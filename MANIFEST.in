@@ -1,0 +1,14 @@
+include README.rst
+include CHANGES.rst
+include LICENSE
+
+prune docs
+prune docs/_build
+prune docs/_templates
+
+prune examples
+
+prune tests
+
+global-exclude *.py[co]
+global-exclude __pycache__
