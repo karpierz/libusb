@@ -44,8 +44,8 @@ It is **version-agnostic**: All versions of the USB protocol, from 1.0 to 3.1
 Linux, OS X, Windows, Windows CE, Android, OpenBSD/NetBSD, Haiku.
 
 **For additional information, please consult the**
-`**FAQ** <https://github.com/libusb/libusb/wiki/FAQ>`__
-**or the** `**Wiki** <https://github.com/libusb/libusb/wiki>`__.
+`FAQ <https://github.com/libusb/libusb/wiki/FAQ>`__
+**or the** `Wiki <https://github.com/libusb/libusb/wiki>`__.
 
 Requirements
 ============
