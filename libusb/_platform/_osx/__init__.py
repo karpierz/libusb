@@ -25,3 +25,5 @@ class timeval(ct.Structure):
     ("tv_sec",  time_t),       # seconds
     ("tv_usec", suseconds_t),  # microseconds
 ]
+
+# eof

@@ -2,15 +2,15 @@
 
 from __future__ import absolute_import
 
+from os import path
 from setuptools import setup
-from os.path import dirname, abspath, join as path
 from codecs import open as fopen
-fopen = lambda name, mode="r", open=fopen: open(name, mode, "utf-8")
+fread = lambda name, encoding="utf-8": fopen(name, "r", encoding).read()
 
-setup_dir = dirname(abspath(__file__))
+top_dir = path.dirname(path.abspath(__file__))
 
-class about:
-    exec(open(path(setup_dir, "libusb", "__about__.py")).read(), None)
+with open(path.join(top_dir, "libusb", "__about__.py")) as f:
+    class about: exec(f.read(), None)
 
 setup(
     name             = about.__title__,
@@ -24,12 +24,10 @@ setup(
     maintainer       = about.__author__,
     maintainer_email = about.__email__,
     license          = about.__license__,
-    long_description = (fopen(path(setup_dir, "README.rst")).read() + "\n" +
-                        fopen(path(setup_dir, "CHANGES.rst")).read()),
+    long_description = (fread(path.join(top_dir, "README.rst")) + "\n" +
+                        fread(path.join(top_dir, "CHANGES.rst"))),
 
     python_requires  = ">=2.7.0,!=3.0.*,!=3.1.*,!=3.2.*",
-    setup_requires   = ["setuptools>=30.4.0"],
-    install_requires = ["setuptools>=30.4.0"],
 )
 
 # eof
