@@ -12,10 +12,6 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-#!!! ln -s html api-1.0
-#!!! scp -r api-1.0 pbatard@web.sourceforge.net:/home/project-web/libusb/htdocs
-#!!! rm -f api-1.0
-
 import sys
 import os
 
