@@ -100,8 +100,8 @@ def _test_result_to_str(result):
 
 def _print_usage(argv):
 
-    print("Usage: %s [-l] [-v] [<test_name> ...]" %
-          (argv[0] if len(argv) > 0 else "test_*"))
+    print("Usage: {} [-l] [-v] [<test_name> ...]".format(
+          argv[0] if len(argv) > 0 else "test_*"))
     print("   -l   List available tests")
     print("   -v   Don't redirect STDERR/STDOUT during tests")
 
@@ -163,7 +163,7 @@ def _setup_test_output(ctx):
                 ctx.old_stdout = os.dup(STDOUT_FILENO)
             except OSError as exc:
                 ctx.old_stdout = INVALID_FD
-                print("Failed to duplicate stdout handle: %d" % exc.errno)
+                print("Failed to duplicate stdout handle: {:d}".format(exc.errno))
                 return 1
 
             try:
@@ -171,7 +171,7 @@ def _setup_test_output(ctx):
             except OSError as exc:
                 ctx.old_stderr = INVALID_FD
                 _cleanup_test_output(ctx)
-                print("Failed to duplicate stderr handle: %d" % exc.errno)
+                print("Failed to duplicate stderr handle: {:d}".format(exc.errno))
                 return 1
 
             # Redirect STDOUT_FILENO and STDERR_FILENO to /dev/null or "nul"
@@ -181,7 +181,7 @@ def _setup_test_output(ctx):
             except OSError as exc:
                 ctx.null_fd = INVALID_FD
                 _cleanup_test_output(ctx)
-                print("Failed to open null handle: %d" % exc.errno)
+                print("Failed to open null handle: {:d}".format(exc.errno))
                 return 1
 
             try:
@@ -196,7 +196,7 @@ def _setup_test_output(ctx):
             except OSError as exc:
                 ctx.output_file = sys.__stdout__
                 _cleanup_test_output(ctx)
-                print("Failed to open FILE for output handle: %d" % exc.errno)
+                print("Failed to open FILE for output handle: {:d}".format(exc.errno))
                 return 1
 
     #endif
@@ -209,7 +209,7 @@ def logf(ctx, fmt, *args):
 
     # Logs some test information or state
 
-    print(fmt % args, file=ctx.output_file)
+    print(fmt.format(*args), file=ctx.output_file)
     ctx.output_file.flush()
 
 
@@ -238,7 +238,7 @@ def run_tests(argv, tests):
                 ctx.verbose = True
                 break;
             else:
-                print("Unknown option: '%s'" % arg)
+                print("Unknown option: '{}'".format(arg))
                 _print_usage(argv)
                 return 1
         else:
@@ -287,9 +287,9 @@ def run_tests(argv, tests):
                 # Failed to find a test match, so do the next loop iteration
                 continue
 
-        logf(ctx, "Starting test run: %s...", test.name)
+        logf(ctx, "Starting test run: {}...", test.name)
         result = test.function(ctx)  # test_result
-        logf(ctx, "%s (%d)", _test_result_to_str(result), result)
+        logf(ctx, "{} ({:d})", _test_result_to_str(result), result)
         if   result == test_result.TEST_STATUS_SUCCESS: pass_count += 1
         elif result == test_result.TEST_STATUS_FAILURE: fail_count += 1
         elif result == test_result.TEST_STATUS_ERROR: error_count += 1
@@ -297,11 +297,11 @@ def run_tests(argv, tests):
         run_count += 1
 
     logf(ctx, "---")
-    logf(ctx, "Ran %d tests", run_count)
-    logf(ctx, "Passed %d tests", pass_count)
-    logf(ctx, "Failed %d tests", fail_count)
-    logf(ctx, "Error in %d tests", error_count)
-    logf(ctx, "Skipped %d tests", skip_count)
+    logf(ctx, "Ran {:d} tests", run_count)
+    logf(ctx, "Passed {:d} tests", pass_count)
+    logf(ctx, "Failed {:d} tests", fail_count)
+    logf(ctx, "Error in {:d} tests", error_count)
+    logf(ctx, "Skipped {:d} tests", skip_count)
 
     _cleanup_test_output(ctx)
 

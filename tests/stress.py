@@ -37,7 +37,7 @@ def test_init_and_exit(tctx):
         ctx = ct.POINTER(usb.context)()
         r = usb.init(ct.byref(ctx))
         if r != usb.LIBUSB_SUCCESS:
-            testlib.logf(tctx, "Failed to init libusb on iteration %d: %d", i, r)
+            testlib.logf(tctx, "Failed to init libusb on iteration {:d}: {:d}", i, r)
             return test_result.TEST_STATUS_FAILURE
         usb.exit(ctx)
 
@@ -52,14 +52,15 @@ def test_get_device_list(tctx):
     ctx = ct.POINTER(usb.context)()
     r = usb.init(ct.byref(ctx))
     if r != usb.LIBUSB_SUCCESS:
-        testlib.logf(tctx, "Failed to init libusb: %d", r)
+        testlib.logf(tctx, "Failed to init libusb: {:d}", r)
         return test_result.TEST_STATUS_FAILURE
 
     for i in range(1000):
         device_list = ct.POINTER(ct.POINTER(usb.device))()
         list_size = usb.get_device_list(ctx, ct.byref(device_list))
         if list_size < 0 or not device_list:
-            testlib.logf(tctx, "Failed to get device list on iteration %d: %d (%p)",
+            testlib.logf(tctx,
+                         "Failed to get device list on iteration {:d}: {:d} ({:#x})",
                          i, -list_size, device_list)
             return test_result.TEST_STATUS_FAILURE
         usb.free_device_list(device_list, 1)
@@ -78,7 +79,7 @@ def test_many_device_lists(tctx):
     ctx = ct.POINTER(usb.context)()
     r = usb.init(ct.byref(ctx))
     if r != usb.LIBUSB_SUCCESS:
-        testlib.logf(tctx, "Failed to init libusb: %d", r)
+        testlib.logf(tctx, "Failed to init libusb: {:d}", r)
         return test_result.TEST_STATUS_FAILURE
 
     device_lists = (ct.POINTER(ct.POINTER(usb.device)) * LIST_COUNT)()
@@ -87,7 +88,8 @@ def test_many_device_lists(tctx):
     for i in range(LIST_COUNT):
         list_size = usb.get_device_list(ctx, ct.byref(device_lists[i]))
         if list_size < 0 or not device_lists[i]:
-            testlib.logf(tctx, "Failed to get device list on iteration %d: %d (%p)",
+            testlib.logf(tctx,
+                         "Failed to get device list on iteration {:d}: {:d} ({:#x})",
                          i, -list_size, device_lists[i])
             return test_result.TEST_STATUS_FAILURE
 
@@ -114,7 +116,7 @@ def test_default_context_change(tctx):
         # First create a new context
         r = usb.init(ct.byref(ctx))
         if r != usb.LIBUSB_SUCCESS:
-            testlib.logf(tctx, "Failed to init libusb: %d", r)
+            testlib.logf(tctx, "Failed to init libusb: {:d}", r)
             return test_result.TEST_STATUS_FAILURE
 
         # Enable debug output, to be sure to use the context
@@ -124,7 +126,7 @@ def test_default_context_change(tctx):
         # Now create a reference to the default context
         r = usb.init(None)
         if r != usb.LIBUSB_SUCCESS:
-            testlib.logf(tctx, "Failed to init libusb: %d", r)
+            testlib.logf(tctx, "Failed to init libusb: {:d}", r)
             return test_result.TEST_STATUS_FAILURE
 
         # Destroy the first context
