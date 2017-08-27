@@ -28,42 +28,42 @@ def print_devs(devs):
 
     path = (ct.c_uint8, 8)()
 
-    i = -1
-    while True:
-        i += 1
-        device_p = devs[i]
-        if not device_p: break
+    i = 0
+    while devs[i]:
+        dev = devs[i]
 
         desc = usb.device_descriptor()
-        r = usb.get_device_descriptor(device_p, ct.byref(desc))
+        r = usb.get_device_descriptor(dev, ct.byref(desc))
         if r < 0:
             print("failed to get device descriptor", file=sys.stderr)
             return
 
         print("{:04x}:{:04x} (bus {}, device {})".format(
               desc.idVendor, desc.idProduct,
-              usb.get_bus_number(device_p), usb.get_device_address(device_p)), end="")
+              usb.get_bus_number(dev), usb.get_device_address(dev)), end="")
 
-        r = usb.get_port_numbers(device_p, path, ct.sizeof(path))
+        r = usb.get_port_numbers(dev, path, ct.sizeof(path))
         if r > 0:
             print(" path: {}".format(path[0]), end="")
             for j in range(1, r):
                 print(".{}".format(path[j]), end="")
 
         print()
+        i += 1
 
 
 def main():
 
     r = usb.init(None)
-    if r < 0: return r
+    if r < 0:
+        return r
 
     devs = ct.POINTER(ct.POINTER(usb.device))()
     cnt = usb.get_device_list(None, ct.byref(devs))
-    if cnt < 0: return cnt
+    if cnt < 0:
+        return cnt
 
     print_devs(devs)
-
     usb.free_device_list(devs, 1)
 
     usb.exit(None)

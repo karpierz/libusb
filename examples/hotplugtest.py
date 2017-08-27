@@ -25,7 +25,7 @@ import libusb as usb
 
 
 handle = ct.POINTER(usb.device_handle)()
-done   = 0
+done = 0
 
 
 @usb.hotplug_callback_fn

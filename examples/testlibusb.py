@@ -45,14 +45,14 @@ def print_endpoint(endpoint):
     print("        bSynchAddress:    {}".format(endpoint.bSynchAddress))
 
     i = 0
-    while True:
-        if i >= endpoint.extra_length: break
+    while i < endpoint.extra_length:
 
         if endpoint.extra[i + 1] == usb.LIBUSB_DT_SS_ENDPOINT_COMPANION:
             ep_comp = ct.POINTER(usb.ss_endpoint_companion_descriptor)()
             ret = usb.get_ss_endpoint_companion_descriptor(None, ct.byref(endpoint),
                                                            ct.byref(ep_comp))
-            if ret != usb.LIBUSB_SUCCESS: continue
+            if ret != usb.LIBUSB_SUCCESS:
+                continue
             print_endpoint_comp(ep_comp[0])
             usb.free_ss_endpoint_companion_descriptor(ep_comp)
 
@@ -96,7 +96,8 @@ def print_bos(handle):
 
     bos = ct.POINTER(usb.bos_descriptor)()
     ret = usb.get_bos_descriptor(ct.byref(handle), ct.byref(bos))
-    if ret < 0: return
+    if ret < 0:
+        return
     bos = bos[0]
 
     print("  Binary Object Store (BOS):")
@@ -107,7 +108,8 @@ def print_bos(handle):
         usb_2_0_extension = ct.POINTER(usb.usb_2_0_extension_descriptor)()
         ret =  usb.get_usb_2_0_extension_descriptor(None, bos.dev_capability[0],
                                                     ct.byref(usb_2_0_extension))
-        if ret < 0: return
+        if ret < 0:
+            return
         print_2_0_ext_cap(usb_2_0_extension[0])
         usb.free_usb_2_0_extension_descriptor(usb_2_0_extension)
 
@@ -115,7 +117,8 @@ def print_bos(handle):
         dev_cap = ct.POINTER(usb.ss_usb_device_capability_descriptor)()
         ret = usb.get_ss_usb_device_capability_descriptor(None, bos.dev_capability[0],
                                                           ct.byref(dev_cap))
-        if ret < 0: return
+        if ret < 0:
+            return
         print_ss_usb_cap(dev_cap[0])
         usb.free_ss_usb_device_capability_descriptor(dev_cap)
 
@@ -187,7 +190,8 @@ def print_device(device_p, level):
             ret = usb.get_string_descriptor_ascii(handle, desc.iSerialNumber,
                       ct.cast(string_descr, ct.POINTER(ct.c_ubyte)), ct.sizeof(string_descr))
             if ret > 0:
-                print("{:<{width}}  - Serial Number: {}".format(" " * 20, string_descr.value.decode(),
+                print("{:<{width}}  - Serial Number: {}".format(" " * 20,
+                                                                string_descr.value.decode(),
                                                                 width=level * 2))
     if verbose:
 
@@ -216,18 +220,18 @@ def main():
         verbose = True
 
     r = usb.init(None)
-    if r < 0: return r
+    if r < 0:
+        return r
 
     devs = ct.POINTER(ct.POINTER(usb.device))()
     cnt = usb.get_device_list(None, ct.byref(devs))
-    if cnt < 0: return cnt
+    if cnt < 0:
+        return cnt
 
-    i = -1
-    while True:
+    i = 0
+    while devs[i]:
+        print_device(devs[i], 0)
         i += 1
-        dev = devs[i]
-        if not dev: break
-        print_device(dev, 0)
 
     usb.free_device_list(devs, 1)
 

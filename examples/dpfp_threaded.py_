@@ -1,0 +1,549 @@
+/*
+ * libusb example program to manipulate U.are.U 4000B fingerprint scanner.
+ * Copyright © 2007 Daniel Drake <dsd@gentoo.org>
+ * Copyright © 2016 Nathan Hjelm <hjelmn@mac.com>
+ *
+ * Basic image capture program only, does not consider the powerup quirks or
+ * the fact that image encryption may be enabled. Not expected to work
+ * flawlessly all of the time.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
+#include <errno.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <signal.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+
+#include "libusb.h"
+
+#define EP_INTR         (1 | LIBUSB_ENDPOINT_IN)
+#define EP_DATA         (2 | LIBUSB_ENDPOINT_IN)
+#define CTRL_IN         (LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN)
+#define CTRL_OUT        (LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_OUT)
+#define USB_RQ          0x04
+#define INTR_LENGTH     64
+#define SEM_NAME                "/org.libusb.example.dpfp_threaded"
+
+enum {
+    MODE_INIT = 0x00,
+    MODE_AWAIT_FINGER_ON = 0x10,
+    MODE_AWAIT_FINGER_OFF = 0x12,
+    MODE_CAPTURE = 0x20,
+    MODE_SHUT_UP = 0x30,
+    MODE_READY = 0x80,
+};
+
+static int next_state(void);
+
+enum {
+    STATE_AWAIT_MODE_CHANGE_AWAIT_FINGER_ON = 1,
+    STATE_AWAIT_IRQ_FINGER_DETECTED,
+    STATE_AWAIT_MODE_CHANGE_CAPTURE,
+    STATE_AWAIT_IMAGE,
+    STATE_AWAIT_MODE_CHANGE_AWAIT_FINGER_OFF,
+    STATE_AWAIT_IRQ_FINGER_REMOVED,
+};
+
+static int state = 0;
+static struct usb.device_handle *devh = NULL;
+static unsigned char imgbuf[0x1b340];
+static unsigned char irqbuf[INTR_LENGTH];
+static usb.transfer *img_transfer = NULL;
+static usb.transfer *irq_transfer = NULL;
+static int img_idx = 0;
+static volatile sig_atomic_t do_exit = 0;
+
+static pthread_t poll_thread;
+static sem_t *exit_sem;
+
+static void _request_exit(sig_atomic_t code)
+{
+    do_exit = code;
+    sem_post(exit_sem);
+}
+
+static void *poll_thread_main(void *arg)
+{
+    int r = 0;
+    print("poll thread running")
+
+    while (!do_exit) {
+        struct timeval tv = { 1, 0 };
+        r = libusb_handle_events_timeout(NULL, &tv);
+        if r < 0:
+            _request_exit(2)
+            break;
+        }
+    }
+
+    print("poll thread shutting down")
+    return NULL;
+}
+
+def find_dpfp_device():
+
+    devh = usb.open_device_with_vid_pid(NULL, 0x05ba, 0x000a)
+    return devh ? 0 : -EIO;
+
+
+static int print_f0_data(void)
+{
+    unsigned char data[0x10];
+    int r;
+    unsigned int i;
+
+    r = usb.control_transfer(devh, CTRL_IN, USB_RQ, 0xf0, 0, data,
+        sizeof(data), 0);
+    if r < 0:
+        print(stderr, "F0 error %d", r)
+        return r
+
+    if ((unsigned int) r < sizeof(data)) {
+        print(stderr, "short read (%d)", r)
+        return -1;
+    }
+
+    printf("F0 data:");
+    for (i = 0; i < sizeof(data); i++)
+        printf("%02x ", data[i]);
+    print()
+    return 0;
+}
+
+static int get_hwstat(unsigned char *status)
+{
+    int r;
+
+    r = usb.control_transfer(devh, CTRL_IN, USB_RQ, 0x07, 0, status, 1, 0);
+    if r < 0:
+        fprintf(stderr, "read hwstat error %d\n", r);
+        return r
+
+    if ((unsigned int) r < 1) {
+        fprintf(stderr, "short read (%d)\n", r);
+        return -1;
+    }
+
+    print("hwstat reads %02x", *status)
+    return 0;
+}
+
+static int set_hwstat(unsigned char data)
+{
+    int r;
+
+    print("set hwstat to %02x", data)
+    r = usb.control_transfer(devh, CTRL_OUT, USB_RQ, 0x07, 0, &data, 1, 0);
+    if r < 0:
+        print(stderr, "set hwstat error %d", r)
+        return r
+
+    if ((unsigned int) r < 1) {
+        fprintf(stderr, "short write (%d)", r);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int set_mode(unsigned char data)
+{
+    int r;
+    print("set mode %02x", data)
+
+    r = usb.control_transfer(devh, CTRL_OUT, USB_RQ, 0x4e, 0, &data, 1, 0);
+    if r < 0:
+        print(stderr, "set mode error %d", r)
+        return r
+
+    if ((unsigned int) r < 1) {
+        fprintf(stderr, "short write (%d)", r);
+        return -1;
+    }
+
+    return 0;
+}
+
+static void LIBUSB_CALL cb_mode_changed(usb.transfer *transfer)
+{
+    if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
+        fprintf(stderr, "mode change transfer not completed!\n");
+        _request_exit(2)
+    }
+
+    print("async cb_mode_changed length=%d actual_length=%d",
+          transfer->length, transfer->actual_length)
+    if (next_state() < 0)
+        _request_exit(2)
+}
+
+static int set_mode_async(unsigned char data)
+{
+    unsigned char *buf = (unsigned char*) malloc(LIBUSB_CONTROL_SETUP_SIZE + 1);
+    usb.transfer *transfer;
+
+    if (!buf)
+        return -ENOMEM;
+
+    transfer = usb.alloc_transfer(0)
+    if (!transfer) {
+        free(buf);
+        return -ENOMEM;
+    }
+
+    print("async set mode %02x", data);
+    usb.fill_control_setup(buf, CTRL_OUT, USB_RQ, 0x4e, 0, 1)
+    buf[LIBUSB_CONTROL_SETUP_SIZE] = data;
+    usb.fill_control_transfer(transfer, devh, buf, cb_mode_changed, NULL, 1000);
+
+    transfer->flags = LIBUSB_TRANSFER_SHORT_NOT_OK
+        | LIBUSB_TRANSFER_FREE_BUFFER | LIBUSB_TRANSFER_FREE_TRANSFER;
+    return usb.submit_transfer(transfer);
+}
+
+static int do_sync_intr(unsigned char *data)
+{
+    int r;
+    int transferred;
+
+    r = libusb_interrupt_transfer(devh, EP_INTR, data, INTR_LENGTH, &transferred, 1000);
+    if r < 0:
+        print(stderr, "intr error %d", r);
+        return r
+
+    if (transferred < INTR_LENGTH) {
+        print(stderr, "short read (%d)", r);
+        return -1;
+    }
+
+    print("recv interrupt %04x", *((uint16_t *) data))
+    return 0;
+}
+
+static int sync_intr(unsigned char type)
+{
+    int r;
+    unsigned char data[INTR_LENGTH];
+
+    while True:
+        r = do_sync_intr(data);
+        if r < 0:
+            return r
+        if (data[0] == type)
+            return 0;
+
+}
+
+static int save_to_file(unsigned char *data)
+{
+    FILE *fd;
+    char filename[64];
+
+    snprintf(filename, sizeof(filename), "finger%d.pgm", img_idx++);
+    fd = fopen(filename, "w");
+    if (!fd)
+        return -1;
+
+    fputs("P5 384 289 255 ", fd);
+    (void) fwrite(data + 64, 1, 384*289, fd);
+    fclose(fd);
+    print("saved image to %s", filename)
+    return 0;
+}
+
+static int next_state(void)
+{
+    int r = 0;
+    print("old state: %d", state)
+    switch (state) {
+    case STATE_AWAIT_IRQ_FINGER_REMOVED:
+        state = STATE_AWAIT_MODE_CHANGE_AWAIT_FINGER_ON;
+        r = set_mode_async(MODE_AWAIT_FINGER_ON);
+        break;
+    case STATE_AWAIT_MODE_CHANGE_AWAIT_FINGER_ON:
+        state = STATE_AWAIT_IRQ_FINGER_DETECTED;
+        break;
+    case STATE_AWAIT_IRQ_FINGER_DETECTED:
+        state = STATE_AWAIT_MODE_CHANGE_CAPTURE;
+        r = set_mode_async(MODE_CAPTURE);
+        break;
+    case STATE_AWAIT_MODE_CHANGE_CAPTURE:
+        state = STATE_AWAIT_IMAGE;
+        break;
+    case STATE_AWAIT_IMAGE:
+        state = STATE_AWAIT_MODE_CHANGE_AWAIT_FINGER_OFF;
+        r = set_mode_async(MODE_AWAIT_FINGER_OFF);
+        break;
+    case STATE_AWAIT_MODE_CHANGE_AWAIT_FINGER_OFF:
+        state = STATE_AWAIT_IRQ_FINGER_REMOVED;
+        break;
+    default:
+        print("unrecognised state %d", state)
+    }
+    if r < 0:
+        print(stderr, "error detected changing state")
+        return r
+
+
+    print("new state: %d", state)
+    return 0;
+}
+
+static void LIBUSB_CALL cb_irq(usb.transfer *transfer)
+{
+    unsigned char irqtype = transfer->buffer[0];
+
+    if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
+        print(stderr, "irq transfer status %d?", transfer->status);
+        irq_transfer = NULL;
+        _request_exit(2)
+        return
+    }
+
+    print("IRQ callback %02x", irqtype);
+    switch (state)
+    {
+    case STATE_AWAIT_IRQ_FINGER_DETECTED:
+        if (irqtype == 0x01) {
+            if (next_state() < 0) {
+                _request_exit(2)
+                return
+            }
+        } else {
+            print("finger-on-sensor detected in wrong state!");
+        }
+        break;
+    case STATE_AWAIT_IRQ_FINGER_REMOVED:
+        if (irqtype == 0x02) {
+            if (next_state() < 0) {
+                _request_exit(2)
+                return
+            }
+        } else {
+            print("finger-on-sensor detected in wrong state!");
+        }
+        break;
+    }
+    if (usb.submit_transfer(irq_transfer) < 0)
+        _request_exit(2)
+}
+
+static void LIBUSB_CALL cb_img(usb.transfer *transfer)
+{
+    if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
+        fprintf(stderr, "img transfer status %d?\n", transfer->status);
+        img_transfer = NULL;
+        _request_exit(2)
+        return
+    }
+
+    print("Image callback")
+    save_to_file(imgbuf);
+    if (next_state() < 0) {
+        _request_exit(2)
+        return
+    }
+    if (usb.submit_transfer(img_transfer) < 0)
+        _request_exit(2)
+}
+
+static int _init_capture(void)
+{
+    int r;
+
+    r = usb.submit_transfer(irq_transfer);
+    if r < 0:
+        return r
+
+    r = usb.submit_transfer(img_transfer)
+    if r < 0:
+        usb.cancel_transfer(irq_transfer)
+        while (irq_transfer)
+            if (libusb_handle_events(NULL) < 0)
+                break;
+        return r
+
+
+    /* start state machine */
+    state = STATE_AWAIT_IRQ_FINGER_REMOVED;
+    return next_state();
+}
+
+static int do_init(void)
+{
+    unsigned char status;
+    int r;
+
+    r = get_hwstat(&status);
+    if r < 0:
+        return r
+
+    if (!(status & 0x80)) {
+        r = set_hwstat(status | 0x80);
+        if r < 0:
+            return r
+        r = get_hwstat(&status);
+        if r < 0:
+            return r
+    }
+
+    status &= ~0x80;
+    r = set_hwstat(status);
+    if r < 0:
+        return r
+
+    r = get_hwstat(&status);
+    if r < 0:
+        return r
+
+    r = sync_intr(0x56);
+    if r < 0:
+        return r
+
+    return 0;
+}
+
+static int _alloc_transfers(void)
+{
+    img_transfer = usb.alloc_transfer(0)
+    if (!img_transfer) return -ENOMEM;
+
+    irq_transfer = usb.alloc_transfer(0)
+    if (!irq_transfer) return -ENOMEM;
+
+    usb.fill_bulk_transfer(img_transfer, devh, EP_DATA, imgbuf,
+                           sizeof(imgbuf), cb_img, NULL, 0);
+    libusb_fill_interrupt_transfer(irq_transfer, devh, EP_INTR, irqbuf,
+                                   sizeof(irqbuf), cb_irq, NULL, 0);
+
+    return 0;
+}
+
+static void sighandler(int signum)
+{
+    _request_exit(1)
+}
+
+def main()
+
+    struct sigaction sigact;
+    int r = 1;
+
+    exit_sem = sem_open(SEM_NAME, O_CREAT, 0);
+    if (!exit_sem) {
+        fprintf(stderr, "failed to initialise semaphore error %d", errno);
+        sys.exit(1)
+    }
+
+    /* only using this semaphore in this process so go ahead and unlink it now */
+    sem_unlink(SEM_NAME);
+
+    r = usb.init(None)
+    if r < 0:
+        print(stderr, "failed to initialise libusb")
+        sys.exit(1)
+
+    r = find_dpfp_device();
+    if r < 0:
+        print(stderr, "Could not find/open device")
+        goto out;
+
+    r = usb.claim_interface(devh, 0)
+    if r < 0:
+        print(stderr, "usb_claim_interface error %d %s", r, strerror(-r));
+        goto out;
+
+    print("claimed interface")
+
+    r = print_f0_data();
+    if r < 0:
+        goto out_release;
+
+    r = do_init();
+    if r < 0:
+        goto out_deinit;
+
+    # async from here onwards
+
+    sigact.sa_handler = sighandler;
+    sigemptyset(&sigact.sa_mask);
+    sigact.sa_flags = 0;
+    sigaction(SIGINT,  &sigact, NULL)
+    sigaction(SIGTERM, &sigact, NULL)
+    sigaction(SIGQUIT, &sigact, NULL)
+
+    r = pthread_create(&poll_thread, NULL, poll_thread_main, NULL);
+    if (r)
+        goto out_deinit;
+
+    r = _alloc_transfers();
+    if r < 0:
+        _request_exit(1)
+        pthread_join(poll_thread, NULL);
+        goto out_deinit;
+
+    r = _init_capture();
+    if r < 0:
+        _request_exit(1)
+        pthread_join(poll_thread, NULL);
+        goto out_deinit;
+
+    while not do_exit:
+        sem_wait(exit_sem);
+
+    print("shutting down...")
+    pthread_join(poll_thread, NULL);
+
+    r = usb.cancel_transfer(irq_transfer)
+    if r < 0:
+        _request_exit(1)
+        goto out_deinit;
+
+    r = usb.cancel_transfer(img_transfer);
+    if r < 0:
+        _request_exit(1)
+        goto out_deinit;
+
+    while (img_transfer || irq_transfer)
+        if (libusb_handle_events(NULL) < 0)
+            break;
+
+    if (do_exit == 1)
+        r = 0;
+    else
+        r = 1;
+
+    out_deinit:
+
+    usb.free_transfer(img_transfer)
+    usb.free_transfer(irq_transfer)
+    set_mode(0);
+    set_hwstat(0x80);
+    out_release:
+    usb.release_interface(devh, 0)
+
+    out:
+
+    usb.close(devh)
+    usb.exit(None)
+    return r >= 0 ? r : -r;
+
+
+sys.exit(main() or 0)
