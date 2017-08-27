@@ -24,15 +24,16 @@
 from __future__ import absolute_import
 
 import ctypes as ct
-new_array = lambda type, size: (type * size)()
 
 from ._platform import DLL_PATH, DLL, CFUNC, dlclose
 from ._platform import timeval
 
 try:
     dll = DLL(DLL_PATH)
+except OSError as exc:
+    raise exc
 except Exception as exc:
-    raise OSError(str(type(u"")(bytes(exc), errors="ignore")))
+    raise OSError("{}".format(exc))
 
 #include <limits.h>
 UINT_MAX = ct.c_uint(-1).value

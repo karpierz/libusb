@@ -26,7 +26,7 @@ import libusb as usb
 
 def print_devs(devs):
 
-    path = usb.new_array(ct.c_uint8, 8)
+    path = (ct.c_uint8, 8)()
 
     i = -1
     while True:

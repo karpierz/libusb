@@ -71,7 +71,7 @@ def hotplug_callback_detach(ctx, dev, event, user_data):
 
 def main():
 
-    hp = usb.new_array(usb.hotplug_callback_handle, 2)
+    hp = (usb.hotplug_callback_handle, 2)()
 
     vendor_id  = int(argv[1]) if len(sys.argv) > 1 else 0x045a
     product_id = int(argv[2]) if len(sys.argv) > 2 else 0x5005

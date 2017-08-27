@@ -1,347 +1,311 @@
-/*
- * libusb test library helper functions
- * Copyright © 2012 Toby Gray <toby.gray@realvnc.com>
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- */
+# coding: utf-8
 
-#include "libusb_testlib.h"
+# libusb test library helper functions
+# Copyright © 2012 Toby Gray <toby.gray@realvnc.com>
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-/** Values returned from a test function to indicate test result */
-typedef enum {
-    /** Indicates that the test ran successfully. */
-    TEST_STATUS_SUCCESS,
-    /** Indicates that the test failed one or more test. */
-    TEST_STATUS_FAILURE,
-    /** Indicates that an unexpected error occurred. */
-    TEST_STATUS_ERROR,
-    /** Indicates that the test can't be run. For example this may be
-    * due to no suitable device being connected to perform the tests.*/
-    TEST_STATUS_SKIP
-} libusb_testlib_result;
+from __future__ import absolute_import
 
+import sys
+import os
+#from annotate import annotate
+from libusb._platform import is_windows, defined
 
-/**
- * Context for test library functions
- */
-typedef struct {
-    char ** test_names;
-    int test_count;
-    bool list_tests;
-    bool verbose;
-    int old_stdout;
-    int old_stderr;
-    FILE* output_file;
-    int null_fd;
-} libusb_testlib_ctx;
-
-/**
- * Function pointer for a libusb test function.
- *
- * Should return TEST_STATUS_SUCCESS on success or another TEST_STATUS value.
- */
-typedef libusb_testlib_result (*libusb_testlib_test_function)(libusb_testlib_ctx * ctx);
-
-/**
- * Structure holding a test description.
- */
-typedef struct {
-    /** Human readable name of the test. */
-    const char * name;
-    /** The test library will call this function to run the test. */
-    libusb_testlib_test_function function;
-} libusb_testlib_test;
-
-/**
- * Value to use at the end of a test array to indicate the last
- * element.
- */
-#define LIBUSB_NULL_TEST {NULL, NULL}
+if defined("_WIN32_WCE"):
+    # No support for selective redirection of STDOUT on WinCE.
+    DISABLE_STDOUT_REDIRECTION = True
+else:
+    if is_windows:
+        NULL_PATH = "nul"
+    else:
+        NULL_PATH = "/dev/null"
+    STDOUT_FILENO = sys.__stdout__.fileno()
+    STDERR_FILENO = sys.__stderr__.fileno()
+INVALID_FD = -1
 
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <errno.h>
-#if !defined(_WIN32_WCE)
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#endif
+class test_result(object):
 
-#if defined(_WIN32_WCE)
-// No support for selective redirection of STDOUT on WinCE.
-#define DISABLE_STDOUT_REDIRECTION
-#define STDOUT_FILENO 1
-#elif defined(_WIN32)
-#include <io.h>
-#define dup _dup
-#define dup2 _dup2
-#define open _open
-#define close _close
-#define fdopen _fdopen
-#define NULL_PATH "nul"
-#define STDOUT_FILENO 1
-#define STDERR_FILENO 2
-#else
-#include <unistd.h>
-#define NULL_PATH "/dev/null"
-#endif
-#define INVALID_FD -1
-#define IGNORE_RETVAL(expr) do { (void)(expr); } while(0)
+    # Values returned from a test function to indicate test result
 
-/**
- * Converts a test result code into a human readable string.
- */
-static const char* test_result_to_str(libusb_testlib_result result)
-{
-    switch (result) {
-    case TEST_STATUS_SUCCESS:
-        return "Success";
-    case TEST_STATUS_FAILURE:
-        return "Failure";
-    case TEST_STATUS_ERROR:
-        return "Error";
-    case TEST_STATUS_SKIP:
-        return "Skip";
-    default:
-        return "Unknown";
-    }
-}
+    # Indicates that the test ran successfully.
+    TEST_STATUS_SUCCESS = 0
+    # Indicates that the test failed one or more test.
+    TEST_STATUS_FAILURE = 1
+    # Indicates that an unexpected error occurred.
+    TEST_STATUS_ERROR = 2
+    # Indicates that the test can't be run. For example this may be
+    # due to no suitable device being connected to perform the tests.
+    TEST_STATUS_SKIP = 3
 
-static void print_usage(int argc, char ** argv)
-{
-    printf("Usage: %s [-l] [-v] [<test_name> ...]\n",
-        argc > 0 ? argv[0] : "test_*");
-    printf("   -l   List available tests\n");
-    printf("   -v   Don't redirect STDERR/STDOUT during tests\n");
-}
 
-static void cleanup_test_output(libusb_testlib_ctx * ctx)
-{
-#ifndef DISABLE_STDOUT_REDIRECTION
+class test_ctx(object):
 
-    if (!ctx->verbose)
-    {
-        if (ctx->old_stdout != INVALID_FD) {
-            IGNORE_RETVAL(dup2(ctx->old_stdout, STDOUT_FILENO));
-            ctx->old_stdout = INVALID_FD;
-        }
-        if (ctx->old_stderr != INVALID_FD) {
-            IGNORE_RETVAL(dup2(ctx->old_stderr, STDERR_FILENO));
-            ctx->old_stderr = INVALID_FD;
-        }
-        if (ctx->null_fd != INVALID_FD) {
-            close(ctx->null_fd);
-            ctx->null_fd = INVALID_FD;
-        }
-        if (ctx->output_file != stdout) {
-            fclose(ctx->output_file);
-            ctx->output_file = stdout;
-        }
-    }
+    # Context for test library functions
 
-#endif
-}
+    def __init__(self):
+        # Setup default mode of operation
+        self.test_names = None # char**
+        self.list_tests = False
+        self.verbose = False
+        self.old_stdout = INVALID_FD
+        self.old_stderr = INVALID_FD
+        self.output_file = sys.__stdout__
+        self.null_fd = INVALID_FD
 
-/**
- * Setup test output handles
- * \return zero on success, non-zero on failure
- */
-static int setup_test_output(libusb_testlib_ctx * ctx)
-{
-#ifndef DISABLE_STDOUT_REDIRECTION
 
-    /* Stop output to stdout and stderr from being displayed if using non-verbose output */
-    if (!ctx->verbose)
-    {
-        /* Keep a copy of STDOUT and STDERR */
-        ctx->old_stdout = dup(STDOUT_FILENO);
-        if (ctx->old_stdout < 0) {
-            ctx->old_stdout = INVALID_FD;
-            printf("Failed to duplicate stdout handle: %d\n", errno);
-            return 1;
-        }
-        ctx->old_stderr = dup(STDERR_FILENO);
-        if (ctx->old_stderr < 0) {
-            ctx->old_stderr = INVALID_FD;
-            cleanup_test_output(ctx);
-            printf("Failed to duplicate stderr handle: %d\n", errno);
-            return 1;
-        }
-        /* Redirect STDOUT_FILENO and STDERR_FILENO to /dev/null or "nul"*/
-        ctx->null_fd = open(NULL_PATH, O_WRONLY);
-        if (ctx->null_fd < 0) {
-            ctx->null_fd = INVALID_FD;
-            cleanup_test_output(ctx);
-            printf("Failed to open null handle: %d\n", errno);
-            return 1;
-        }
-        if ((dup2(ctx->null_fd, STDOUT_FILENO) < 0) ||
-            (dup2(ctx->null_fd, STDERR_FILENO) < 0)) {
-                cleanup_test_output(ctx);
-                return 1;
-        }
-        ctx->output_file = fdopen(ctx->old_stdout, "w");
-        if (!ctx->output_file) {
-            ctx->output_file = stdout;
-            cleanup_test_output(ctx);
-            printf("Failed to open FILE for output handle: %d\n", errno);
-            return 1;
-        }
-    }
+class test_test(object):
 
-#endif
-    return 0;
-}
+    # Structure holding a test description.
 
-/**
- * Logs some test information or state
- */
-void libusb_testlib_logf(libusb_testlib_ctx * ctx, const char* fmt, ...)
-{
-    va_list va;
-    va_start(va, fmt);
-    vfprintf(ctx->output_file, fmt, va);
-    va_end(va);
-    fprintf(ctx->output_file, "\n");
-    fflush(ctx->output_file);
-}
+    def __init__(self, name, function):
+        # Human readable name of the test.
+        self.name = name
+        # The test library will call this function to run the test.
+        # It has one parameter of test_ctx type.
+        # Should return test_result.TEST_STATUS_SUCCESS on success or
+        # another test_result.TEST_STATUS_* value.
+        self.function = function
 
-/**
- * Runs the tests provided.
- *
- * Before running any tests argc and argv will be processed
- * to determine the mode of operation.
- *
- * \param argc The argc from main
- * \param argv The argv from main
- * \param tests A NULL_TEST terminated array of tests
- * \return 0 on success, non-zero on failure
- */
-int libusb_testlib_run_tests(int argc, char ** argv, const libusb_testlib_test * tests):
-{
-    int run_count = 0;
-    int idx = 0;
-    int pass_count = 0;
-    int fail_count = 0;
-    int error_count = 0;
-    int skip_count = 0;
-    int r, j;
-    size_t arglen;
-    libusb_testlib_result test_result;
-    libusb_testlib_ctx ctx;
 
-    /* Setup default mode of operation */
-    ctx.test_names = NULL;
-    ctx.test_count = 0;
-    ctx.list_tests = false;
-    ctx.verbose = false;
-    ctx.old_stdout = INVALID_FD;
-    ctx.old_stderr = INVALID_FD;
-    ctx.output_file = stdout;
-    ctx.null_fd = INVALID_FD;
+#@annonate(str, result=test_result)
+def _test_result_to_str(result):
 
-    /* Parse command line options */
-    if (argc >= 2) {
-        for (j = 1; j < argc; j++) {
-            arglen = strlen(argv[j]);
-            if ( ((argv[j][0] == '-') || (argv[j][0] == '/')) &&
-                arglen >=2 ) {
-                    switch (argv[j][1]) {
-                    case 'l':
-                        ctx.list_tests = true;
-                        break;
-                    case 'v':
-                        ctx.verbose = true;
-                        break;
-                    default:
-                        printf("Unknown option: '%s'\n", argv[j]);
-                        print_usage(argc, argv);
-                        return 1;
-                    }
-            } else {
-                /* End of command line options, remaining must be list of tests to run */
-                ctx.test_names = argv + j;
-                ctx.test_count = argc - j;
+    # Converts a test result code into a human readable string.
+
+    if result == test_result.TEST_STATUS_SUCCESS:
+        return "Success"
+    elif result == test_result.TEST_STATUS_FAILURE:
+        return "Failure"
+    elif result == test_result.TEST_STATUS_ERROR:
+        return "Error"
+    elif result == test_result.TEST_STATUS_SKIP:
+        return "Skip"
+    else:
+        return "Unknown"
+
+
+def _print_usage(argv):
+
+    print("Usage: %s [-l] [-v] [<test_name> ...]" %
+          (argv[0] if len(argv) > 0 else "test_*"))
+    print("   -l   List available tests")
+    print("   -v   Don't redirect STDERR/STDOUT during tests")
+
+
+#@annonate(ctx=test_ctx)
+def _cleanup_test_output(ctx):
+
+    if not defined("DISABLE_STDOUT_REDIRECTION"):
+
+        if not ctx.verbose:
+
+            if ctx.old_stdout != INVALID_FD:
+                try:
+                    os.dup2(ctx.old_stdout, STDOUT_FILENO)
+                except OSError:
+                    pass
+                ctx.old_stdout = INVALID_FD
+
+            if ctx.old_stderr != INVALID_FD:
+                try:
+                    os.dup2(ctx.old_stderr, STDERR_FILENO)
+                except OSError:
+                    pass
+                ctx.old_stderr = INVALID_FD
+
+            if ctx.null_fd != INVALID_FD:
+                try:
+                    os.close(ctx.null_fd)
+                except OSError:
+                    pass
+                ctx.null_fd = INVALID_FD
+
+            if ctx.output_file != sys.__stdout__:
+                try:
+                    ctx.output_file.close()
+                except OSError:
+                    pass
+                ctx.output_file = sys.__stdout__
+
+    #endif
+
+
+#@annonate(int, ctx=test_ctx)
+def _setup_test_output(ctx):
+
+    # Setup test output handles
+    # \return zero on success, non-zero on failure
+
+    if not defined("DISABLE_STDOUT_REDIRECTION"):
+
+        # Stop output to stdout and stderr from being displayed
+        # if using non-verbose output
+
+        if not ctx.verbose:
+
+            # Keep a copy of STDOUT and STDERR
+
+            try:
+                ctx.old_stdout = os.dup(STDOUT_FILENO)
+            except OSError as exc:
+                ctx.old_stdout = INVALID_FD
+                print("Failed to duplicate stdout handle: %d" % exc.errno)
+                return 1
+
+            try:
+                ctx.old_stderr = os.dup(STDERR_FILENO)
+            except OSError as exc:
+                ctx.old_stderr = INVALID_FD
+                _cleanup_test_output(ctx)
+                print("Failed to duplicate stderr handle: %d" % exc.errno)
+                return 1
+
+            # Redirect STDOUT_FILENO and STDERR_FILENO to /dev/null or "nul"
+
+            try:
+                ctx.null_fd = os.open(NULL_PATH, os.O_WRONLY)
+            except OSError as exc:
+                ctx.null_fd = INVALID_FD
+                _cleanup_test_output(ctx)
+                print("Failed to open null handle: %d" % exc.errno)
+                return 1
+
+            try:
+                os.dup2(ctx.null_fd, STDOUT_FILENO)
+                os.dup2(ctx.null_fd, STDERR_FILENO)
+            except OSError:
+                _cleanup_test_output(ctx)
+                return 1
+
+            try:
+                ctx.output_file = os.fdopen(ctx.old_stdout, "w")
+            except OSError as exc:
+                ctx.output_file = sys.__stdout__
+                _cleanup_test_output(ctx)
+                print("Failed to open FILE for output handle: %d" % exc.errno)
+                return 1
+
+    #endif
+
+    return 0
+
+
+#@annonate(ctx=test_ctx, fmt=str)
+def logf(ctx, fmt, *args):
+
+    # Logs some test information or state
+
+    print(fmt % args, file=ctx.output_file)
+    ctx.output_file.flush()
+
+
+#@annonate(int, argv=list, tests=list)
+def run_tests(argv, tests):
+
+    # Runs the tests provided.
+    #
+    # Before running any tests argv will be processed
+    # to determine the mode of operation.
+    #
+    # \param argv The argv from main
+    # \param tests A NULL_TEST terminated array of tests
+    # \return 0 on success, non-zero on failure
+
+    ctx = test_ctx()
+
+    # Parse command line options
+    for j, arg in enumerate(argv[1:]):
+        if arg[0] in ('-', '/') and len(arg) >=2:
+            opt = arg[1]
+            if opt == 'l':
+                ctx.list_tests = True
                 break;
-            }
-        }
-    }
+            elif opt == 'v':
+                ctx.verbose = True
+                break;
+            else:
+                print("Unknown option: '%s'" % arg)
+                _print_usage(argv)
+                return 1
+        else:
+            # End of command line options, remaining must be list
+            # of tests to run
+            ctx.test_names = argv[j + 1:]
+            break
 
-    /* Validate command line options */
-    if (ctx.test_names && ctx.list_tests) {
-        printf("List of tests requested but test list provided\n");
-        print_usage(argc, argv);
-        return 1;
-    }
+    # Validate command line options
+    if ctx.test_names and ctx.list_tests:
+        print("List of tests requested but test list provided")
+        _print_usage(argv)
+        return 1
 
-    /* Setup test log output */
-    r = setup_test_output(&ctx);
-    if (r != 0)
-        return r;  
+    # Setup test log output
+    r = _setup_test_output(ctx)
+    if r != 0:
+        return r
 
-    /* Act on any options not related to running tests */
-    if (ctx.list_tests) {
-        while (tests[idx].function != NULL) {
-            libusb_testlib_logf(&ctx, tests[idx].name);
-            ++idx;
-        }
-        cleanup_test_output(&ctx);
-        return 0;
-    }
+    # Act on any options not related to running tests
 
-    /* Run any requested tests */
-    while (tests[idx].function != NULL)
-    {
-        const libusb_testlib_test * test = &tests[idx];
-        ++idx;
-        if (ctx.test_count > 0) {
-            /* Filtering tests to run, check if this is one of them */
-            int i;
-            for (i = 0; i < ctx.test_count; ++i)
-            {
-                if (strcmp(ctx.test_names[i], test->name) == 0)
-                    /* Matches a requested test name */
-                    break;
-            }
-            if (i >= ctx.test_count) {
-                /* Failed to find a test match, so do the next loop iteration */
-                continue;
-            }
-        }
-        libusb_testlib_logf(&ctx, "Starting test run: %s...", test->name);
-        test_result = test->function(&ctx);
-        libusb_testlib_logf(&ctx, "%s (%d)",
-                            test_result_to_str(test_result), test_result);
-        switch (test_result)
-        {
-        case TEST_STATUS_SUCCESS: pass_count++;  break;
-        case TEST_STATUS_FAILURE: fail_count++;  break;
-        case TEST_STATUS_ERROR:   error_count++; break;
-        case TEST_STATUS_SKIP:    skip_count++;  break;
-        }
-        ++run_count;
-    }
-    libusb_testlib_logf(&ctx, "---");
-    libusb_testlib_logf(&ctx, "Ran %d tests", run_count);
-    libusb_testlib_logf(&ctx, "Passed %d tests", pass_count);
-    libusb_testlib_logf(&ctx, "Failed %d tests", fail_count);
-    libusb_testlib_logf(&ctx, "Error in %d tests", error_count);
-    libusb_testlib_logf(&ctx, "Skipped %d tests", skip_count);
+    if ctx.list_tests:
 
-    cleanup_test_output(&ctx);
-    return pass_count != run_count;
-}
+        for test in tests:
+            logf(ctx, test.name)
+        _cleanup_test_output(ctx)
+        return 0
+
+    # Run any requested tests
+
+    run_count = 0
+    pass_count = 0
+    fail_count = 0
+    error_count = 0
+    skip_count = 0
+
+    for test in tests:
+
+        if ctx.test_names:
+            # Filtering tests to run, check if this is one of them
+            for test_name in ctx.test_names:
+                if test_name == test.name:
+                    # Matches a requested test name
+                    break
+            else:
+                # Failed to find a test match, so do the next loop iteration
+                continue
+
+        logf(ctx, "Starting test run: %s...", test.name)
+        result = test.function(ctx)  # test_result
+        logf(ctx, "%s (%d)", _test_result_to_str(result), result)
+        if   result == test_result.TEST_STATUS_SUCCESS: pass_count += 1
+        elif result == test_result.TEST_STATUS_FAILURE: fail_count += 1
+        elif result == test_result.TEST_STATUS_ERROR: error_count += 1
+        elif result == test_result.TEST_STATUS_SKIP: skip_count += 1
+        run_count += 1
+
+    logf(ctx, "---")
+    logf(ctx, "Ran %d tests", run_count)
+    logf(ctx, "Passed %d tests", pass_count)
+    logf(ctx, "Failed %d tests", fail_count)
+    logf(ctx, "Error in %d tests", error_count)
+    logf(ctx, "Skipped %d tests", skip_count)
+
+    _cleanup_test_output(ctx)
+
+    return pass_count != run_count
+
+
+# eof
