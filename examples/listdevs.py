@@ -64,6 +64,7 @@ def main():
         return cnt
 
     print_devs(devs)
+
     usb.free_device_list(devs, 1)
 
     usb.exit(None)
