@@ -42,7 +42,7 @@ def hotplug_callback(ctx, dev, event, user_data):
 
     if handle:
         usb.close(handle)
-        handle = NULL;
+        handle = ct.POINTER(usb.device_handle)()
 
     rc = usb.open(dev, ct.byref(handle))
     if rc != usb.LIBUSB_SUCCESS:
@@ -62,7 +62,7 @@ def hotplug_callback_detach(ctx, dev, event, user_data):
 
     if handle:
         usb.close(handle)
-        handle = NULL;
+        handle = ct.POINTER(usb.device_handle)()
 
     done += 1
 
@@ -71,7 +71,7 @@ def hotplug_callback_detach(ctx, dev, event, user_data):
 
 def main():
 
-    hp = (usb.hotplug_callback_handle, 2)()
+    hp = (usb.hotplug_callback_handle * 2)()
 
     vendor_id  = int(argv[1]) if len(sys.argv) > 1 else 0x045a
     product_id = int(argv[2]) if len(sys.argv) > 2 else 0x5005

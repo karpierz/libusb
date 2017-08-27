@@ -163,7 +163,7 @@ def print_device(device_p, level):
             ret = usb.get_string_descriptor_ascii(handle, desc.iManufacturer,
                       ct.cast(string_descr, ct.POINTER(ct.c_ubyte)), ct.sizeof(string_descr))
             if ret > 0:
-                description = "{} - ".format(string_descr.value.decode())
+                description = "{!s} - ".format(string_descr.value.decode())
             else:
                 description = "{:04X} - ".format(desc.idVendor)
         else:
@@ -173,7 +173,7 @@ def print_device(device_p, level):
             ret = usb.get_string_descriptor_ascii(handle, desc.iProduct,
                       ct.cast(string_descr, ct.POINTER(ct.c_ubyte)), ct.sizeof(string_descr))
             if ret > 0:
-                description += "{}".format(string_descr.value.decode())
+                description += "{!s}".format(string_descr.value.decode())
             else:
                 description += "{:04X}".format(desc.idProduct)
         else:
@@ -190,9 +190,9 @@ def print_device(device_p, level):
             ret = usb.get_string_descriptor_ascii(handle, desc.iSerialNumber,
                       ct.cast(string_descr, ct.POINTER(ct.c_ubyte)), ct.sizeof(string_descr))
             if ret > 0:
-                print("{:<{width}}  - Serial Number: {}".format(" " * 20,
-                                                                string_descr.value.decode(),
-                                                                width=level * 2))
+                print("{:<{width}}  - Serial Number: {!s}".format(" " * 20,
+                                                                  string_descr.value.decode(),
+                                                                  width=level * 2))
     if verbose:
 
         for i in range(desc.bNumConfigurations):

@@ -42,7 +42,7 @@ do_exit   = False
 num_bytes = 0
 num_xfer  = 0
 
-buf = (ct.c_uint8, 2048)()
+buf = (ct.c_uint8 * 2048)()
 
 
 @usb.transfer_cb_fn
