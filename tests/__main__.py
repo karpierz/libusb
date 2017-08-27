@@ -10,7 +10,7 @@ import logging
 from . import test_dir
 
 
-def test_suite(names=None, omit=("testlib", "stress")):
+def test_suite(names=None, omit=("stress", "testlib")):
 
     from . import __name__ as pkg_name
     from . import __path__ as pkg_path
