@@ -5,7 +5,7 @@ __all__ = ('__title__', '__summary__', '__uri__', '__version_info__',
            '__license__')
 
 __title__        = "libusb"
-__summary__      = "Python wrapper for the libusb library (ctypes/cffi-based libusb)"
+__summary__      = "Python binding for the libusb C library (ctypes/cffi-based libusb)"
 __uri__          = "http://pypi.python.org/pypi/libusb/"
 __version_info__ = type("version_info", (), dict(serial=3,
                         major=1, minor=0, micro=21, releaselevel="alpha"))

@@ -1,14 +1,15 @@
 include README.rst
 include CHANGES.rst
 include LICENSE
+include tox.ini
 
-prune docs
+graft docs
 prune docs/_build
-prune docs/_templates
 
-prune examples
+graft examples
 
-prune tests
+graft tests
 
-global-exclude *.py[co]
-global-exclude __pycache__
+prune build
+prune dist
+global-exclude *.py[co] __pycache__

@@ -6,7 +6,7 @@ import os
 this_dir = os.path.dirname(os.path.abspath(__file__))
 is_py32bit = sys.maxsize <= 2**32
 
-DLL_PATH = os.path.join(this_dir, "win32" if is_py32bit else "x64", "libusb-1.0.dll")
+DLL_PATH = os.path.join(this_dir, "x86" if is_py32bit else "x64", "libusb-1.0.dll")
 
 import ctypes as ct
 from ctypes  import WinDLL      as DLL

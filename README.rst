@@ -1,7 +1,7 @@
 libusb
 =======
 
-Python wrapper for the *libusb* C library.
+Python binding for the *libusb* C library.
 
 Overview
 ========
@@ -50,8 +50,9 @@ Linux, OS X, Windows, Windows CE, Android, OpenBSD/NetBSD, Haiku.
 Requirements
 ============
 
-- TBD...
-- ATTENTION: currently works and tested only for Windows
+- | It is fully independent package.
+  | All necessary things are installed during the normal installation process.
+- ATTENTION: currently works and tested only for Windows.
 
 Installation
 ============
@@ -78,14 +79,20 @@ Clone the `sources <https://github.com/karpierz/libusb>`__ and run::
 
     python -m pip install ./libusb
 
-or on development mode:
+or on development mode::
 
     python -m pip install --editable ./libusb
 
 Development
 ===========
 
-Visit: https://github.com/karpierz/libusb
+Visit `development page <https://github.com/karpierz/libusb>`__
+
+Prerequisites:
+
++ Development is based strictly on *tox*. To install it run::
+
+    python -m pip install tox
 
 License
 =======
