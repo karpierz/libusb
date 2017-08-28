@@ -17,21 +17,17 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 import sys
 import os
 #from annotate import annotate
 from libusb._platform import is_windows, defined
 
-if defined("_WIN32_WCE"):
+if is_windows and defined("_WIN32_WCE"):
     # No support for selective redirection of STDOUT on WinCE.
     DISABLE_STDOUT_REDIRECTION = True
 else:
-    if is_windows:
-        NULL_PATH = "nul"
-    else:
-        NULL_PATH = "/dev/null"
     STDOUT_FILENO = sys.__stdout__.fileno()
     STDERR_FILENO = sys.__stderr__.fileno()
 INVALID_FD = -1
@@ -58,7 +54,7 @@ class test_ctx(object):
 
     def __init__(self):
         # Setup default mode of operation
-        self.test_names = None # char**
+        self.test_names = None
         self.list_tests = False
         self.verbose = False
         self.old_stdout = INVALID_FD
@@ -67,7 +63,7 @@ class test_ctx(object):
         self.null_fd = INVALID_FD
 
 
-class test_test(object):
+class test_spec(object):
 
     # Structure holding a test description.
 
@@ -177,7 +173,7 @@ def _setup_test_output(ctx):
             # Redirect STDOUT_FILENO and STDERR_FILENO to /dev/null or "nul"
 
             try:
-                ctx.null_fd = os.open(NULL_PATH, os.O_WRONLY)
+                ctx.null_fd = os.open(os.devnull, os.O_WRONLY)
             except OSError as exc:
                 ctx.null_fd = INVALID_FD
                 _cleanup_test_output(ctx)
@@ -229,7 +225,7 @@ def run_tests(argv, tests):
 
     # Parse command line options
     for j, arg in enumerate(argv[1:]):
-        if arg[0] in ('-', '/') and len(arg) >=2:
+        if arg[0] in ('-', '/') and len(arg) >= 2:
             opt = arg[1]
             if opt == 'l':
                 ctx.list_tests = True
@@ -288,7 +284,7 @@ def run_tests(argv, tests):
                 continue
 
         logf(ctx, "Starting test run: {}...", test.name)
-        result = test.function(ctx)  # test_result
+        result = test.function(ctx)
         logf(ctx, "{} ({:d})", _test_result_to_str(result), result)
         if   result == test_result.TEST_STATUS_SUCCESS: pass_count += 1
         elif result == test_result.TEST_STATUS_FAILURE: fail_count += 1

@@ -17,13 +17,13 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 import sys
 import ctypes as ct
 import libusb as usb
 import testlib
-from testlib import test_result,test_ctx
+from testlib import test_result,test_ctx, test_spec
 #from annotate import annotate
 
 
@@ -37,7 +37,8 @@ def test_init_and_exit(tctx):
         ctx = ct.POINTER(usb.context)()
         r = usb.init(ct.byref(ctx))
         if r != usb.LIBUSB_SUCCESS:
-            testlib.logf(tctx, "Failed to init libusb on iteration {:d}: {:d}", i, r)
+            testlib.logf(tctx, "Failed to init libusb on iteration "
+                         "{:d}: {:d}", i, r)
             return test_result.TEST_STATUS_FAILURE
         usb.exit(ctx)
 
@@ -59,9 +60,8 @@ def test_get_device_list(tctx):
         device_list = ct.POINTER(ct.POINTER(usb.device))()
         list_size = usb.get_device_list(ctx, ct.byref(device_list))
         if list_size < 0 or not device_list:
-            testlib.logf(tctx,
-                         "Failed to get device list on iteration {:d}: {:d} ({:#x})",
-                         i, -list_size, device_list)
+            testlib.logf(tctx, "Failed to get device list on iteration "
+                         "{:d}: {:d} ({:#x})", i, -list_size, device_list)
             return test_result.TEST_STATUS_FAILURE
         usb.free_device_list(device_list, 1)
 
@@ -88,9 +88,8 @@ def test_many_device_lists(tctx):
     for i in range(LIST_COUNT):
         list_size = usb.get_device_list(ctx, ct.byref(device_lists[i]))
         if list_size < 0 or not device_lists[i]:
-            testlib.logf(tctx,
-                         "Failed to get device list on iteration {:d}: {:d} ({:#x})",
-                         i, -list_size, device_lists[i])
+            testlib.logf(tctx, "Failed to get device list on iteration "
+                         "{:d}: {:d} ({:#x})", i, -list_size, device_lists[i])
             return test_result.TEST_STATUS_FAILURE
 
     # Destroy the 100 device lists.
@@ -140,10 +139,10 @@ def test_default_context_change(tctx):
 # Fill in the list of tests.
 
 tests = [
-    testlib.test_test("init_and_exit",          test_init_and_exit),
-    testlib.test_test("get_device_list",        test_get_device_list),
-    testlib.test_test("many_device_lists",      test_many_device_lists),
-    testlib.test_test("default_context_change", test_default_context_change),
+    test_spec("init_and_exit", test_init_and_exit),
+    test_spec("get_device_list", test_get_device_list),
+    test_spec("many_device_lists", test_many_device_lists),
+    test_spec("default_context_change", test_default_context_change),
 ]
 
 
@@ -152,7 +151,7 @@ def main():
     return testlib.run_tests(sys.argv, tests)
 
 
-main()
+sys.exit(main() or 0)
 
 
 # eof

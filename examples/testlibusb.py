@@ -29,9 +29,9 @@ verbose = False
 def print_endpoint_comp(ep_comp):
 
     print("      USB 3.0 Endpoint Companion:")
-    print("        bMaxBurst:        {}".format(ep_comp.bMaxBurst))
+    print("        bMaxBurst:        {:d}".format(ep_comp.bMaxBurst))
     print("        bmAttributes:     {:#04x}".format(ep_comp.bmAttributes))
-    print("        wBytesPerInterval: {}".format(ep_comp.wBytesPerInterval))
+    print("        wBytesPerInterval: {:d}".format(ep_comp.wBytesPerInterval))
 
 
 def print_endpoint(endpoint):
@@ -39,10 +39,10 @@ def print_endpoint(endpoint):
     print("      Endpoint:")
     print("        bEndpointAddress: {:02x}".format(endpoint.bEndpointAddress))
     print("        bmAttributes:     {:02x}".format(endpoint.bmAttributes))
-    print("        wMaxPacketSize:   {}".format(endpoint.wMaxPacketSize))
-    print("        bInterval:        {}".format(endpoint.bInterval))
-    print("        bRefresh:         {}".format(endpoint.bRefresh))
-    print("        bSynchAddress:    {}".format(endpoint.bSynchAddress))
+    print("        wMaxPacketSize:   {:d}".format(endpoint.wMaxPacketSize))
+    print("        bInterval:        {:d}".format(endpoint.bInterval))
+    print("        bRefresh:         {:d}".format(endpoint.bRefresh))
+    print("        bSynchAddress:    {:d}".format(endpoint.bSynchAddress))
 
     i = 0
     while i < endpoint.extra_length:
@@ -62,13 +62,13 @@ def print_endpoint(endpoint):
 def print_altsetting(interface):
 
     print("    Interface:")
-    print("      bInterfaceNumber:   {}".format(interface.bInterfaceNumber))
-    print("      bAlternateSetting:  {}".format(interface.bAlternateSetting))
-    print("      bNumEndpoints:      {}".format(interface.bNumEndpoints))
-    print("      bInterfaceClass:    {}".format(interface.bInterfaceClass))
-    print("      bInterfaceSubClass: {}".format(interface.bInterfaceSubClass))
-    print("      bInterfaceProtocol: {}".format(interface.bInterfaceProtocol))
-    print("      iInterface:         {}".format(interface.iInterface))
+    print("      bInterfaceNumber:   {:d}".format(interface.bInterfaceNumber))
+    print("      bAlternateSetting:  {:d}".format(interface.bAlternateSetting))
+    print("      bNumEndpoints:      {:d}".format(interface.bNumEndpoints))
+    print("      bInterfaceClass:    {:d}".format(interface.bInterfaceClass))
+    print("      bInterfaceSubClass: {:d}".format(interface.bInterfaceSubClass))
+    print("      bInterfaceProtocol: {:d}".format(interface.bInterfaceProtocol))
+    print("      iInterface:         {:d}".format(interface.iInterface))
 
     for i in range(interface.bNumEndpoints):
         print_endpoint(interface.endpoint[i])
@@ -77,19 +77,19 @@ def print_altsetting(interface):
 def print_2_0_ext_cap(usb_2_0_ext_cap):
 
     print("    USB 2.0 Extension Capabilities:")
-    print("      bDevCapabilityType: {}".format(usb_2_0_ext_cap.bDevCapabilityType))
+    print("      bDevCapabilityType: {:d}".format(usb_2_0_ext_cap.bDevCapabilityType))
     print("      bmAttributes:       {:#x}".format(usb_2_0_ext_cap.bmAttributes))
 
 
 def print_ss_usb_cap(ss_usb_cap):
 
     print("    USB 3.0 Capabilities:")
-    print("      bDevCapabilityType: {}".format(ss_usb_cap.bDevCapabilityType))
+    print("      bDevCapabilityType: {:d}".format(ss_usb_cap.bDevCapabilityType))
     print("      bmAttributes:       {:#x}".format(ss_usb_cap.bmAttributes))
     print("      wSpeedSupported:    {:#x}".format(ss_usb_cap.wSpeedSupported))
-    print("      bFunctionalitySupport: {}".format(ss_usb_cap.bFunctionalitySupport))
-    print("      bU1devExitLat:      {}".format(ss_usb_cap.bU1DevExitLat))
-    print("      bU2devExitLat:      {}".format(ss_usb_cap.bU2DevExitLat))
+    print("      bFunctionalitySupport: {:d}".format(ss_usb_cap.bFunctionalitySupport))
+    print("      bU1devExitLat:      {:d}".format(ss_usb_cap.bU1DevExitLat))
+    print("      bU2devExitLat:      {:d}".format(ss_usb_cap.bU2DevExitLat))
 
 
 def print_bos(handle):
@@ -101,8 +101,8 @@ def print_bos(handle):
     bos = bos[0]
 
     print("  Binary Object Store (BOS):")
-    print("    wTotalLength:       {}".format(bos.wTotalLength))
-    print("    bNumDeviceCaps:     {}".format(bos.bNumDeviceCaps))
+    print("    wTotalLength:       {:d}".format(bos.wTotalLength))
+    print("    bNumDeviceCaps:     {:d}".format(bos.bNumDeviceCaps))
 
     if bos.dev_capability[0][0].bDevCapabilityType == usb.LIBUSB_BT_USB_2_0_EXTENSION:
         usb_2_0_extension = ct.POINTER(usb.usb_2_0_extension_descriptor)()
@@ -134,12 +134,12 @@ def print_interface(interface):
 def print_configuration(config):
 
     print("  Configuration:")
-    print("    wTotalLength:         {}".format(config.wTotalLength))
-    print("    bNumInterfaces:       {}".format(config.bNumInterfaces))
-    print("    bConfigurationValue:  {}".format(config.bConfigurationValue))
-    print("    iConfiguration:       {}".format(config.iConfiguration))
+    print("    wTotalLength:         {:d}".format(config.wTotalLength))
+    print("    bNumInterfaces:       {:d}".format(config.bNumInterfaces))
+    print("    bConfigurationValue:  {:d}".format(config.bConfigurationValue))
+    print("    iConfiguration:       {:d}".format(config.iConfiguration))
     print("    bmAttributes:         {:02x}".format(config.bmAttributes))
-    print("    MaxPower:             {}".format(config.MaxPower))
+    print("    MaxPower:             {:d}".format(config.MaxPower))
 
     for i in range(config.bNumInterfaces):
         print_interface(config.interface[i])
@@ -181,7 +181,7 @@ def print_device(device_p, level):
     else:
         description = "{:04X} - {:04X}".format(desc.idVendor, desc.idProduct)
 
-    print("{:<{width}}Dev (bus {}, device {}): {}".format(" " * 20,
+    print("{:<{width}}Dev (bus {:d}, device {:d}): {}".format(" " * 20,
           usb.get_bus_number(device_p), usb.get_device_address(device_p), description,
           width=level * 2))
 

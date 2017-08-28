@@ -38,15 +38,15 @@ def print_devs(devs):
             print("failed to get device descriptor", file=sys.stderr)
             return
 
-        print("{:04x}:{:04x} (bus {}, device {})".format(
+        print("{:04x}:{:04x} (bus {:d}, device {:d})".format(
               desc.idVendor, desc.idProduct,
               usb.get_bus_number(dev), usb.get_device_address(dev)), end="")
 
         r = usb.get_port_numbers(dev, path, ct.sizeof(path))
         if r > 0:
-            print(" path: {}".format(path[0]), end="")
+            print(" path: {:d}".format(path[0]), end="")
             for j in range(1, r):
-                print(".{}".format(path[j]), end="")
+                print(".{:d}".format(path[j]), end="")
 
         print()
         i += 1
