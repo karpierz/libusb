@@ -1,4 +1,6 @@
-# coding: utf-8
+# Copyright (c) 2016-2017, Adam Karpierz
+# Licensed under the zlib/libpng License
+# http://opensource.org/licenses/zlib
 
 # libusb stress test program to perform simple stress tests
 # Copyright © 2012 Toby Gray <toby.gray@realvnc.com>
@@ -24,10 +26,8 @@ import ctypes as ct
 import libusb as usb
 import testlib
 from testlib import test_result,test_ctx, test_spec
-#from annotate import annotate
 
 
-#@annotate(test_result, tctx=test_ctx)
 def test_init_and_exit(tctx):
 
     # Test that creates and destroys a single concurrent context
@@ -45,7 +45,6 @@ def test_init_and_exit(tctx):
     return test_result.TEST_STATUS_SUCCESS
 
 
-#@annotate(test_result, tctx=test_ctx)
 def test_get_device_list(tctx):
 
     # Tests that devices can be listed 1000 times.
@@ -69,7 +68,6 @@ def test_get_device_list(tctx):
     return test_result.TEST_STATUS_SUCCESS
 
 
-#@annotate(test_result, tctx=test_ctx)
 def test_many_device_lists(tctx):
 
     # Tests that 100 concurrent device lists can be open at a time.
@@ -102,7 +100,6 @@ def test_many_device_lists(tctx):
     return test_result.TEST_STATUS_SUCCESS
 
 
-#@annotate(test_result, tctx=test_ctx)
 def test_default_context_change(tctx):
 
     # Tests that the default context (used for various things including
@@ -152,6 +149,3 @@ def main():
 
 
 sys.exit(main() or 0)
-
-
-# eof

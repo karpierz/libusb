@@ -1,4 +1,6 @@
-# coding: utf-8
+# Copyright (c) 2016-2017, Adam Karpierz
+# Licensed under the zlib/libpng License
+# http://opensource.org/licenses/zlib
 
 from __future__ import absolute_import
 
@@ -33,5 +35,3 @@ elif is_osx:
     from ._osx     import timeval
 else:
     raise ImportError("unsupported platform")
-
-# eof

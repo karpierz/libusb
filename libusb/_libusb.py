@@ -1,10 +1,12 @@
-# coding: utf-8
+# Copyright (c) 2016-2017, Adam Karpierz
+# Licensed under the zlib/libpng License
+# http://opensource.org/licenses/zlib
 
 # Public libusb header file
-# Copyright © 2001 Johannes Erdfelt <johannes@erdfelt.com>
-# Copyright © 2007-2008 Daniel Drake <dsd@gentoo.org>
-# Copyright © 2012 Pete Batard <pete@akeo.ie>
-# Copyright © 2012 Nathan Hjelm <hjelmn@cs.unm.edu>
+# Copyright (c) 2001 Johannes Erdfelt <johannes@erdfelt.com>
+# Copyright (c) 2007-2008 Daniel Drake <dsd@gentoo.org>
+# Copyright (c) 2012 Pete Batard <pete@akeo.ie>
+# Copyright (c) 2012 Nathan Hjelm <hjelmn@cs.unm.edu>
 # For more information, please visit: http://libusb.info
 #
 # This library is free software; you can redistribute it and/or

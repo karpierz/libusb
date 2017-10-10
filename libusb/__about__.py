@@ -1,4 +1,6 @@
-# coding: utf-8
+# Copyright (c) 2016-2017, Adam Karpierz
+# Licensed under the zlib/libpng License
+# http://opensource.org/licenses/zlib
 
 __all__ = ('__title__', '__summary__', '__uri__', '__version_info__',
            '__version__', '__author__', '__email__', '__copyright__',
@@ -17,5 +19,3 @@ __email__        = "python@python.pl"
 __copyright__    = "Copyright (c) 2016-2017, {0}".format(__author__)
 __license__      = "zlib/libpng License ; {0}".format(
                    "http://opensource.org/licenses/zlib")
-
-# eof

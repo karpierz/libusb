@@ -15,6 +15,7 @@ Overview
     by implementing whole its functionality in a clean Python instead of C.
   |
   | *libusb* API 1.0 documentation can be found at:
+
     `libusb-1.0 API Reference <http://api.libusb.info>`__
 
 About original libusb:
@@ -59,10 +60,10 @@ Installation
 
 Prerequisites:
 
-+ Python 2.7 or higher or 3.3 or higher
++ Python 2.7 or higher or 3.4 or higher
 
   * http://www.python.org/
-  * 2.7 and 3.4 are primary test environments.
+  * 2.7 and 3.4 with libusb 1.0.21 are primary test environments.
 
 + pip and setuptools
 

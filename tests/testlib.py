@@ -1,4 +1,6 @@
-# coding: utf-8
+# Copyright (c) 2016-2017, Adam Karpierz
+# Licensed under the zlib/libpng License
+# http://opensource.org/licenses/zlib
 
 # libusb test library helper functions
 # Copyright © 2012 Toby Gray <toby.gray@realvnc.com>
@@ -21,7 +23,6 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 import os
-#from annotate import annotate
 from libusb._platform import is_windows, defined
 
 if is_windows and defined("_WIN32_WCE"):
@@ -302,6 +303,3 @@ def run_tests(argv, tests):
     _cleanup_test_output(ctx)
 
     return pass_count != run_count
-
-
-# eof
