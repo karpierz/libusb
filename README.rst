@@ -6,17 +6,17 @@ Python binding for the *libusb* C library.
 Overview
 ========
 
-  | Python *libusb* module is a low-level binding for *libusb* C library.
-  | It is an effort to allow python programs full access to the API implemented
-    and provided by the well known `*libusb* <http://libusb.info>`__ library.
-  |
-  | *libusb* is a lightweight Python package, based on the *ctypes* library.
-  | It is fully compliant implementation of the original C *libusb* 1.0 API
-    by implementing whole its functionality in a clean Python instead of C.
-  |
-  | *libusb* API 1.0 documentation can be found at:
+| Python *libusb* module is a low-level binding for *libusb* C library.
+| It is an effort to allow python programs full access to the API implemented
+  and provided by the well known `*libusb* <http://libusb.info>`__ library.
+|
+| *libusb* is a lightweight Python package, based on the *ctypes* library.
+| It is fully compliant implementation of the original C *libusb* 1.0 API
+  by implementing whole its functionality in a clean Python instead of C.
+|
+| *libusb* API 1.0 documentation can be found at:
 
-    `libusb-1.0 API Reference <http://api.libusb.info>`__
+  `libusb-1.0 API Reference <http://api.libusb.info>`__
 
 About original libusb:
 ----------------------
