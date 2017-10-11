@@ -1,4 +1,6 @@
-# coding: utf-8
+# Copyright (c) 2016-2017, Adam Karpierz
+# Licensed under the zlib/libpng License
+# http://opensource.org/licenses/zlib
 
 # Test suite program based of libusb-0.1-compat testlibusb
 # Copyright (c) 2013 Nathan Hjelm <hjelmn@mac.ccom>

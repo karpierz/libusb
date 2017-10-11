@@ -1,4 +1,6 @@
-# coding: utf-8
+# Copyright (c) 2016-2017, Adam Karpierz
+# Licensed under the zlib/libpng License
+# http://opensource.org/licenses/zlib
 
 # libusb example program to list devices on the bus
 # Copyright © 2007 Daniel Drake <dsd@gentoo.org>
