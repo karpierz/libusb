@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.0.21b2 (2017-12-18)
+---------------------
+  - Fix the error of platform detecting.
+
 1.0.21b1 (2017-10-11)
 ---------------------
   - First beta release.
