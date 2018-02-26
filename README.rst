@@ -74,6 +74,11 @@ To install run::
 
     python -m pip install --upgrade libusb
 
+Development
+===========
+
+Visit `development page <https://github.com/karpierz/libusb>`__
+
 Installation from sources:
 
 Clone the `sources <https://github.com/karpierz/libusb>`__ and run::
@@ -84,14 +89,9 @@ or on development mode::
 
     python -m pip install --editable ./libusb
 
-Development
-===========
-
-Visit `development page <https://github.com/karpierz/libusb>`__
-
 Prerequisites:
 
-+ Development is based strictly on *tox*. To install it run::
++ Development is strictly based on *tox*. To install it run::
 
     python -m pip install tox
 

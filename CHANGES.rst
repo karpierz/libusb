@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.0.21b4 (2018-02-26)
+---------------------
+  - Improve and simplify setup and packaging.
+
 1.0.21b3 (2018-02-25)
 ---------------------
   - Setup improvement.
