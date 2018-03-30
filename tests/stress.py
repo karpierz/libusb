@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2017, Adam Karpierz
+# Copyright (c) 2016-2018, Adam Karpierz
 # Licensed under the zlib/libpng License
 # http://opensource.org/licenses/zlib
 
@@ -116,8 +116,8 @@ def test_default_context_change(tctx):
             return test_result.TEST_STATUS_FAILURE
 
         # Enable debug output, to be sure to use the context
-        usb.set_debug(None, usb.LIBUSB_LOG_LEVEL_DEBUG)
-        usb.set_debug(ctx,  usb.LIBUSB_LOG_LEVEL_DEBUG)
+        usb.set_option(None, usb.LIBUSB_OPTION_LOG_LEVEL, usb.LIBUSB_LOG_LEVEL_DEBUG)
+        usb.set_option(ctx,  usb.LIBUSB_OPTION_LOG_LEVEL, usb.LIBUSB_LOG_LEVEL_DEBUG)
 
         # Now create a reference to the default context
         r = usb.init(None)

@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2017, Adam Karpierz
+# Copyright (c) 2016-2018, Adam Karpierz
 # Licensed under the zlib/libpng License
 # http://opensource.org/licenses/zlib
 
@@ -73,6 +73,8 @@ def hotplug_callback_detach(ctx, dev, event, user_data):
 
 def main():
 
+    global handle, done
+
     hp = (usb.hotplug_callback_handle * 2)()
 
     vendor_id  = int(argv[1]) if len(sys.argv) > 1 else 0x045a
@@ -84,38 +86,36 @@ def main():
         print("failed to initialise libusb: {}".format(usb.error_name(rc)))
         return 1
 
-    if not usb.has_capability(usb.LIBUSB_CAP_HAS_HOTPLUG):
-        print("Hotplug capabilites are not supported on this platform")
+    try:
+        if not usb.has_capability(usb.LIBUSB_CAP_HAS_HOTPLUG):
+            print("Hotplug capabilites are not supported on this platform")
+            return 1
+
+        rc = usb.hotplug_register_callback(None,
+                                           usb.LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, 0,
+                                           vendor_id, product_id, class_id,
+                                           hotplug_callback, None, ct.byref(hp[0]))
+        if rc != usb.LIBUSB_SUCCESS:
+            print("Error registering callback 0", file=sys.stderr)
+            return 1
+
+        rc = usb.hotplug_register_callback(None,
+                                           usb.LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, 0,
+                                           vendor_id, product_id, class_id,
+                                           hotplug_callback_detach, None, ct.byref(hp[1]))
+        if rc != usb.LIBUSB_SUCCESS:
+            print("Error registering callback 1", file=sys.stderr)
+            return 1
+
+        while done < 2:
+            rc = usb.handle_events(None)
+            if rc < 0:
+                print("libusb.handle_events() failed: {}".format(usb.error_name(rc)))
+    finally:
+        if handle:
+            usb.close(handle)
         usb.exit(None)
-        return 1
 
-    rc = usb.hotplug_register_callback(None,
-                                       usb.LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, 0,
-                                       vendor_id, product_id, class_id,
-                                       hotplug_callback, None, ct.byref(hp[0]))
-    if rc != usb.LIBUSB_SUCCESS:
-        print("Error registering callback 0", file=sys.stderr)
-        usb.exit(None)
-        return 1
-
-    rc = usb.hotplug_register_callback(None,
-                                       usb.LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, 0,
-                                       vendor_id, product_id, class_id,
-                                       hotplug_callback_detach, None, ct.byref(hp[1]))
-    if rc != usb.LIBUSB_SUCCESS:
-        print("Error registering callback 1", file=sys.stderr)
-        usb.exit(None)
-        return 1
-
-    while done < 2:
-        rc = usb.handle_events(None)
-        if rc < 0:
-            print("libusb.handle_events() failed: {}".format(usb.error_name(rc)))
-
-    if handle:
-        usb.close(handle)
-
-    usb.exit(None)
     return 0
 
 

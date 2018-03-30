@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2017, Adam Karpierz
+# Copyright (c) 2016-2018, Adam Karpierz
 # Licensed under the zlib/libpng License
 # http://opensource.org/licenses/zlib
 
@@ -101,7 +101,7 @@ def LIBUSB_DEPRECATED_FOR(f): pass  # __attribute__((deprecated("Use " #f " inst
 # Internally, LIBUSB_API_VERSION is defined as follows:
 # (libusb major << 24) | (libusb minor << 16) | (16 bit incremental)
 
-LIBUSB_API_VERSION = 0x01000105
+LIBUSB_API_VERSION = 0x01000106
 
 # The following is kept for compatibility, but will be deprecated in the future
 LIBUSBX_API_VERSION = LIBUSB_API_VERSION
@@ -912,7 +912,7 @@ class version(ct.Structure):
 # sessions allows for your program to use two libraries (or dynamically
 # load two modules) which both independently use libusb. This will prevent
 # interference between the individual libusb users - for example
-# libusb.set_debug() will not affect the other user of the library, and
+# libusb.set_option() will not affect the other user of the library, and
 # libusb.exit() will not destroy resources that the other user is still
 # using.
 #
@@ -973,7 +973,10 @@ speed = ct.c_int
     # The device is operating at super speed (5000MBit/s).
     LIBUSB_SPEED_SUPER,
 
-) = (0, 1, 2, 3, 4)
+    # The device is operating at super speed plus (10000MBit/s).
+    LIBUSB_SPEED_SUPER_PLUS,
+
+) = (0, 1, 2, 3, 4, 5)
 
 # \ingroup libusb::dev
 # Supported speeds (wSpeedSupported) bitfield. Indicates what
@@ -1224,7 +1227,7 @@ transfer._fields_ = [
     # Type of the endpoint from \ref libusb.transfer_type
     ("type", ct.c_ubyte),
 
-    # Timeout for this transfer in millseconds. A value of 0 indicates no
+    # Timeout for this transfer in milliseconds. A value of 0 indicates no
     # timeout.
     ("timeout", ct.c_uint),
 
@@ -1293,10 +1296,8 @@ capability = ct.c_int
 #  - LIBUSB_LOG_LEVEL_NONE (0)    : no messages ever printed by the library (default)
 #  - LIBUSB_LOG_LEVEL_ERROR (1)   : error messages are printed to stderr
 #  - LIBUSB_LOG_LEVEL_WARNING (2) : warning and error messages are printed to stderr
-#  - LIBUSB_LOG_LEVEL_INFO (3)    : informational messages are printed to stdout, warning
-#    and error messages are printed to stderr
-#  - LIBUSB_LOG_LEVEL_DEBUG (4)   : debug and informational messages are printed to stdout,
-#    warnings and errors to stderr
+#  - LIBUSB_LOG_LEVEL_INFO (3)    : informational messages are printed to stderr
+#  - LIBUSB_LOG_LEVEL_DEBUG (4)   : debug and informational messages are printed to stderr
 
 log_level = ct.c_int
 (
@@ -1318,10 +1319,13 @@ exit        = CFUNC(None,
                     ct.POINTER(context))(
                     ("libusb_exit", dll), (
                     (1, "ctx"),))
+LIBUSB_DEPRECATED_FOR("set_option")
 set_debug   = CFUNC(None,
-                    ct.POINTER(context), ct.c_int)(
+                    ct.POINTER(context),
+                    ct.c_int)(
                     ("libusb_set_debug", dll), (
-                    (1, "ctx"), (1, "level")))
+                    (1, "ctx"),
+                    (1, "level")))
 has_capability = CFUNC(ct.c_int,
                     ct.c_uint32)(
                     ("libusb_has_capability", dll), (
@@ -1472,7 +1476,7 @@ get_port_numbers        = CFUNC(ct.c_int,
                                 (1, "dev"),
                                 (1, "port_numbers"),
                                 (1, "port_numbers_len")))
-LIBUSB_DEPRECATED_FOR (get_port_numbers)
+LIBUSB_DEPRECATED_FOR("get_port_numbers")
 get_port_path           = CFUNC(ct.c_int,
                                 ct.POINTER(context),
                                 ct.POINTER(device),
@@ -2388,5 +2392,56 @@ hotplug_deregister_callback = CFUNC(None,
                                     ("libusb_hotplug_deregister_callback", dll), (
                                     (1, "ctx"),
                                     (1, "callback_handle")))
+ 
+# \ingroup libusb_lib
+# Available option values for libusb_set_option().
+
+option = ct.c_int
+(
+    # Set the log message verbosity.
+    #
+    # The default level is LIBUSB_LOG_LEVEL_NONE, which means no messages are ever
+    # printed. If you choose to increase the message verbosity level, ensure
+    # that your application does not close the stderr file descriptor.
+    #
+    # You are advised to use level LIBUSB_LOG_LEVEL_WARNING. libusb is conservative
+    # with its message logging and most of the time, will only log messages that
+    # explain error conditions and other oddities. This will help you debug
+    # your software.
+    #
+    # If the LIBUSB_DEBUG environment variable was set when libusb was
+    # initialized, this function does nothing: the message verbosity is fixed
+    # to the value in the environment variable.
+    #
+    # If libusb was compiled without any message logging, this function does
+    # nothing: you'll never get any messages.
+    #
+    # If libusb was compiled with verbose debug message logging, this function
+    # does nothing: you'll always get messages from all levels.
+    #
+    LIBUSB_OPTION_LOG_LEVEL,
+
+    # Use the UsbDk backend for a specific context, if available.
+    #
+    # This option should be set immediately after calling libusb_init(), otherwise
+    # unspecified behavior may occur.
+    #
+    # Only valid on Windows.
+    #
+    LIBUSB_OPTION_USE_USBDK,
+
+) = (0, 1)
+
+def set_option(ctx, option, *values):
+
+    if option == LIBUSB_OPTION_LOG_LEVEL:
+        if not (LIBUSB_LOG_LEVEL_NONE <= values[0] <= LIBUSB_LOG_LEVEL_DEBUG):
+            return LIBUSB_ERROR_INVALID_PARAM
+        set_debug(ctx, values[0])
+        return LIBUSB_SUCCESS
+    elif option == LIBUSB_OPTION_USE_USBDK:
+        return LIBUSB_ERROR_NOT_SUPPORTED
+    else:
+        return LIBUSB_ERROR_INVALID_PARAM
 
 # eof

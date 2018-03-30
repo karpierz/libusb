@@ -1,30 +1,35 @@
-/*
- * Copyright © 2001 Stephen Williams (steve@icarus.com)
- * Copyright © 2001-2002 David Brownell (dbrownell@users.sourceforge.net)
- * Copyright © 2008 Roger Williams (rawqux@users.sourceforge.net)
- * Copyright © 2012 Pete Batard (pete@akeo.ie)
- * Copyright © 2013 Federico Manzan (f.manzan@gmail.com)
- *
- *    This source code is free software; you can redistribute it
- *    and/or modify it in source code form under the terms of the GNU
- *    General Public License as published by the Free Software
- *    Foundation; either version 2 of the License, or (at your option)
- *    any later version.
- *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with this program; if not, write to the Free Software
- *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
- */
+# Copyright (c) 2016-2018, Adam Karpierz
+# Licensed under the zlib/libpng License
+# http://opensource.org/licenses/zlib
 
-#include <getopt.h>
+# Copyright © 2001 Stephen Williams (steve@icarus.com)
+# Copyright © 2001-2002 David Brownell (dbrownell@users.sourceforge.net)
+# Copyright © 2008 Roger Williams (rawqux@users.sourceforge.net)
+# Copyright © 2012 Pete Batard (pete@akeo.ie)
+# Copyright © 2013 Federico Manzan (f.manzan@gmail.com)
+#
+#    This source code is free software; you can redistribute it
+#    and/or modify it in source code form under the terms of the GNU
+#    General Public License as published by the Free Software
+#    Foundation; either version 2 of the License, or (at your option)
+#    any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
 
-#include "libusb.h"
-#include "ezusb.h"
+from __future__ import absolute_import, division, print_function
+
+import sys
+import ctypes as ct
+import libusb as usb
+from ezusb import FX_KNOWN_DEVICES, FX_TYPE_MAX, FX_TYPE_NAMES, IMG_TYPE_NAMES, FX_TYPE_UNDEFINED
+from ezusb import ezusb_load_ram
 
 #if !defined(_WIN32) || defined(__CYGWIN__ )
 #include <syslog.h>
@@ -42,11 +47,11 @@ static bool dosyslog = false;
 #endif
 
 
-void logerror(const char *format, ...):
+def logerror(const char *format, ...):
     __attribute__ ((format (__printf__, 1, 2)));
 
 
-void logerror(const char *format, ...):
+def logerror(const char *format, ...):
 
     va_list ap;
     va_start(ap, format);
@@ -62,16 +67,15 @@ void logerror(const char *format, ...):
 
 def print_usage(error_code):
 
-    print(stderr, "\nUsage: fxload [-v] [-V] [-t type] [-d vid:pid] [-p bus,addr] [-s loader] -i firmware")
-    print(stderr, "  -i <path>       -- Firmware to upload")
-    print(stderr, "  -s <path>       -- Second stage loader")
-    print(stderr, "  -t <type>       -- Target type: an21, fx, fx2, fx2lp, fx3")
-    print(stderr, "  -d <vid:pid>    -- Target device, as an USB VID:PID")
-    print(stderr, "  -p <bus,addr>   -- Target device, as a libusb bus number and device address path")
-    print(stderr, "  -v              -- Increase verbosity")
-    print(stderr, "  -q              -- Decrease verbosity (silent mode)")
-    print(stderr, "  -V              -- Print program version")
-
+    print("\nUsage: fxload [-v] [-V] [-t type] [-d vid:pid] [-p bus,addr] [-s loader] -i firmware\n"
+          "  -i <path>       -- Firmware to upload\n"
+          "  -s <path>       -- Second stage loader\n"
+          "  -t <type>       -- Target type: an21, fx, fx2, fx2lp, fx3\n"
+          "  -d <vid:pid>    -- Target device, as an USB VID:PID\n"
+          "  -p <bus,addr>   -- Target device, as a libusb bus number and device address path\n"
+          "  -v              -- Increase verbosity\n"
+          "  -q              -- Decrease verbosity (silent mode)\n"
+          "  -V              -- Print program version", file=sys.stderr)
     return error_code
 
 
@@ -87,7 +91,8 @@ def main():
     const char *type = NULL;
     const char *fx_name[FX_TYPE_MAX] = FX_TYPE_NAMES;
     const char *ext, *img_name[] = IMG_TYPE_NAMES;
-    int fx_type = FX_TYPE_UNDEFINED, img_type[ARRAYSIZE(path)];
+    int fx_type = FX_TYPE_UNDEFINED;
+    int img_type[ARRAYSIZE(path)];
     int opt, status;
     unsigned int i, j;
     unsigned vid = 0, pid = 0;
@@ -102,31 +107,27 @@ def main():
         {
 
         case 'd':
-            device_id = optarg;
-            if (sscanf(device_id, "%x:%x" , &vid, &pid) != 2 )
-            {
-                fputs ("please specify VID & PID as \"vid:pid\" in hexadecimal format\n", stderr);
+            device_id = optarg
+            if (sscanf(device_id, "%x:%x" , &vid, &pid) != 2 ):
+                fputs("please specify VID & PID as \"vid:pid\" in hexadecimal format\n", stderr)
                 return -1;
-            }
             break;
 
         case 'p':
-            device_path = optarg;
-            if (sscanf(device_path, "%u,%u", &busnum, &devaddr) != 2 )
-            {
-                fputs ("please specify bus number & device number as \"bus,dev\" in decimal format\n", stderr);
+            device_path = optarg
+            if (sscanf(device_path, "%u,%u", &busnum, &devaddr) != 2 ):
+                fputs("please specify bus number & device number as \"bus,dev\" in decimal format\n", stderr)
                 return -1;
-            }
             break;
 
         case 'i':
         case 'I':
-            path[FIRMWARE] = optarg;
+            path[FIRMWARE] = optarg
             break;
 
         case 's':
         case 'S':
-            path[LOADER] = optarg;
+            path[LOADER] = optarg
             break;
 
         case 'V':
@@ -134,193 +135,168 @@ def main():
             return 0;
 
         case 't':
-            type = optarg;
+            type = optarg
             break;
 
         case 'v':
-            verbose++;
+            verbose += 1
             break;
 
         case 'q':
-            verbose--;
+            verbose -= 1
             break;
 
         case '?':
         case 'h':
         default:
             return print_usage(-1)
-
     }
 
-    if (path[FIRMWARE] == NULL)
-    {
-        logerror("no firmware specified!\n");
+    if path[FIRMWARE] == NULL:
+        logerror("no firmware specified!\n")
         return print_usage(-1)
-    }
-    if ((device_id != NULL) && (device_path != NULL))
-    {
-        logerror("only one of -d or -p can be specified\n");
-        return print_usage(-1)
-    }
 
-    /* determine the target type */
-    if (type != NULL) {
-        for (i=0; i<FX_TYPE_MAX; i++) {
-            if (strcmp(type, fx_name[i]) == 0) {
-                fx_type = i;
-                break;
-            }
-        }
-        if (i >= FX_TYPE_MAX) {
-            logerror("illegal microcontroller type: %s\n", type);
+    if device_id != NULL and device_path != NULL:
+        logerror("only one of -d or -p can be specified\n")
+        return print_usage(-1)
+
+    # determine the target type
+    if type != NULL:
+        for (i=0; i<FX_TYPE_MAX; i++):
+            if (strcmp(type, fx_name[i]) == 0):
+                fx_type = i
+                break
+        else:
+            logerror("illegal microcontroller type: %s\n", type)
             return print_usage(-1)
-        }
-    }
 
-    /* open the device using libusb */
+    # open the device using libusb
     status = usb.init(None)
-    if status < 0: {
-        logerror("libusb_init() failed: %s\n", usb.error_name(status));
-        return -1;
-    }
-    usb.set_debug(NULL, verbose)
+    if status < 0:
+        logerror("usb.init() failed: %s\n", usb.error_name(status))
+        return -1
 
-    /* try to pick up missing parameters from known devices */
-    if ((type == NULL) || (device_id == NULL) || (device_path != NULL)) {
-        if (usb.get_device_list(None, ct.byref(devs) < 0) {
-            logerror("libusb.get_device_list() failed: %s\n", usb.error_name(status));
-            goto err;
-        }
-        for (i=0; (dev=devs[i]) != NULL; i++)
-        {
-            _busnum = usb.get_bus_number(dev);
-            _devaddr = usb.get_device_address(dev);
-            if ((type != NULL) && (device_path != NULL)) {
-                // if both a type and bus,addr were specified, we just need to find our match
-                if ((usb.get_bus_number(dev) == busnum) && (usb.get_device_address(dev) == devaddr))
-                    break;
-            } else {
-                status = usb.get_device_descriptor(dev, ct.byref(desc))
-                if (status >= 0) {
-                    if (verbose >= 3) {
-                        logerror("examining {:04x}:{:04x} (%d,%d)\n",
-                            desc.idVendor, desc.idProduct, _busnum, _devaddr);
-                    }
-                    for (j=0; j<ARRAYSIZE(known_device); j++) {
-                        if ((desc.idVendor == known_device[j].vid)
-                            && (desc.idProduct == known_device[j].pid)) {
-                            if (// nothing was specified
-                                ((type == NULL) && (device_id == NULL) && (device_path == NULL)) ||
-                                // vid:pid was specified and we have a match
-                                ((type == NULL) && (device_id != NULL) && (vid == desc.idVendor) && (pid == desc.idProduct)) ||
-                                // bus,addr was specified and we have a match
-                                ((type == NULL) && (device_path != NULL) && (busnum == _busnum) && (devaddr == _devaddr)) ||
-                                // type was specified and we have a match
-                                ((type != NULL) && (device_id == NULL) && (device_path == NULL) && (fx_type == known_device[j].type)) ) {
-                                fx_type = known_device[j].type;
-                                vid = desc.idVendor;
-                                pid = desc.idProduct;
-                                busnum = _busnum;
-                                devaddr = _devaddr;
-                                break;
-                            }
-                        }
-                    }
-                    if (j < ARRAYSIZE(known_device))
-                    {
-                        if (verbose)
-                            logerror("found device '%s' [{:04x}:{:04x}] (%d,%d)\n",
-                                     known_device[j].designation, vid, pid, busnum, devaddr);
+    try:
+        usb.set_option(None, usb.LIBUSB_OPTION_LOG_LEVEL, verbose)
+
+        # try to pick up missing parameters from known devices
+        if type == NULL or device_id == NULL or device_path != NULL:
+
+            if usb.get_device_list(None, ct.byref(devs) < 0:
+                logerror("libusb.get_device_list() failed: %s\n", usb.error_name(status))
+                return -1
+
+            for (i=0; (dev=devs[i]) != NULL; i++):
+
+                _busnum  = usb.get_bus_number(dev)
+                _devaddr = usb.get_device_address(dev)
+                if type != NULL and device_path != NULL:
+                    # if both a type and bus,addr were specified, we just need to find our match
+                    if (usb.get_bus_number(dev) == busnum and
+                        usb.get_device_address(dev) == devaddr):
                         break;
-                    }
-                }
-            }
-        }
-        if (dev == NULL)
-        {
+                else:
+                    status = usb.get_device_descriptor(dev, ct.byref(desc))
+                    if status >= 0:
+
+                        if verbose >= 3:
+                            logerror("examining {:04x}:{:04x} (%d,%d)\n",
+                                     desc.idVendor, desc.idProduct, _busnum, _devaddr)
+
+                        for (j=0; j<ARRAYSIZE(known_device); j++):
+                            if (desc.idVendor  == known_device[j].vid and
+                                desc.idProduct == known_device[j].pid):
+                            {
+                                if (// nothing was specified
+                                    ((type == NULL) and (device_id == NULL) and (device_path == NULL)) ||
+                                    // vid:pid was specified and we have a match
+                                    ((type == NULL) and (device_id != NULL) and (vid == desc.idVendor) and (pid == desc.idProduct)) ||
+                                    // bus,addr was specified and we have a match
+                                    ((type == NULL) and (device_path != NULL) and (busnum == _busnum) and (devaddr == _devaddr)) ||
+                                    // type was specified and we have a match
+                                    ((type != NULL) and (device_id == NULL) and (device_path == NULL) and (fx_type == known_device[j].type)) ) {
+                                    fx_type = known_device[j].type;
+                                    vid = desc.idVendor
+                                    pid = desc.idProduct
+                                    busnum  = _busnum
+                                    devaddr = _devaddr
+                                    break;
+                                }
+                            }
+                        if j < ARRAYSIZE(known_device):
+                            if verbose:
+                                logerror("found device '%s' [{:04x}:{:04x}] (%d,%d)\n",
+                                         known_device[j].designation, vid, pid, busnum, devaddr)
+                            break
+            else:
+                usb.free_device_list(devs, 1)
+                logerror("could not find a known device - please specify type and/or vid:pid and/or bus,dev\n");
+                return print_usage(-1)
+
+            status = usb.open(dev, &device);
             usb.free_device_list(devs, 1)
-            usb.exit(None)
-            logerror("could not find a known device - please specify type and/or vid:pid and/or bus,dev\n");
-            return print_usage(-1)
-        }
-        status = libusb_open(dev, &device);
-        usb.free_device_list(devs, 1)
-        if status < 0:
-        {
-            logerror("libusb_open() failed: %s\n", usb.error_name(status));
-            goto err;
-        }
-    } elif (device_id != NULL) {
-        device = usb.open_device_with_vid_pid(NULL, (uint16_t)vid, (uint16_t)pid)
-        if (device == NULL)
-        {
-            logerror("libusb_open() failed\n");
-            goto err;
-        }
-    }
+            if status < 0:
+                logerror("usb.open() failed: %s\n", usb.error_name(status))
+                return -1
 
-    /* We need to claim the first interface */
-    usb.set_auto_detach_kernel_driver(device, 1);
-    status = usb.claim_interface(device, 0);
-    if status != usb.LIBUSB_SUCCESS:
-        usb.close(device)
-        logerror("libusb.claim_interface failed: %s\n", usb.error_name(status));
-        goto err;
+        elif device_id != NULL:
 
-    if (verbose)
-        logerror("microcontroller type: %s\n", fx_name[fx_type]);
+            device = usb.open_device_with_vid_pid(NULL, (uint16_t)vid, (uint16_t)pid)
+            if device == NULL:
+                logerror("usb.open() failed\n")
+                return -1
 
-    for (i=0; i<ARRAYSIZE(path); i++)
-    {
-        if (path[i] != NULL) {
-            ext = path[i] + strlen(path[i]) - 4;
-            if ((_stricmp(ext, ".hex") == 0) || (strcmp(ext, ".ihx") == 0))
-                img_type[i] = IMG_TYPE_HEX;
-            elif (_stricmp(ext, ".iic") == 0)
-                img_type[i] = IMG_TYPE_IIC;
-            elif (_stricmp(ext, ".bix") == 0)
-                img_type[i] = IMG_TYPE_BIX;
-            elif (_stricmp(ext, ".img") == 0)
-                img_type[i] = IMG_TYPE_IMG;
-            else {
-                logerror("%s is not a recognized image type\n", path[i]);
-                goto err;
-            }
-        }
-        if (verbose && path[i] != NULL)
-            logerror("%s: type %s\n", path[i], img_name[img_type[i]]);
-    }
+        # We need to claim the first interface
+        usb.set_auto_detach_kernel_driver(device, 1)
+        status = usb.claim_interface(device, 0)
+        if status != usb.LIBUSB_SUCCESS:
+            usb.close(device)
+            logerror("libusb.claim_interface failed: %s\n", usb.error_name(status))
+            return -1
 
-    if (path[LOADER] == NULL)
-    {
-        /* single stage, put into internal memory */
-        if verbose > 1:
-            logerror("single stage: load on-chip memory\n");
-        status = ezusb_load_ram(device, path[FIRMWARE], fx_type, img_type[FIRMWARE], 0);
-    }
-    else
-    {
-        /* two-stage, put loader into internal memory */
-        if verbose > 1:
-            logerror("1st stage: load 2nd stage loader\n");
-        status = ezusb_load_ram(device, path[LOADER], fx_type, img_type[LOADER], 0);
-        if (status == 0)
-        {
-            /* two-stage, put firmware into internal memory */
+        if verbose:
+            logerror("microcontroller type: %s\n", fx_name[fx_type])
+
+        for (i=0; i<ARRAYSIZE(path); i++):
+            if path[i] != NULL:
+                ext = path[i] + strlen(path[i]) - 4;
+                if ((_stricmp(ext, ".hex") == 0) or
+                    (strcmp(ext, ".ihx") == 0))
+                    img_type[i] = IMG_TYPE_HEX;
+                elif (_stricmp(ext, ".iic") == 0)
+                    img_type[i] = IMG_TYPE_IIC;
+                elif (_stricmp(ext, ".bix") == 0)
+                    img_type[i] = IMG_TYPE_BIX;
+                elif (_stricmp(ext, ".img") == 0)
+                    img_type[i] = IMG_TYPE_IMG;
+                else:
+                    logerror("%s is not a recognized image type\n", path[i])
+                    return -1
+            if verbose and path[i] != NULL:
+                logerror("%s: type %s\n", path[i], img_name[img_type[i]])
+
+        if path[LOADER] == NULL:
+            # single stage, put into internal memory
             if verbose > 1:
-                logerror("2nd state: load on-chip memory\n");
-            status = ezusb_load_ram(device, path[FIRMWARE], fx_type, img_type[FIRMWARE], 1);
-        }
-    }
+                logerror("single stage: load on-chip memory\n")
+            status = ezusb_load_ram(device, path[FIRMWARE], fx_type, img_type[FIRMWARE], 0)
+        else:
+            # two-stage, put loader into internal memory
+            if verbose > 1:
+                logerror("1st stage: load 2nd stage loader\n")
+            status = ezusb_load_ram(device, path[LOADER], fx_type, img_type[LOADER], 0)
+            if status == 0:
+                # two-stage, put firmware into internal memory
+                if verbose > 1:
+                    logerror("2nd state: load on-chip memory\n")
+                status = ezusb_load_ram(device, path[FIRMWARE], fx_type, img_type[FIRMWARE], 1)
 
-    usb.release_interface(device, 0)
-    usb.close(device)
-    usb.exit(None)
-    return status;
+        usb.release_interface(device, 0)
+        usb.close(device)
+    finally:
+        usb.exit(None)
 
-    err:
-    usb.exit(None)
-    return -1;
+    return status
 
 
 sys.exit(main() or 0)

@@ -34,29 +34,29 @@
 
 /** Values returned from a test function to indicate test result */
 typedef enum {
-    /** Indicates that the test ran successfully. */
-    TEST_STATUS_SUCCESS,
-    /** Indicates that the test failed one or more test. */
-    TEST_STATUS_FAILURE,
-    /** Indicates that an unexpected error occurred. */
-    TEST_STATUS_ERROR,
-    /** Indicates that the test can't be run. For example this may be
-    * due to no suitable device being connected to perform the tests.*/
-    TEST_STATUS_SKIP
+	/** Indicates that the test ran successfully. */
+	TEST_STATUS_SUCCESS,
+	/** Indicates that the test failed one or more test. */
+	TEST_STATUS_FAILURE,
+	/** Indicates that an unexpected error occurred. */
+	TEST_STATUS_ERROR,
+	/** Indicates that the test can't be run. For example this may be
+	* due to no suitable device being connected to perform the tests.*/
+	TEST_STATUS_SKIP
 } libusb_testlib_result;
 
 /**
  * Context for test library functions
  */
 typedef struct {
-    char ** test_names;
-    int test_count;
-    bool list_tests;
-    bool verbose;
-    int old_stdout;
-    int old_stderr;
-    FILE* output_file;
-    int null_fd;
+	char ** test_names;
+	int test_count;
+	bool list_tests;
+	bool verbose;
+	int old_stdout;
+	int old_stderr;
+	FILE* output_file;
+	int null_fd;
 } libusb_testlib_ctx;
 
 /**
@@ -77,10 +77,10 @@ typedef libusb_testlib_result
  * Structure holding a test description.
  */
 typedef struct {
-    /** Human readable name of the test. */
-    const char * name;
-    /** The test library will call this function to run the test. */
-    libusb_testlib_test_function function;
+	/** Human readable name of the test. */
+	const char * name;
+	/** The test library will call this function to run the test. */
+	libusb_testlib_test_function function;
 } libusb_testlib_test;
 
 /**

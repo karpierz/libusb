@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2017, Adam Karpierz
+# Copyright (c) 2016-2018, Adam Karpierz
 # Licensed under the zlib/libpng License
 # http://opensource.org/licenses/zlib
 
@@ -60,16 +60,18 @@ def main():
     if r < 0:
         return r
 
-    devs = ct.POINTER(ct.POINTER(usb.device))()
-    cnt = usb.get_device_list(None, ct.byref(devs))
-    if cnt < 0:
-        return cnt
+    try:
+        devs = ct.POINTER(ct.POINTER(usb.device))()
+        cnt = usb.get_device_list(None, ct.byref(devs))
+        if cnt < 0:
+            return cnt
 
-    print_devs(devs)
+        print_devs(devs)
 
-    usb.free_device_list(devs, 1)
+        usb.free_device_list(devs, 1)
+    finally:
+        usb.exit(None)
 
-    usb.exit(None)
     return 0
 
 

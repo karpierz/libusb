@@ -183,9 +183,9 @@ def main():
         # Measurement has already been done by the signal handler.
 
         usb.release_interface(devh, 0)
-
     finally:
-        if devh: usb.close(devh)
+        if devh:
+            usb.close(devh)
         usb.exit(None)
 
     return rc

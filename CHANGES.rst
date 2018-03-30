@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.0.22b1 (2018-03-30)
+---------------------
+  - Upgrade to the libusb v.1.0.22
+  - Setup improvement.
+
 1.0.21b4 (2018-02-26)
 ---------------------
   - Improve and simplify setup and packaging.
