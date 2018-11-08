@@ -98,13 +98,13 @@ Prerequisites:
 License
 =======
 
-  | Copyright (c) 2016-2018, Adam Karpierz
+  | Copyright (c) 2016-2018 Adam Karpierz
   |
   | Licensed under the zlib/libpng License
   | http://opensource.org/licenses/zlib
-  | Please refer to the LICENSE file.
+  | Please refer to the accompanying LICENSE file.
 
 Authors
 =======
 
-* Adam Karpierz <python@python.pl>
+* Adam Karpierz <adam@karpierz.net>
