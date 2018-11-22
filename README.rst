@@ -60,7 +60,7 @@ Installation
 
 Prerequisites:
 
-+ Python 2.7 or higher or 3.4 or higher
++ Python 2.7 or Python 3.4 or later
 
   * http://www.python.org/
   * 2.7 and 3.4 with libusb 1.0.21 are primary test environments.
