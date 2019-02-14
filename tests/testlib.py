@@ -19,7 +19,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, print_function
 
 import sys
 import os
@@ -83,16 +83,14 @@ def _test_result_to_str(result):
 
     # Converts a test result code into a human readable string.
 
-    if result == test_result.TEST_STATUS_SUCCESS:
-        return "Success"
-    elif result == test_result.TEST_STATUS_FAILURE:
-        return "Failure"
-    elif result == test_result.TEST_STATUS_ERROR:
-        return "Error"
-    elif result == test_result.TEST_STATUS_SKIP:
-        return "Skip"
-    else:
-        return "Unknown"
+    _test_result_str = {
+        test_result.TEST_STATUS_SUCCESS: "Success",
+        test_result.TEST_STATUS_FAILURE: "Failure",
+        test_result.TEST_STATUS_ERROR:   "Error",
+        test_result.TEST_STATUS_SKIP:    "Skip",
+    }
+
+    return _test_result_str.get(result, "Unknown")
 
 
 def _print_usage(argv):

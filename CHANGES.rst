@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.0.22b3 (2019-02-05)
+---------------------
+  - Setup improvement.
+  - Update required setuptools version.
+  - Some updates of examples.
+
 1.0.22b2 (2018-11-08)
 ---------------------
   - Setup improvement.

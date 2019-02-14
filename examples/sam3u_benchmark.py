@@ -24,9 +24,10 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, print_function
 
 import sys
+import signal
 from datetime import datetime
 import ctypes as ct
 import libusb as usb
@@ -34,6 +35,9 @@ import libusb as usb
 
 EP_DATA_IN = 0x82
 EP_ISO_IN  = 0x86
+
+VID = 0x16c0
+PID = 0x0763
 
 devh     = None
 tv_start = None
@@ -70,7 +74,7 @@ def cb_xfr(xfr):
 
     print("length:{}, actual_length:{}".format(xfr.length, xfr.actual_length))
     for i in range(xfr.actual_length):
-        print("%02x".format(xfr.buffer[i]), end="")
+        print("{:02x}".format(xfr.buffer[i]), end="")
         if   i % 16: print()
         elif i % 8:  print("  ", end="")
         else:        print(" ",  end="")
@@ -96,14 +100,16 @@ def benchmark_in(ep):
         num_iso_pack = 0
 
     xfr = usb.alloc_transfer(num_iso_pack)
-    if not xfr: return -ENOMEM
+    if not xfr:
+        return -errno.ENOMEM
 
     if ep == EP_ISO_IN:
         usb.fill_iso_transfer(xfr, devh, ep, buf, ct.sizeof(buf),
                               num_iso_pack, cb_xfr, None, 0)
         usb.set_iso_packet_lengths(xfr, ct.sizeof(buf) // num_iso_pack)
     else:
-        usb.fill_bulk_transfer(xfr, devh, ep, buf, ct.sizeof(buf), cb_xfr, None, 0)
+        usb.fill_bulk_transfer(xfr, devh, ep, buf, ct.sizeof(buf),
+                               cb_xfr, None, 0)
 
     tv_start = datetime.now()
 
@@ -137,11 +143,11 @@ def measure():
           num_xfer, num_bytes, diff_msec, (num_bytes * 1000) // diff_msec))
 
 
-def sig_hdlr(signum):
+def sig_hdlr(signum, frame):
 
     global do_exit
 
-    if signum == SIGINT:
+    if signum == signal.SIGINT:
         measure()
         do_exit = True
 
@@ -149,13 +155,14 @@ def sig_hdlr(signum):
 def main():
 
     global devh
+    global VID, PID
     global do_exit
 
-    #struct sigaction sigact;
+    #sigact = struct_sigaction()
     #sigact.sa_handler = sig_hdlr
-    #sigemptyset(&sigact.sa_mask)
+    #sigemptyset(ct.byref(sigact.sa_mask))
     #sigact.sa_flags = 0
-    #sigaction(SIGINT, &sigact, NULL)
+    signal.signal(signal.SIGINT, sig_hdlr)
 
     rc = usb.init(None)
     if rc < 0:
@@ -163,7 +170,7 @@ def main():
         sys.exit(1)
 
     try:
-        devh = usb.open_device_with_vid_pid(None, 0x16c0, 0x0763)
+        devh = usb.open_device_with_vid_pid(None, VID, PID)
         if not devh:
             print("Error finding USB device", file=sys.stderr)
             return rc

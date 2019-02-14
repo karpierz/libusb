@@ -8,7 +8,7 @@ from os import path
 from setuptools import setup
 
 top_dir = path.dirname(path.abspath(__file__))
-with open(path.join(top_dir, "libusb", "__about__.py")) as f:
+with open(path.join(top_dir, "src", "libusb", "__about__.py")) as f:
     class about: exec(f.read(), None)
 
 setup(

@@ -6,6 +6,8 @@ include tox.ini
 graft docs
 prune docs/_build
 
+graft src
+
 graft examples
 
 graft tests

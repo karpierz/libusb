@@ -19,7 +19,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, print_function
 
 import sys
 import ctypes as ct
@@ -48,7 +48,6 @@ def print_endpoint(endpoint):
 
     i = 0
     while i < endpoint.extra_length:
-
         if endpoint.extra[i + 1] == usb.LIBUSB_DT_SS_ENDPOINT_COMPANION:
             ep_comp = ct.POINTER(usb.ss_endpoint_companion_descriptor)()
             ret = usb.get_ss_endpoint_companion_descriptor(None, ct.byref(endpoint),
@@ -57,7 +56,6 @@ def print_endpoint(endpoint):
                 continue
             print_endpoint_comp(ep_comp[0])
             usb.free_ss_endpoint_companion_descriptor(ep_comp)
-
         i += endpoint.extra[i]
 
 
@@ -148,6 +146,8 @@ def print_configuration(config):
 
 
 def print_device(device_p, level):
+
+    global verbose
 
     string_descr = ct.create_string_buffer(256)
 
