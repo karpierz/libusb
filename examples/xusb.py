@@ -1006,10 +1006,12 @@ def test_device(vid, pid):
         for i in range(3):
             if string_index[i] == 0:
                 continue
-            if usb.get_string_descriptor_ascii(handle, string_index[i], ct.cast(string, ct.POINTER(ct.c_ubyte)), ct.sizeof(string)) > 0:
+            if usb.get_string_descriptor_ascii(handle, string_index[i],
+                   ct.cast(string, ct.POINTER(ct.c_ubyte)), ct.sizeof(string)) > 0:
                 print("   String ({:#04X}): \"{}\"".format(string_index[i], string))
         # Read the OS String Descriptor
-        r = usb.get_string_descriptor(handle, MS_OS_DESC_STRING_INDEX, 0, ct.cast(string, ct.POINTER(ct.c_ubyte)), MS_OS_DESC_STRING_LENGTH)
+        r = usb.get_string_descriptor(handle, MS_OS_DESC_STRING_INDEX, 0,
+                                      ct.cast(string, ct.POINTER(ct.c_ubyte)), MS_OS_DESC_STRING_LENGTH)
         if r == MS_OS_DESC_STRING_LENGTH and memcmp(ms_os_desc_string, string, sizeof(ms_os_desc_string)) == 0:
             # If this is a Microsoft OS String Descriptor,
             # attempt to read the WinUSB extended Feature Descriptors
