@@ -1053,7 +1053,7 @@ def test_device(vid, pid):
     return 0
 
 
-def main():
+def main(argv):
 
     global VID, PID
     global test_mode
@@ -1076,11 +1076,11 @@ def main():
               "CPUs are not supported with this program, sorry.")
         return 0
 
-   #if len(sys.argv) >= 2:
-    for j in range(1, len(sys.argv)):
-        arglen = len(sys.argv[j])
-        if sys.argv[j][0] in ('-', '/') and arglen >= 2:
-            opt = sys.argv[j][1]
+   #if len(argv) >= 2:
+    for j in range(1, len(argv)):
+        arglen = len(argv[j])
+        if argv[j][0] in ('-', '/') and arglen >= 2:
+            opt = argv[j][1]
             if opt == 'd':
                 debug_mode = True
             elif opt == 'i':
@@ -1089,17 +1089,17 @@ def main():
                 force_device_request = True
             elif opt == 'b':
                 j += 1
-                if j >= len(sys.argv) or sys.argv[j][0] in ('-', '/'):
+                if j >= len(argv) or argv[j][0] in ('-', '/'):
                     print("   Option -b requires a file name")
                     return 1
-                binary_name = sys.argv[j]
+                binary_name = argv[j]
                 binary_dump = True
             elif opt == 'l':
                 j += 1
-                if j >= len(sys.argv) or sys.argv[j][0] in ('-', '/'):
+                if j >= len(argv) or argv[j][0] in ('-', '/'):
                     print("   Option -l requires an ISO 639-1 language parameter")
                     return 1
-                error_lang = sys.argv[j]
+                error_lang = argv[j]
             elif opt == 'j':
                 # OLIMEX ARM-USB-TINY JTAG, 2 channel composite device - 2 interfaces
                 if not VID and not PID:
@@ -1130,10 +1130,10 @@ def main():
                 show_help = True
         else:
             for i in range(arglen):
-                if sys.argv[j][i] == ':':
+                if argv[j][i] == ':':
                     tmp_vid = 0  # unsigned int
                     tmp_pid = 0  # unsigned int
-                    if sscanf(sys.argv[j], "%x:%x" , ct.pointer(tmp_vid), ct.pointer(tmp_pid)) != 2:
+                    if sscanf(argv[j], "%x:%x" , ct.pointer(tmp_vid), ct.pointer(tmp_pid)) != 2:
                         print("   Please specify VID & PID as \"vid:pid\" in hexadecimal format")
                         return 1
                     VID = ct.c_uint16(tmp_vid)
@@ -1142,8 +1142,8 @@ def main():
             else:
                 show_help = True
 
-    if show_help or len(sys.argv) == 1 or len(sys.argv) > 7:
-        print("usage: {} [-h] [-d] [-i] [-k] [-b file] [-l lang] [-j] [-x] [-s] [-p] [-w] [vid:pid]".format(sys.argv[0]))
+    if show_help or len(argv) == 1 or len(argv) > 7:
+        print("usage: {} [-h] [-d] [-i] [-k] [-b file] [-l lang] [-j] [-x] [-s] [-p] [-w] [vid:pid]".format(argv[0]))
         print("   -h      : display usage")
         print("   -d      : enable debug output")
         print("   -i      : print topology and speed info")
@@ -1196,4 +1196,4 @@ def main():
     return 0
 
 
-sys.exit(main() or 0)
+sys.exit(main(sys.argv) or 0)

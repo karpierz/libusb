@@ -215,10 +215,10 @@ def print_device(device_p, level):
     return 0
 
 
-def main():
+def main(argv):
 
     global verbose
-    if len(sys.argv) > 1 and sys.argv[1] == "-v":
+    if len(argv) > 1 and argv[1] == "-v":
         verbose = True
 
     r = usb.init(None)
@@ -243,4 +243,4 @@ def main():
     return 0
 
 
-sys.exit(main() or 0)
+sys.exit(main(sys.argv) or 0)

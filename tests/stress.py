@@ -143,9 +143,9 @@ tests = [
 ]
 
 
-def main():
+def main(argv):
 
-    return testlib.run_tests(sys.argv, tests)
+    return testlib.run_tests(argv, tests)
 
 
-sys.exit(main() or 0)
+sys.exit(main(sys.argv) or 0)
