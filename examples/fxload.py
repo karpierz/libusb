@@ -68,7 +68,7 @@ def print_usage(error_code):
     return error_code
 
 
-def main():
+def main(argv):
 
     global verbose
 
@@ -99,8 +99,12 @@ def main():
     device = ct.POINTER(usb.device_handle)()
     desc   = usb.device_descriptor()
 
-    options, _ = getopt.getopt(sys.argv[1:], "qvV?hd:p:i:I:s:S:t:")
-    for opt, optarg in options:
+    try:
+        opts, args = getopt.getopt(argv[1:], "qvV?hd:p:i:I:s:S:t:")
+    except getopt.GetoptError:
+        return print_usage(-1)
+
+    for opt, optarg in opts:
         if opt == "-d":
             device_id = optarg
             if sscanf(device_id, "%x:%x" , ct.byref(vid), ct.byref(pid)) != 2:
@@ -277,4 +281,4 @@ def main():
     return status
 
 
-sys.exit(main() or 0)
+sys.exit(main(sys.argv) or 0)
