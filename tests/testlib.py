@@ -1,6 +1,6 @@
-# Copyright (c) 2016-2018, Adam Karpierz
+# Copyright (c) 2016-2019, Adam Karpierz
 # Licensed under the zlib/libpng License
-# http://opensource.org/licenses/zlib
+# https://opensource.org/licenses/zlib/
 
 # libusb test library helper functions
 # Copyright © 2012 Toby Gray <toby.gray@realvnc.com>

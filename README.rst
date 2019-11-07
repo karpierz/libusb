@@ -8,7 +8,7 @@ Overview
 
 | Python *libusb* module is a low-level binding for *libusb* C library.
 | It is an effort to allow python programs full access to the API implemented
-  and provided by the well known `*libusb* <http://libusb.info>`__ library.
+  and provided by the well known `*libusb* <https://libusb.info/>`__ library.
 |
 | *libusb* is a lightweight Python package, based on the *ctypes* library.
 | It is fully compliant implementation of the original C *libusb* 1.0 API
@@ -21,7 +21,7 @@ Overview
 About original libusb:
 ----------------------
 
-Borrowed from the `original website <http://libusb.info>`__:
+Borrowed from the `original website <https://libusb.info/>`__:
 
 **libusb** - A cross-platform user library to access USB devices
 
@@ -51,7 +51,7 @@ Linux, OS X, Windows, Windows CE, Android, OpenBSD/NetBSD, Haiku.
 Requirements
 ============
 
-- | It is fully independent package.
+- | It is a fully independent package.
   | All necessary things are installed during the normal installation process.
 - ATTENTION: currently works and tested only for Windows.
 
@@ -60,15 +60,15 @@ Installation
 
 Prerequisites:
 
-+ Python 2.7 or Python 3.4 or later
++ Python 2.7 or Python 3.5 or later
 
-  * http://www.python.org/
-  * 2.7 and 3.4 with libusb 1.0.21 are primary test environments.
+  * https://www.python.org/
+  * 2.7 and 3.7 with libusb 1.0.21 are primary test environments.
 
 + pip and setuptools
 
-  * http://pypi.python.org/pypi/pip
-  * http://pypi.python.org/pypi/setuptools
+  * https://pypi.org/project/pip/
+  * https://pypi.org/project/setuptools/
 
 To install run::
 
@@ -77,11 +77,11 @@ To install run::
 Development
 ===========
 
-Visit `development page <https://github.com/karpierz/libusb>`__
+Visit `development page <https://github.com/karpierz/libusb/>`__
 
 Installation from sources:
 
-Clone the `sources <https://github.com/karpierz/libusb>`__ and run::
+Clone the `sources <https://github.com/karpierz/libusb/>`__ and run::
 
     python -m pip install ./libusb
 
@@ -98,10 +98,10 @@ Prerequisites:
 License
 =======
 
-  | Copyright (c) 2016-2018 Adam Karpierz
+  | Copyright (c) 2016-2019 Adam Karpierz
   |
   | Licensed under the zlib/libpng License
-  | http://opensource.org/licenses/zlib
+  | https://opensource.org/licenses/zlib/
   | Please refer to the accompanying LICENSE file.
 
 Authors

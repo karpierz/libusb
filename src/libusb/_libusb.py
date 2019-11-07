@@ -1,6 +1,6 @@
-# Copyright (c) 2016-2018, Adam Karpierz
+# Copyright (c) 2016-2019, Adam Karpierz
 # Licensed under the zlib/libpng License
-# http://opensource.org/licenses/zlib
+# https://opensource.org/licenses/zlib/
 
 # Public libusb header file
 # Copyright (c) 2001 Johannes Erdfelt <johannes@erdfelt.com>

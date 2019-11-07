@@ -1,46 +1,50 @@
 Changelog
 =========
 
+1.0.22b5 (2019-10-24)
+---------------------
+- Setup update and cleanup.
+
 1.0.22b4 (2019-02-15)
 ---------------------
-  - Setup improvement.
-  - Update required setuptools version.
-  - Some updates of examples.
+- Setup improvement.
+- Update required setuptools version.
+- Some updates of examples.
 
 1.0.22b2 (2018-11-08)
 ---------------------
-  - Setup improvement.
-  - Update required setuptools version.
+- Setup improvement.
+- Update required setuptools version.
 
 1.0.22b1 (2018-03-30)
 ---------------------
-  - Upgrade to the libusb v.1.0.22
-  - Setup improvement.
+- Upgrade to the libusb v.1.0.22
+- Setup improvement.
 
 1.0.21b4 (2018-02-26)
 ---------------------
-  - Improve and simplify setup and packaging.
+- Improve and simplify setup and packaging.
 
 1.0.21b3 (2018-02-25)
 ---------------------
-  - Setup improvement.
+- Setup improvement.
 
 1.0.21b2 (2017-12-18)
 ---------------------
-  - Fix the error of platform detecting.
+- Fix the error of platform detecting.
 
 1.0.21b1 (2017-10-11)
 ---------------------
-  - First beta release.
+- First beta release.
 
 1.0.21a3 (2017-08-20)
 ---------------------
-  - Next alpha release.
+- Next alpha release.
 
 1.0.21a0 (2016-09-24)
 ---------------------
-  - First alpha release.
+- First alpha release.
 
 0.0.1 (2016-09-23)
 ------------------
-  - Initial release.
+- Initial release.
