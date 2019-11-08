@@ -6,11 +6,11 @@ Python binding for the *libusb* C library.
 Overview
 ========
 
-| Python *libusb* module is a low-level binding for *libusb* C library.
+| Python |package_bold| module is a low-level binding for *libusb* C library.
 | It is an effort to allow python programs full access to the API implemented
   and provided by the well known `*libusb* <https://libusb.info/>`__ library.
 |
-| *libusb* is a lightweight Python package, based on the *ctypes* library.
+| |package_bold| is a lightweight Python package, based on the *ctypes* library.
 | It is fully compliant implementation of the original C *libusb* 1.0 API
   by implementing whole its functionality in a clean Python instead of C.
 |
@@ -70,30 +70,42 @@ Prerequisites:
   * https://pypi.org/project/pip/
   * https://pypi.org/project/setuptools/
 
-To install run::
+To install run:
 
-    python -m pip install --upgrade libusb
+.. parsed-literal::
+
+    python -m pip install --upgrade |package|
 
 Development
 ===========
 
-Visit `development page <https://github.com/karpierz/libusb/>`__
+Visit `development page`_.
 
 Installation from sources:
 
-Clone the `sources <https://github.com/karpierz/libusb/>`__ and run::
+clone the sources:
 
-    python -m pip install ./libusb
+.. parsed-literal::
 
-or on development mode::
+    git clone |respository| |package|
 
-    python -m pip install --editable ./libusb
+and run:
+
+.. parsed-literal::
+
+    python -m pip install ./|package|
+
+or on development mode:
+
+.. parsed-literal::
+
+    python -m pip install --editable ./|package|
 
 Prerequisites:
 
 + Development is strictly based on *tox*. To install it run::
 
-    python -m pip install tox
+    python -m pip install --upgrade tox
 
 License
 =======
@@ -108,3 +120,8 @@ Authors
 =======
 
 * Adam Karpierz <adam@karpierz.net>
+
+.. |package| replace:: libusb
+.. |package_bold| replace:: **libusb**
+.. |respository| replace:: https://github.com/karpierz/libusb.git
+.. _development page: https://github.com/karpierz/libusb/

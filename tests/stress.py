@@ -144,7 +144,6 @@ tests = [
 
 
 def main(argv):
-
     return testlib.run_tests(argv, tests)
 
 
