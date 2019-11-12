@@ -19,8 +19,6 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-from __future__ import absolute_import, print_function
-
 import sys
 import ctypes as ct
 import libusb as usb
@@ -143,8 +141,8 @@ tests = [
 ]
 
 
-def main(argv):
+def main(argv=sys.argv):
     return testlib.run_tests(argv, tests)
 
 
-sys.exit(main(sys.argv) or 0)
+sys.exit(main() or 0)

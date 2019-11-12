@@ -19,8 +19,6 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-from __future__ import absolute_import, print_function
-
 import sys
 import ctypes as ct
 import libusb as usb
@@ -29,7 +27,6 @@ verbose = False
 
 
 def print_endpoint_comp(ep_comp):
-
     print("      USB 3.0 Endpoint Companion:")
     print("        bMaxBurst:        {:d}".format(ep_comp.bMaxBurst))
     print("        bmAttributes:     {:#04x}".format(ep_comp.bmAttributes))
@@ -37,7 +34,6 @@ def print_endpoint_comp(ep_comp):
 
 
 def print_endpoint(endpoint):
-
     print("      Endpoint:")
     print("        bEndpointAddress: {:02x}".format(endpoint.bEndpointAddress))
     print("        bmAttributes:     {:02x}".format(endpoint.bmAttributes))
@@ -45,7 +41,6 @@ def print_endpoint(endpoint):
     print("        bInterval:        {:d}".format(endpoint.bInterval))
     print("        bRefresh:         {:d}".format(endpoint.bRefresh))
     print("        bSynchAddress:    {:d}".format(endpoint.bSynchAddress))
-
     i = 0
     while i < endpoint.extra_length:
         if endpoint.extra[i + 1] == usb.LIBUSB_DT_SS_ENDPOINT_COMPANION:
@@ -60,7 +55,6 @@ def print_endpoint(endpoint):
 
 
 def print_altsetting(interface):
-
     print("    Interface:")
     print("      bInterfaceNumber:   {:d}".format(interface.bInterfaceNumber))
     print("      bAlternateSetting:  {:d}".format(interface.bAlternateSetting))
@@ -69,20 +63,17 @@ def print_altsetting(interface):
     print("      bInterfaceSubClass: {:d}".format(interface.bInterfaceSubClass))
     print("      bInterfaceProtocol: {:d}".format(interface.bInterfaceProtocol))
     print("      iInterface:         {:d}".format(interface.iInterface))
-
     for i in range(interface.bNumEndpoints):
         print_endpoint(interface.endpoint[i])
 
 
 def print_2_0_ext_cap(usb_2_0_ext_cap):
-
     print("    USB 2.0 Extension Capabilities:")
     print("      bDevCapabilityType: {:d}".format(usb_2_0_ext_cap.bDevCapabilityType))
     print("      bmAttributes:       {:#x}".format(usb_2_0_ext_cap.bmAttributes))
 
 
 def print_ss_usb_cap(ss_usb_cap):
-
     print("    USB 3.0 Capabilities:")
     print("      bDevCapabilityType: {:d}".format(ss_usb_cap.bDevCapabilityType))
     print("      bmAttributes:       {:#x}".format(ss_usb_cap.bmAttributes))
@@ -126,13 +117,11 @@ def print_bos(handle):
 
 
 def print_interface(interface):
-
     for i in range(interface.num_altsetting):
         print_altsetting(interface.altsetting[i])
 
 
 def print_configuration(config):
-
     print("  Configuration:")
     print("    wTotalLength:         {:d}".format(config.wTotalLength))
     print("    bNumInterfaces:       {:d}".format(config.bNumInterfaces))
@@ -140,7 +129,6 @@ def print_configuration(config):
     print("    iConfiguration:       {:d}".format(config.iConfiguration))
     print("    bmAttributes:         {:02x}".format(config.bmAttributes))
     print("    MaxPower:             {:d}".format(config.MaxPower))
-
     for i in range(config.bNumInterfaces):
         print_interface(config.interface[i])
 
@@ -215,7 +203,7 @@ def print_device(device_p, level):
     return 0
 
 
-def main(argv):
+def main(argv=sys.argv):
 
     global verbose
     if len(argv) > 1 and argv[1] == "-v":
@@ -243,4 +231,4 @@ def main(argv):
     return 0
 
 
-sys.exit(main(sys.argv) or 0)
+sys.exit(main() or 0)

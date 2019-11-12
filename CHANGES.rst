@@ -1,8 +1,11 @@
 Changelog
 =========
 
-1.0.22b5 (2019-10-24)
+1.0.22b5 (2019-11-12)
 ---------------------
+- Drop support for Python 2.
+- Drop support for Python 3.4.
+- Add support for Python 3.8.
 - Setup update and cleanup.
 
 1.0.22b4 (2019-02-15)

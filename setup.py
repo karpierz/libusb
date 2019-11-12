@@ -2,8 +2,6 @@
 # Licensed under the zlib/libpng License
 # https://opensource.org/licenses/zlib/
 
-from __future__ import absolute_import
-
 from os import path
 from setuptools import setup
 

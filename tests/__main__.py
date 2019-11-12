@@ -2,8 +2,6 @@
 # Licensed under the zlib/libpng License
 # https://opensource.org/licenses/zlib/
 
-from __future__ import absolute_import, print_function
-
 import unittest
 import sys
 import os
@@ -27,11 +25,8 @@ def test_suite(names=None, omit=("stress", "testlib")):
 
 def main(argv=sys.argv):
     print("Running tests", "\n", file=sys.stderr)
-    try:
-        tests = test_suite(argv[1:] or None)
-        result = unittest.TextTestRunner(verbosity=2).run(tests)
-    finally:
-        pass
+    tests = test_suite(argv[1:] or None)
+    result = unittest.TextTestRunner(verbosity=2).run(tests)
     sys.exit(0 if result.wasSuccessful() else 1)
 
 

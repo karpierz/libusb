@@ -20,8 +20,6 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
-from __future__ import absolute_import, division, print_function
-
 import sys
 import os
 import ctypes as ct
@@ -1053,7 +1051,7 @@ def test_device(vid, pid):
     return 0
 
 
-def main(argv):
+def main(argv=sys.argv):
 
     global VID, PID
     global test_mode
@@ -1196,4 +1194,4 @@ def main(argv):
     return 0
 
 
-sys.exit(main(sys.argv) or 0)
+sys.exit(main() or 0)

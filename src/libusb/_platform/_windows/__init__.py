@@ -16,6 +16,10 @@ from ctypes  import WinDLL      as DLL
 from ctypes  import WINFUNCTYPE as CFUNC
 from _ctypes import FreeLibrary as dlclose
 
+# Winsock doesn't have this POSIX type; it's used for the
+# tv_usec value of struct timeval.
+suseconds_t = ct.c_long
+
 # Taken from the file <winsock.h>
 #
 # struct timeval {
@@ -25,6 +29,6 @@ from _ctypes import FreeLibrary as dlclose
 
 class timeval(ct.Structure):
     _fields_ = [
-    ("tv_sec",  ct.c_long),  # seconds
-    ("tv_usec", ct.c_long),  # microseconds
+    ("tv_sec",  ct.c_long),    # seconds
+    ("tv_usec", suseconds_t),  # microseconds
 ]

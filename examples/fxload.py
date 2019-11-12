@@ -23,8 +23,6 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
 
-from __future__ import absolute_import, print_function
-
 import sys
 import os
 import getopt
@@ -68,7 +66,7 @@ def print_usage(error_code):
     return error_code
 
 
-def main(argv):
+def main(argv=sys.argv):
 
     global verbose
 
@@ -281,4 +279,4 @@ def main(argv):
     return status
 
 
-sys.exit(main(sys.argv) or 0)
+sys.exit(main() or 0)
