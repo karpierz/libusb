@@ -25,15 +25,9 @@
 
 import ctypes as ct
 
-from ._platform import DLL_PATH, DLL, CFUNC, dlclose
+from ._platform import CFUNC
 from ._platform import timeval
-
-try:
-    dll = DLL(DLL_PATH)
-except OSError as exc:
-    raise exc
-except Exception as exc:
-    raise OSError("{}".format(exc))
+from ._dll      import dll
 
 #include <limits.h>
 UINT_MAX = ct.c_uint(-1).value

@@ -9,12 +9,15 @@ import ctypes as ct
 this_dir = os.path.dirname(os.path.abspath(__file__))
 is_32bit = (sys.maxsize <= 2**32)
 
-arch = "x86" if is_32bit else "x64"
-DLL_PATH = os.path.join(this_dir, arch, "libusb-1.0.dll")
+try:
+    from ...__config__ import LIBUSB
+except ImportError:
+    arch = "x86" if is_32bit else "x64"
+    DLL_PATH = os.path.join(this_dir, arch, "libusb-1.0.dll")
 
-from ctypes  import WinDLL      as DLL
-from ctypes  import WINFUNCTYPE as CFUNC
+from ctypes  import WinDLL as DLL
 from _ctypes import FreeLibrary as dlclose
+from ctypes  import WINFUNCTYPE as CFUNC
 
 # Winsock doesn't have this POSIX type; it's used for the
 # tv_usec value of struct timeval.

@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.0.22b6 (2019-11-23)
+---------------------
+- (Very) initial support for Linux.
+
 1.0.22b5 (2019-11-14)
 ---------------------
 - Drop support for Python 2.

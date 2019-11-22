@@ -9,12 +9,15 @@ import ctypes as ct
 this_dir = os.path.dirname(os.path.abspath(__file__))
 is_32bit = (sys.maxsize <= 2**32)
 
-arch = "x86" if is_32bit else "x64"
-DLL_PATH = os.path.join(this_dir, arch, "libusb-1.0.dylib")
+try:
+    from ...__config__ import LIBUSB
+except ImportError:
+    arch = "x86" if is_32bit else "x64"
+    DLL_PATH = os.path.join(this_dir, arch, "libusb-1.0.dylib")
 
-from ctypes  import CDLL      as DLL
-from ctypes  import CFUNCTYPE as CFUNC
+from ctypes  import CDLL as DLL
 from _ctypes import dlclose
+from ctypes  import CFUNCTYPE as CFUNC
 
 # Taken from the file <sys/time.h>
 #include <time.h>

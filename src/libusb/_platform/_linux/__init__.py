@@ -9,12 +9,23 @@ import ctypes as ct
 this_dir = os.path.dirname(os.path.abspath(__file__))
 is_32bit = (sys.maxsize <= 2**32)
 
-arch = "x86" if is_32bit else "x64"
-DLL_PATH = os.path.join(this_dir, arch, "libusb-1.0.so")
+try:
+    from ...__config__ import LIBUSB
+except ImportError:
+    arch = "x86" if is_32bit else "x64"
+    DLL_PATH = os.path.join(this_dir, arch, "libusb-1.0.so")
 
-from ctypes  import CDLL      as DLL
-from ctypes  import CFUNCTYPE as CFUNC
+from ctypes  import CDLL as DLL
 from _ctypes import dlclose
+from ctypes  import CFUNCTYPE as CFUNC
+
+# X32 kernel interface is 64-bit.
+if False:#if defined __x86_64__ && defined __ILP32__
+    # quad_t is also 64 bits.
+    time_t = suseconds_t = ct.c_longlong
+else:
+    time_t = suseconds_t = ct.c_long
+#endif
 
 # Taken from the file <sys/time.h>
 #include <time.h>
@@ -23,14 +34,6 @@ from _ctypes import dlclose
 #     time_t      tv_sec;   /* Seconds. */
 #     suseconds_t tv_usec;  /* Microseconds. */
 # };
-
-# X32 kernel interface is 64-bit.
-#if defined __x86_64__ && defined __ILP32__
-  # quad_t is also 64 bits.
-  # time_t = suseconds_t = long long int
-#else
-  # time_t = suseconds_t = long int
-#endif
 
 class timeval(ct.Structure):
     _fields_ = [

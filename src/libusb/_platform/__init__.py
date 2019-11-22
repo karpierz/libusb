@@ -24,13 +24,13 @@ def defined(varname, _getframe=sys._getframe):
 del sys, os, platform
 
 if is_windows:
-    from ._windows import DLL_PATH, DLL, CFUNC, dlclose
+    from ._windows import DLL_PATH, DLL, dlclose, CFUNC
     from ._windows import timeval
 elif is_linux:
-    from ._linux   import DLL_PATH, DLL, CFUNC, dlclose
+    from ._linux   import DLL_PATH, DLL, dlclose, CFUNC
     from ._linux   import timeval
 elif is_osx:
-    from ._osx     import DLL_PATH, DLL, CFUNC, dlclose
+    from ._osx     import DLL_PATH, DLL, dlclose, CFUNC
     from ._osx     import timeval
 else:
     raise ImportError("unsupported platform")
