@@ -13,7 +13,7 @@ try:
     from ...__config__ import LIBUSB
 except ImportError:
     arch = "x86" if is_32bit else "x64"
-    DLL_PATH = os.path.join(this_dir, arch, "libusb-1.0.so")
+    DLL_PATH = os.path.join(this_dir, arch, "libusb-1.0.so.0.1.0")
 
 from ctypes  import CDLL as DLL
 from _ctypes import dlclose

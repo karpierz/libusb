@@ -3,7 +3,7 @@ Changelog
 
 1.0.22b6 (2019-11-23)
 ---------------------
-- (Very) initial support for Linux.
+- Initial support for Linux (libusb v.1.0.21 x64).
 
 1.0.22b5 (2019-11-14)
 ---------------------
