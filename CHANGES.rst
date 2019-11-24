@@ -1,9 +1,11 @@
 Changelog
 =========
 
-1.0.22b7 (2019-11-23)
+1.0.22b8 (2019-11-24)
 ---------------------
 - Upgrade for Linux: libusb x64 v.1.0.21 -> v.1.0.22
+- Fix for error when the shared library is configured.
+- Cleanup.
 
 1.0.22b6 (2019-11-23)
 ---------------------
