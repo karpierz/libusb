@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.0.22b7 (2019-11-23)
+---------------------
+- Upgrade for Linux: libusb x64 v.1.0.21 -> v.1.0.22
+
 1.0.22b6 (2019-11-23)
 ---------------------
 - Initial support for Linux (libusb v.1.0.21 x64).
