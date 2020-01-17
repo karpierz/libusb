@@ -1,0 +1,5 @@
+Url: https://github.com/libusb/libusb/releases/download/v1.0.22/libusb-1.0.22.7z
+Completed: 2020-01-17 09:01:24
+File name: libusb-1.0.22.7z
+File date: Sun, 25 Mar 2018 01:22:28 GMT
+File size: 980895
