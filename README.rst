@@ -110,10 +110,10 @@ Prerequisites:
 License
 =======
 
-  | Copyright (c) 2016-2019 Adam Karpierz
+  | Copyright (c) 2016-2020 Adam Karpierz
   |
   | Licensed under the zlib/libpng License
-  | https://opensource.org/licenses/zlib/
+  | https://opensource.org/licenses/zlib
   | Please refer to the accompanying LICENSE file.
 
 Authors

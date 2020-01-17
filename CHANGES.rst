@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.0.22b9 (2020-01-17)
+---------------------
+- Added ReadTheDocs config file.
+- Setup update.
+
 1.0.22b8 (2019-11-24)
 ---------------------
 - Upgrade for Linux: libusb x64 v.1.0.21 -> v.1.0.22
