@@ -3,9 +3,9 @@ Changelog
 
 1.0.23b1 (2020-09-15)
 ---------------------
-- Upgrade for Windows: libusb v.1.0.22 -> v.1.0.23
-  (partially; without libusb_wrap_sys_device, because
-   original Windows dlls do not export this function).
+- | Upgrade for Windows: libusb v.1.0.22 -> v.1.0.23
+  | (partially; without libusb_wrap_sys_device, because
+  | original Windows dlls do not export this function).
 - Add support for Python 3.9.
 - Drop support for Python 3.5.
 - Setup update.
