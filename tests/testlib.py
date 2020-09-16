@@ -32,9 +32,8 @@ else:
 INVALID_FD = -1
 
 
-class test_result(object):
-
-    # Values returned from a test function to indicate test result
+class test_result:
+    """Values returned from a test function to indicate test result"""
 
     # Indicates that the test ran successfully.
     TEST_STATUS_SUCCESS = 0
@@ -47,9 +46,8 @@ class test_result(object):
     TEST_STATUS_SKIP = 3
 
 
-class test_ctx(object):
-
-    # Context for test library functions
+class test_ctx:
+    """Context for test library functions"""
 
     def __init__(self):
         # Setup default mode of operation
@@ -62,9 +60,8 @@ class test_ctx(object):
         self.null_fd = INVALID_FD
 
 
-class test_spec(object):
-
-    # Structure holding a test description.
+class test_spec:
+    """Structure holding a test description."""
 
     def __init__(self, name, function):
         # Human readable name of the test.
@@ -76,10 +73,8 @@ class test_spec(object):
         self.function = function
 
 
-#@annonate(str, result=test_result)
-def _test_result_to_str(result):
-
-    # Converts a test result code into a human readable string.
+def _test_result_to_str(result: test_result) -> str:
+    """Converts a test result code into a human readable string."""
 
     _test_result_str = {
         test_result.TEST_STATUS_SUCCESS: "Success",
@@ -92,15 +87,13 @@ def _test_result_to_str(result):
 
 
 def _print_usage(argv):
-
     print("Usage: {} [-l] [-v] [<test_name> ...]".format(
           argv[0] if len(argv) > 0 else "test_*"))
     print("   -l   List available tests")
     print("   -v   Don't redirect STDERR/STDOUT during tests")
 
 
-#@annonate(ctx=test_ctx)
-def _cleanup_test_output(ctx):
+def _cleanup_test_output(ctx: test_ctx):
 
     if not defined("DISABLE_STDOUT_REDIRECTION"):
 
@@ -137,11 +130,9 @@ def _cleanup_test_output(ctx):
     #endif
 
 
-#@annonate(int, ctx=test_ctx)
-def _setup_test_output(ctx):
-
-    # Setup test output handles
-    # \return zero on success, non-zero on failure
+def _setup_test_output(ctx: test_ctx) -> int:
+    """Setup test output handles
+    \return zero on success, non-zero on failure"""
 
     if not defined("DISABLE_STDOUT_REDIRECTION"):
 
@@ -197,26 +188,22 @@ def _setup_test_output(ctx):
     return 0
 
 
-#@annonate(ctx=test_ctx, fmt=str)
-def logf(ctx, fmt, *args):
-
-    # Logs some test information or state
+def logf(ctx: test_ctx, fmt: str, *args):
+    """Logs some test information or state"""
 
     print(fmt.format(*args), file=ctx.output_file)
     ctx.output_file.flush()
 
 
-#@annonate(int, argv=list, tests=list)
-def run_tests(argv, tests):
+def run_tests(argv: list, tests: list) -> int:
+    """Runs the tests provided.
 
-    # Runs the tests provided.
-    #
-    # Before running any tests argv will be processed
-    # to determine the mode of operation.
-    #
-    # \param argv The argv from main
-    # \param tests A NULL_TEST terminated array of tests
-    # \return 0 on success, non-zero on failure
+    Before running any tests argv will be processed
+    to determine the mode of operation.
+
+    \param argv The argv from main
+    \param tests A NULL_TEST terminated array of tests
+    \return 0 on success, non-zero on failure"""
 
     ctx = test_ctx()
 
@@ -254,7 +241,6 @@ def run_tests(argv, tests):
     # Act on any options not related to running tests
 
     if ctx.list_tests:
-
         for test in tests:
             logf(ctx, test.name)
         _cleanup_test_output(ctx)
@@ -298,4 +284,4 @@ def run_tests(argv, tests):
 
     _cleanup_test_output(ctx)
 
-    return pass_count != run_count
+    return int(pass_count != run_count)

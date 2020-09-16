@@ -231,4 +231,4 @@ def main(argv=sys.argv):
     return 0
 
 
-sys.exit(main() or 0)
+sys.exit(main())

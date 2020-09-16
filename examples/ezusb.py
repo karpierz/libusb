@@ -379,13 +379,13 @@ def parse_ihex(image, context, is_external, poke):
         # Read the length field (up to 16 bytes)
         tmp = buf[3]; buf[3] = 0
         #size # ct.c_size_t
-        size = strtoul(buf[1:], NULL, 16);
+        size = size_t(strtoul(buf[1:], NULL, 16))
         buf[3] = tmp
 
         # Read the target offset (address up to 64KB)
         tmp = buf[7]; buf[7] = 0
         #off # unsigned
-        off = int(strtoul(buf[3:], NULL, 16));
+        off = unsigned_int(strtoul(buf[3:], NULL, 16))
         buf[7] = tmp
 
         # Initialize data_addr
@@ -889,5 +889,4 @@ def ezusb_load_ram(device, path, fx_type, img_type, stage):
 
 #@annotate(int, device=ct.POINTER(usb.device_handle), path=str, fx_type=ct.c_int, img_type=ct.c_int, config=ct.c_int)
 def ezusb_load_eeprom(device, path, fx_type, img_type, config):
-
     raise NotImplementedError()

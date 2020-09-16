@@ -1,0 +1,5 @@
+Url: https://github.com/libusb/libusb/archive/v1.0.23.zip
+Completed: 2020-08-17 18:40:33
+File name: libusb-1.0.23.zip
+File date: 2020-08-17 18:40:33
+File size: 528057

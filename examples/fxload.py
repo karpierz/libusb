@@ -279,4 +279,4 @@ def main(argv=sys.argv):
     return status
 
 
-sys.exit(main() or 0)
+sys.exit(main())

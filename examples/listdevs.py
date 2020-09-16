@@ -52,7 +52,7 @@ def print_devs(devs):
         i += 1
 
 
-def main():
+def main(argv=sys.argv):
 
     r = usb.init(None)
     if r < 0:
@@ -73,4 +73,4 @@ def main():
     return 0
 
 
-sys.exit(main() or 0)
+sys.exit(main())

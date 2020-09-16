@@ -150,7 +150,7 @@ def sig_hdlr(signum, frame):
         do_exit = True
 
 
-def main():
+def main(argv=sys.argv):
 
     global devh
     global VID, PID
@@ -196,4 +196,4 @@ def main():
     return rc
 
 
-sys.exit(main() or 0)
+sys.exit(main())

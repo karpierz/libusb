@@ -881,6 +881,7 @@ def test_device(vid, pid):
         "12 Mbit/s (USB FullSpeed)",
         "480 Mbit/s (USB HighSpeed)",
         "5000 Mbit/s (USB SuperSpeed)",
+        "10000 Mbit/s (USB SuperSpeedPlus)",
     ]
 
     print("Opening device {:04X}:{:04X}...".format(vid, pid))
@@ -907,7 +908,7 @@ def test_device(vid, pid):
                     print("->{}".format(port_path[i]), end="")
                 print(" (from root hub)")
             r = usb.get_device_speed(dev)
-            if r < 0 or r > 4: r = 0
+            if r < 0 or r > 5: r = 0
             print("             speed: {}".format(speed_name[r]))
 
         print("\nReading device descriptor:")
@@ -1194,4 +1195,4 @@ def main(argv=sys.argv):
     return 0
 
 
-sys.exit(main() or 0)
+sys.exit(main())

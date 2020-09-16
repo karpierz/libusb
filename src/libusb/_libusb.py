@@ -6,7 +6,7 @@
 # Copyright (c) 2001 Johannes Erdfelt <johannes@erdfelt.com>
 # Copyright (c) 2007-2008 Daniel Drake <dsd@gentoo.org>
 # Copyright (c) 2012 Pete Batard <pete@akeo.ie>
-# Copyright (c) 2012 Nathan Hjelm <hjelmn@cs.unm.edu>
+# Copyright (c) 2012-2018 Nathan Hjelm <hjelmn@cs.unm.edu>
 # For more information, please visit: http://libusb.info
 #
 # This library is free software; you can redistribute it and/or
@@ -24,6 +24,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 import ctypes as ct
+intptr_t = (ct.c_int32 if ct.sizeof(ct.c_void_p) == ct.sizeof(ct.c_int32) else ct.c_int64)
 
 from ._platform import CFUNC
 from ._platform import timeval
@@ -93,7 +94,7 @@ def LIBUSB_DEPRECATED_FOR(f): pass  # __attribute__((deprecated("Use " #f " inst
 # Internally, LIBUSB_API_VERSION is defined as follows:
 # (libusb major << 24) | (libusb minor << 16) | (16 bit incremental)
 
-LIBUSB_API_VERSION = 0x01000106
+LIBUSB_API_VERSION = 0x01000107
 
 # The following is kept for compatibility, but will be deprecated in the future
 LIBUSBX_API_VERSION = LIBUSB_API_VERSION
@@ -540,7 +541,7 @@ class endpoint_descriptor(ct.Structure):
     # it will store them here, should you wish to parse them.
     ("extra", ct.POINTER(ct.c_ubyte)),
 
-    # Length of the extra descriptors, in bytes.
+    # Length of the extra descriptors, in bytes. Must be non-negative.
     ("extra_length", ct.c_int),
 ]
 
@@ -592,7 +593,7 @@ class interface_descriptor(ct.Structure):
     # it will store them here, should you wish to parse them.
     ("extra", ct.POINTER(ct.c_ubyte)),
 
-    # Length of the extra descriptors, in bytes.
+    # Length of the extra descriptors, in bytes. Must be non-negative.
     ("extra_length", ct.c_int),
 ]
 
@@ -606,7 +607,8 @@ class interface(ct.Structure):
     # by the num_altsetting field.
     ("altsetting", ct.POINTER(interface_descriptor)),
 
-    # The number of alternate settings that belong to this interface
+    # The number of alternate settings that belong to this interface.
+    # Must be non-negative.
     ("num_altsetting", ct.c_int),
 ]
 
@@ -655,7 +657,7 @@ class config_descriptor(ct.Structure):
     # descriptors, it will store them here, should you wish to parse them.
     ("extra", ct.POINTER(ct.c_ubyte)),
 
-    # Length of the extra descriptors, in bytes.
+    # Length of the extra descriptors, in bytes. Must be non-negative.
     ("extra_length", ct.c_int),
 ]
 
@@ -1232,7 +1234,7 @@ transfer._fields_ = [
     # to determine if errors occurred.
     ("status", transfer_status),
 
-    # Length of the data buffer
+    # Length of the data buffer. Must be non-negative.
     ("length", ct.c_int),
 
     # Actual length of data that was transferred. Read-only, and only for
@@ -1251,7 +1253,7 @@ transfer._fields_ = [
     ("buffer", ct.POINTER(ct.c_ubyte)),
 
     # Number of isochronous packets. Only used for I/O with isochronous
-    # endpoints.
+    # endpoints. Must be non-negative.
     ("num_iso_packets", ct.c_int),
 
     # Isochronous packet descriptors, for isochronous transfers only.
@@ -1284,12 +1286,12 @@ capability = ct.c_int
 ) = (0x0000, 0x0001, 0x0100, 0x0101)
 
 # \ingroup libusb::lib
-#  Log message levels.
-#  - LIBUSB_LOG_LEVEL_NONE (0)    : no messages ever printed by the library (default)
-#  - LIBUSB_LOG_LEVEL_ERROR (1)   : error messages are printed to stderr
-#  - LIBUSB_LOG_LEVEL_WARNING (2) : warning and error messages are printed to stderr
-#  - LIBUSB_LOG_LEVEL_INFO (3)    : informational messages are printed to stderr
-#  - LIBUSB_LOG_LEVEL_DEBUG (4)   : debug and informational messages are printed to stderr
+# Log message levels.
+# - LIBUSB_LOG_LEVEL_NONE (0)    : no messages ever printed by the library (default)
+# - LIBUSB_LOG_LEVEL_ERROR (1)   : error messages are printed to stderr
+# - LIBUSB_LOG_LEVEL_WARNING (2) : warning and error messages are printed to stderr
+# - LIBUSB_LOG_LEVEL_INFO (3)    : informational messages are printed to stderr
+# - LIBUSB_LOG_LEVEL_DEBUG (4)   : debug and informational messages are printed to stderr
 
 log_level = ct.c_int
 (
@@ -1300,40 +1302,85 @@ log_level = ct.c_int
     LIBUSB_LOG_LEVEL_DEBUG,
 
 ) = (0, 1, 2, 3, 4)
+ 
+# \ingroup libusb::lib
+# Log callback mode.
+# \see libusb.set_log_cb()
+
+log_cb_mode = ct.c_int
+(
+    # Callback function handling all log mesages.
+    LIBUSB_LOG_CB_GLOBAL,
+
+    # Callback function handling context related log mesages.
+    LIBUSB_LOG_CB_CONTEXT,
+
+) = (1 << 0, 1 << 1)
+
+# \ingroup libusb::lib
+# Callback function for handling log messages.
+# \param ctx the context which is related to the log message, or NULL if it
+#            is a global log message
+# \param level the log level, see \ref libusb_log_level for a description
+# \param str the log message
+# \see libusb.set_log_cb()
+
+log_cb = CFUNC(None, ct.POINTER(context), log_level, ct.c_char_p)
+
 
 get_version = CFUNC(ct.POINTER(version))(
                     ("libusb_get_version", dll),)
+
 init        = CFUNC(ct.c_int,
                     ct.POINTER(ct.POINTER(context)))(
                     ("libusb_init", dll), (
                     (1, "ctx"),))
+
 exit        = CFUNC(None,
                     ct.POINTER(context))(
                     ("libusb_exit", dll), (
                     (1, "ctx"),))
+
 LIBUSB_DEPRECATED_FOR("set_option")
+
 set_debug   = CFUNC(None,
                     ct.POINTER(context),
                     ct.c_int)(
                     ("libusb_set_debug", dll), (
                     (1, "ctx"),
                     (1, "level")))
+
+try:
+    set_log_cb = CFUNC(None,
+                    ct.POINTER(context),
+                    log_cb,
+                    ct.c_int)(
+                    ("libusb_set_log_cb", dll), (
+                    (1, "ctx"),
+                    (1, "cb"),
+                    (1, "mode")))
+except: pass
+
 has_capability = CFUNC(ct.c_int,
                     ct.c_uint32)(
                     ("libusb_has_capability", dll), (
                     (1, "capability"),))
+
 error_name  = CFUNC(ct.c_char_p,
                     ct.c_int)(
                     ("libusb_error_name", dll), (
                     (1, "errcode"),))
+
 strerror    = CFUNC(ct.c_char_p,
                     error)(
                     ("libusb_strerror", dll), (
                     (1, "errcode"),))
+
 setlocale   = CFUNC(ct.c_int,
                     ct.c_char_p)(
                     ("libusb_setlocale", dll), (
                     (1, "locale"),))
+
 
 get_device_list  = CFUNC(ct.c_ssize_t,
                          ct.POINTER(context),
@@ -1341,20 +1388,24 @@ get_device_list  = CFUNC(ct.c_ssize_t,
                          ("libusb_get_device_list", dll), (
                          (1, "ctx"),
                          (1, "list")))
+
 free_device_list = CFUNC(None,
                          ct.POINTER(ct.POINTER(device)),
                          ct.c_int)(
                          ("libusb_free_device_list", dll), (
                          (1, "list"),
                          (1, "unref_devices")))
+
 ref_device       = CFUNC(ct.POINTER(device),
                          ct.POINTER(device))(
                          ("libusb_ref_device", dll), (
                          (1, "dev"),))
+
 unref_device     = CFUNC(None,
                          ct.POINTER(device))(
                          ("libusb_unref_device", dll), (
                          (1, "dev"),))
+
 
 get_configuration       = CFUNC(ct.c_int,
                                 ct.POINTER(device_handle),
@@ -1362,18 +1413,21 @@ get_configuration       = CFUNC(ct.c_int,
                                 ("libusb_get_configuration", dll), (
                                 (1, "dev_handle"),
                                 (1, "config")))
+
 get_device_descriptor   = CFUNC(ct.c_int,
                                 ct.POINTER(device),
                                 ct.POINTER(device_descriptor))(
                                 ("libusb_get_device_descriptor", dll), (
                                 (1, "dev"),
                                 (1, "desc")))
+
 get_active_config_descriptor = CFUNC(ct.c_int,
                                 ct.POINTER(device),
                                 ct.POINTER(ct.POINTER(config_descriptor)))(
                                 ("libusb_get_active_config_descriptor", dll), (
                                 (1, "dev"),
                                 (1, "config")))
+
 get_config_descriptor   = CFUNC(ct.c_int,
                                 ct.POINTER(device),
                                 ct.c_uint8,
@@ -1382,6 +1436,7 @@ get_config_descriptor   = CFUNC(ct.c_int,
                                 (1, "dev"),
                                 (1, "config_index"),
                                 (1, "config")))
+
 get_config_descriptor_by_value = CFUNC(ct.c_int,
                                 ct.POINTER(device),
                                 ct.c_uint8,
@@ -1390,10 +1445,12 @@ get_config_descriptor_by_value = CFUNC(ct.c_int,
                                 (1, "dev"),
                                 (1, "bConfigurationValue"),
                                 (1, "config")))
+
 free_config_descriptor  = CFUNC(None,
                                 ct.POINTER(config_descriptor))(
                                 ("libusb_free_config_descriptor", dll), (
                                 (1, "config"),))
+
 get_ss_endpoint_companion_descriptor = CFUNC(ct.c_int,
                                 ct.POINTER(context),
                                 ct.POINTER(endpoint_descriptor),
@@ -1402,20 +1459,24 @@ get_ss_endpoint_companion_descriptor = CFUNC(ct.c_int,
                                 (1, "ctx"),
                                 (1, "endpoint"),
                                 (1, "ep_comp")))
+
 free_ss_endpoint_companion_descriptor = CFUNC(None,
                                 ct.POINTER(ss_endpoint_companion_descriptor))(
                                 ("libusb_free_ss_endpoint_companion_descriptor", dll), (
                                 (1, "ep_comp"),))
+
 get_bos_descriptor      = CFUNC(ct.c_int,
                                 ct.POINTER(device_handle),
                                 ct.POINTER(ct.POINTER(bos_descriptor)))(
                                 ("libusb_get_bos_descriptor", dll), (
                                 (1, "dev_handle"),
                                 (1, "bos")))
+
 free_bos_descriptor     = CFUNC(None,
                                 ct.POINTER(bos_descriptor))(
                                 ("libusb_free_bos_descriptor", dll), (
                                 (1, "bos"),))
+
 get_usb_2_0_extension_descriptor = CFUNC(ct.c_int,
                                 ct.POINTER(context),
                                 ct.POINTER(bos_dev_capability_descriptor),
@@ -1424,10 +1485,12 @@ get_usb_2_0_extension_descriptor = CFUNC(ct.c_int,
                                 (1, "ctx"),
                                 (1, "dev_cap"),
                                 (1, "usb_2_0_extension")))
+
 free_usb_2_0_extension_descriptor = CFUNC(None,
                                 ct.POINTER(usb_2_0_extension_descriptor))(
                                 ("libusb_free_usb_2_0_extension_descriptor", dll), (
                                 (1, "usb_2_0_extension"),))
+
 get_ss_usb_device_capability_descriptor = CFUNC(ct.c_int,
                                 ct.POINTER(context),
                                 ct.POINTER(bos_dev_capability_descriptor),
@@ -1436,10 +1499,12 @@ get_ss_usb_device_capability_descriptor = CFUNC(ct.c_int,
                                 (1, "ctx"),
                                 (1, "dev_cap"),
                                 (1, "ss_usb_device_cap")))
+
 free_ss_usb_device_capability_descriptor = CFUNC(None,
                                 ct.POINTER(ss_usb_device_capability_descriptor))(
                                 ("libusb_free_ss_usb_device_capability_descriptor", dll), (
                                 (1, "ss_usb_device_cap"),))
+
 get_container_id_descriptor = CFUNC(ct.c_int,
                                 ct.POINTER(context),
                                 ct.POINTER(bos_dev_capability_descriptor),
@@ -1448,18 +1513,22 @@ get_container_id_descriptor = CFUNC(ct.c_int,
                                 (1, "ctx"),
                                 (1, "dev_cap"),
                                 (1, "container_id")))
+
 free_container_id_descriptor = CFUNC(None,
                                 ct.POINTER(container_id_descriptor))(
                                 ("libusb_free_container_id_descriptor", dll), (
                                 (1, "container_id"),))
+
 get_bus_number          = CFUNC(ct.c_uint8,
                                 ct.POINTER(device))(
                                 ("libusb_get_bus_number", dll), (
                                 (1, "dev"),))
+
 get_port_number         = CFUNC(ct.c_uint8,
                                 ct.POINTER(device))(
                                 ("libusb_get_port_number", dll), (
                                 (1, "dev"),))
+
 get_port_numbers        = CFUNC(ct.c_int,
                                 ct.POINTER(device),
                                 ct.POINTER(ct.c_uint8),
@@ -1468,7 +1537,9 @@ get_port_numbers        = CFUNC(ct.c_int,
                                 (1, "dev"),
                                 (1, "port_numbers"),
                                 (1, "port_numbers_len")))
+
 LIBUSB_DEPRECATED_FOR("get_port_numbers")
+
 get_port_path           = CFUNC(ct.c_int,
                                 ct.POINTER(context),
                                 ct.POINTER(device),
@@ -1479,24 +1550,29 @@ get_port_path           = CFUNC(ct.c_int,
                                 (1, "dev"),
                                 (1, "path"),
                                 (1, "path_length")))
+
 get_parent              = CFUNC(ct.POINTER(device),
                                 ct.POINTER(device))(
                                 ("libusb_get_parent", dll), (
                                 (1, "dev"),))
+
 get_device_address      = CFUNC(ct.c_uint8,
                                 ct.POINTER(device))(
                                 ("libusb_get_device_address", dll), (
                                 (1, "dev"),))
+
 get_device_speed        = CFUNC(ct.c_int,
                                 ct.POINTER(device))(
                                 ("libusb_get_device_speed", dll), (
                                 (1, "dev"),))
+
 get_max_packet_size     = CFUNC(ct.c_int,
                                 ct.POINTER(device),
                                 ct.c_ubyte)(
                                 ("libusb_get_max_packet_size", dll), (
                                 (1, "dev"),
                                 (1, "endpoint")))
+
 get_max_iso_packet_size = CFUNC(ct.c_int,
                                 ct.POINTER(device),
                                 ct.c_ubyte)(
@@ -1504,33 +1580,51 @@ get_max_iso_packet_size = CFUNC(ct.c_int,
                                 (1, "dev"),
                                 (1, "endpoint")))
 
+
+try:
+    wrap_sys_device = CFUNC(ct.c_int,
+              ct.POINTER(context),
+              intptr_t,
+              ct.POINTER(ct.POINTER(device_handle)))(
+              ("libusb_wrap_sys_device", dll), (
+              (1, "ctx"),
+              (1, "sys_dev"),
+              (1, "dev_handle")))
+except: pass
+
 open  = CFUNC(ct.c_int,
               ct.POINTER(device),
               ct.POINTER(ct.POINTER(device_handle)))(
               ("libusb_open", dll), (
               (1, "dev"),
               (1, "dev_handle")))
+
 close = CFUNC(None,
               ct.POINTER(device_handle))(
               ("libusb_close", dll), (
               (1, "dev_handle"),))
+
 get_device = CFUNC(ct.POINTER(device),
               ct.POINTER(device_handle))(
               ("libusb_get_device", dll), (
               (1, "dev_handle"),))
 
+
 set_configuration = CFUNC(ct.c_int,
                           ct.POINTER(device_handle), ct.c_int)(
                           ("libusb_set_configuration", dll), (
                           (1, "dev_handle"), (1, "configuration")))
+
 claim_interface   = CFUNC(ct.c_int,
                           ct.POINTER(device_handle), ct.c_int)(
                           ("libusb_claim_interface", dll), (
                           (1, "dev_handle"), (1, "interface_number")))
+
 release_interface = CFUNC(ct.c_int,
                           ct.POINTER(device_handle), ct.c_int)(
                           ("libusb_release_interface", dll), (
                           (1, "dev_handle"), (1, "interface_number")))
+
 
 open_device_with_vid_pid = CFUNC(ct.POINTER(device_handle),
                                  ct.POINTER(context),
@@ -1541,6 +1635,7 @@ open_device_with_vid_pid = CFUNC(ct.POINTER(device_handle),
                                  (1, "vendor_id"),
                                  (1, "product_id")))
 
+
 set_interface_alt_setting = CFUNC(ct.c_int,
                      ct.POINTER(device_handle),
                      ct.c_int,
@@ -1549,16 +1644,19 @@ set_interface_alt_setting = CFUNC(ct.c_int,
                      (1, "dev_handle"),
                      (1, "interface_number"),
                      (1, "alternate_setting")))
+
 clear_halt   = CFUNC(ct.c_int,
                      ct.POINTER(device_handle),
                      ct.c_ubyte)(
                      ("libusb_clear_halt", dll), (
                      (1, "dev_handle"),
                      (1, "endpoint")))
+
 reset_device = CFUNC(ct.c_int,
                      ct.POINTER(device_handle))(
                      ("libusb_reset_device", dll), (
                      (1, "dev_handle"),))
+
 
 alloc_streams = CFUNC(ct.c_int,
                       ct.POINTER(device_handle),
@@ -1570,6 +1668,7 @@ alloc_streams = CFUNC(ct.c_int,
                       (1, "num_streams"),
                       (1, "endpoints"),
                       (1, "num_endpoints")))
+
 free_streams  = CFUNC(ct.c_int,
                       ct.POINTER(device_handle),
                       ct.POINTER(ct.c_ubyte),
@@ -1579,12 +1678,14 @@ free_streams  = CFUNC(ct.c_int,
                       (1, "endpoints"),
                       (1, "num_endpoints")))
 
+
 dev_mem_alloc = CFUNC(ct.POINTER(ct.c_ubyte),
                       ct.POINTER(device_handle),
                       ct.c_size_t)(
                       ("libusb_dev_mem_alloc", dll), (
                       (1, "dev_handle"),
                       (1, "length")))
+
 dev_mem_free  = CFUNC(ct.c_int,
                       ct.POINTER(device_handle),
                       ct.POINTER(ct.c_ubyte),
@@ -1594,24 +1695,28 @@ dev_mem_free  = CFUNC(ct.c_int,
                       (1, "buffer"),
                       (1, "length")))
 
+
 kernel_driver_active = CFUNC(ct.c_int,
                              ct.POINTER(device_handle),
                              ct.c_int)(
                              ("libusb_kernel_driver_active", dll), (
                              (1, "dev_handle"),
                              (1, "interface_number")))
+
 detach_kernel_driver = CFUNC(ct.c_int,
                              ct.POINTER(device_handle),
                              ct.c_int)(
                              ("libusb_detach_kernel_driver", dll), (
                              (1, "dev_handle"),
                              (1, "interface_number")))
+
 attach_kernel_driver = CFUNC(ct.c_int,
                              ct.POINTER(device_handle),
                              ct.c_int)(
                              ("libusb_attach_kernel_driver", dll), (
                              (1, "dev_handle"),
                              (1, "interface_number")))
+
 set_auto_detach_kernel_driver = CFUNC(ct.c_int,
                              ct.POINTER(device_handle),
                              ct.c_int)(
@@ -1636,9 +1741,7 @@ set_auto_detach_kernel_driver = CFUNC(ct.c_int,
 #static inline
 #@CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer))
 def control_transfer_get_data(transfer):
-
     transfer = transfer[0]
-
     return transfer.buffer + LIBUSB_CONTROL_SETUP_SIZE;
 
 # \ingroup libusb::asyncio
@@ -1656,9 +1759,7 @@ def control_transfer_get_data(transfer):
 #static inline
 #@CFUNC(ct.POINTER(control_setup), ct.POINTER(transfer))
 def control_transfer_get_setup(transfer):
-
     transfer = transfer[0]
-
     return ct.cast(buffer, ct.POINTER(transfer.buffer))
 
 # \ingroup libusb::asyncio
@@ -1688,7 +1789,6 @@ def control_transfer_get_setup(transfer):
 @CFUNC(None,
        ct.POINTER(ct.c_ubyte), ct.c_uint8,  ct.c_uint8,  ct.c_uint16, ct.c_uint16, ct.c_uint16)
 def fill_control_setup(buffer, bmRequestType, bRequest, wValue, wIndex, wLength):
-
     setup = ct.cast(buffer, ct.POINTER(control_setup))[0]
     setup.bmRequestType = bmRequestType
     setup.bRequest      = bRequest
@@ -1700,22 +1800,27 @@ alloc_transfer  = CFUNC(ct.POINTER(transfer),
                         ct.c_int)(
                         ("libusb_alloc_transfer", dll), (
                         (1, "iso_packets"),))
+
 submit_transfer = CFUNC(ct.c_int,
                         ct.POINTER(transfer))(
                         ("libusb_submit_transfer", dll), (
                         (1, "transfer"),))
+
 cancel_transfer = CFUNC(ct.c_int,
                         ct.POINTER(transfer))(
                         ("libusb_cancel_transfer", dll), (
                         (1, "transfer"),))
+
 free_transfer   = CFUNC(None,
                         ct.POINTER(transfer))(
                         ("libusb_free_transfer", dll), (
                         (1, "transfer"),))
+
 transfer_get_stream_id = CFUNC(ct.c_uint32,
                         ct.POINTER(transfer))(
                         ("libusb_transfer_get_stream_id", dll), (
                         (1, "transfer"),))
+
 transfer_set_stream_id = CFUNC(None,
                         ct.POINTER(transfer), ct.c_uint32)(
                         ("libusb_transfer_set_stream_id", dll), (
@@ -1754,10 +1859,8 @@ transfer_set_stream_id = CFUNC(None,
        ct.POINTER(transfer), ct.POINTER(device_handle),
        ct.POINTER(ct.c_ubyte), transfer_cb_fn, ct.c_void_p, ct.c_uint)
 def fill_control_transfer(transfer, dev_handle, buffer, callback, user_data, timeout):
-
     transfer  = transfer[0]
     setup_ptr = ct.cast(buffer, ct.POINTER(control_setup))
-
     transfer.dev_handle = dev_handle
     transfer.endpoint   = 0
     transfer.type       = LIBUSB_TRANSFER_TYPE_CONTROL
@@ -1787,9 +1890,7 @@ def fill_control_transfer(transfer, dev_handle, buffer, callback, user_data, tim
        ct.POINTER(ct.c_ubyte), ct.c_int, transfer_cb_fn, ct.c_void_p, ct.c_uint)
 def fill_bulk_transfer(transfer, dev_handle, endpoint,
                        buffer, length, callback, user_data, timeout):
-
     transfer = transfer[0]
-
     transfer.dev_handle = dev_handle
     transfer.endpoint   = endpoint
     transfer.type       = LIBUSB_TRANSFER_TYPE_BULK
@@ -1821,7 +1922,6 @@ def fill_bulk_transfer(transfer, dev_handle, endpoint,
        ct.POINTER(ct.c_ubyte), ct.c_int, transfer_cb_fn, ct.c_void_p, ct.c_uint)
 def fill_bulk_stream_transfer(transfer, dev_handle, endpoint, stream_id,
                               buffer, length, callback, user_data, timeout):
-
     fill_bulk_transfer(transfer, dev_handle, endpoint,
                        buffer, length, callback, user_data, timeout)
     transfer[0].type = LIBUSB_TRANSFER_TYPE_BULK_STREAM
@@ -1846,9 +1946,7 @@ def fill_bulk_stream_transfer(transfer, dev_handle, endpoint, stream_id,
        ct.POINTER(ct.c_ubyte), ct.c_int, transfer_cb_fn, ct.c_void_p, ct.c_uint)
 def fill_interrupt_transfer(transfer, dev_handle, endpoint,
                             buffer, length, callback, user_data, timeout):
-
     transfer = transfer[0]
-
     transfer.dev_handle = dev_handle
     transfer.endpoint   = endpoint
     transfer.type       = LIBUSB_TRANSFER_TYPE_INTERRUPT
@@ -1878,9 +1976,7 @@ def fill_interrupt_transfer(transfer, dev_handle, endpoint,
        ct.POINTER(ct.c_ubyte), ct.c_int, ct.c_int, transfer_cb_fn, ct.c_void_p, ct.c_uint)
 def fill_iso_transfer(transfer, dev_handle, endpoint,
                       buffer, length, num_iso_packets, callback, user_data, timeout):
-
     transfer = transfer[0]
-
     transfer.dev_handle      = dev_handle
     transfer.endpoint        = endpoint
     transfer.type            = LIBUSB_TRANSFER_TYPE_ISOCHRONOUS
@@ -1902,9 +1998,7 @@ def fill_iso_transfer(transfer, dev_handle, endpoint,
 #static inline
 @CFUNC(None, ct.POINTER(transfer), ct.c_uint)
 def set_iso_packet_lengths(transfer, length):
-
     transfer = transfer[0]
-
     for i in range(transfer.num_iso_packets):
         transfer.iso_packet_desc[i].length = length
 
@@ -1927,7 +2021,6 @@ def set_iso_packet_lengths(transfer, length):
 #static inline
 #@CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer), ct.c_uint)
 def get_iso_packet_buffer(transfer, packet):
-
     packet = packet.value
 
     # oops..slight bug in the API. packet is an unsigned int, but we use
@@ -1969,7 +2062,6 @@ def get_iso_packet_buffer(transfer, packet):
 #static inline
 #@CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer), ct.c_uint)
 def get_iso_packet_buffer_simple(transfer, packet):
-
     packet = packet.value
 
     # oops..slight bug in the API. packet is an unsigned int, but we use
@@ -2049,10 +2141,9 @@ interrupt_transfer = CFUNC(ct.c_int,
 # :returns: number of bytes returned in data, or LIBUSB_ERROR code on failure
 
 #static inline
-@CFUNC(ct.c_int, ct.POINTER(device_handle),
-       ct.c_uint8, ct.c_uint8, ct.POINTER(ct.c_ubyte), ct.c_int)
+@CFUNC(ct.c_int,
+       ct.POINTER(device_handle), ct.c_uint8, ct.c_uint8, ct.POINTER(ct.c_ubyte), ct.c_int)
 def get_descriptor(dev_handle, desc_type, desc_index, data, length):
-
     return control_transfer(dev_handle,
                             LIBUSB_ENDPOINT_IN, LIBUSB_REQUEST_GET_DESCRIPTOR,
                             ct.c_uint16((desc_type << 8) | desc_index),
@@ -2073,10 +2164,9 @@ def get_descriptor(dev_handle, desc_type, desc_index, data, length):
 # \see libusb.get_string_descriptor_ascii()
 
 #static inline
-@CFUNC(ct.c_int, ct.POINTER(device_handle),
-       ct.c_uint8, ct.c_uint16, ct.POINTER(ct.c_ubyte), ct.c_int)
+@CFUNC(ct.c_int,
+       ct.POINTER(device_handle), ct.c_uint8, ct.c_uint16, ct.POINTER(ct.c_ubyte), ct.c_int)
 def get_string_descriptor(dev_handle, desc_index, langid, data, length):
-
     return control_transfer(dev_handle,
                             LIBUSB_ENDPOINT_IN, LIBUSB_REQUEST_GET_DESCRIPTOR,
                             ct.c_uint16((LIBUSB_DT_STRING << 8) | desc_index),
@@ -2099,34 +2189,42 @@ try_lock_events         = CFUNC(ct.c_int,
                                 ct.POINTER(context))(
                                 ("libusb_try_lock_events", dll), (
                                 (1, "ctx"),))
+
 lock_events             = CFUNC(None,
                                 ct.POINTER(context))(
                                 ("libusb_lock_events", dll), (
                                 (1, "ctx"),))
+
 unlock_events           = CFUNC(None,
                                 ct.POINTER(context))(
                                 ("libusb_unlock_events", dll), (
                                 (1, "ctx"),))
+
 event_handling_ok       = CFUNC(ct.c_int,
                                 ct.POINTER(context))(
                                 ("libusb_event_handling_ok", dll), (
                                 (1, "ctx"),))
+
 event_handler_active    = CFUNC(ct.c_int,
                                 ct.POINTER(context))(
                                 ("libusb_event_handler_active", dll), (
                                 (1, "ctx"),))
+
 interrupt_event_handler = CFUNC(None,
                                 ct.POINTER(context))(
                                 ("libusb_interrupt_event_handler", dll), (
                                 (1, "ctx"),))
+
 lock_event_waiters      = CFUNC(None,
                                 ct.POINTER(context))(
                                 ("libusb_lock_event_waiters", dll), (
                                 (1, "ctx"),))
+
 unlock_event_waiters    = CFUNC(None,
                                 ct.POINTER(context))(
                                 ("libusb_unlock_event_waiters", dll), (
                                 (1, "ctx"),))
+
 wait_for_event          = CFUNC(ct.c_int,
                                 ct.POINTER(context),
                                 ct.POINTER(timeval))(
@@ -2140,6 +2238,7 @@ handle_events_timeout   = CFUNC(ct.c_int,
                                 ("libusb_handle_events_timeout", dll), (
                                 (1, "ctx"),
                                 (1, "tv")))
+
 handle_events_timeout_completed = CFUNC(ct.c_int,
                                 ct.POINTER(context),
                                 ct.POINTER(timeval),
@@ -2148,26 +2247,31 @@ handle_events_timeout_completed = CFUNC(ct.c_int,
                                 (1, "ctx"),
                                 (1, "tv"),
                                 (1, "completed")))
+
 handle_events           = CFUNC(ct.c_int,
                                 ct.POINTER(context))(
                                 ("libusb_handle_events", dll), (
                                 (1, "ctx"),))
+
 handle_events_completed = CFUNC(ct.c_int,
                                 ct.POINTER(context),
                                 ct.POINTER(ct.c_int))(
                                 ("libusb_handle_events_completed", dll), (
                                 (1, "ctx"),
                                 (1, "completed")))
+
 handle_events_locked    = CFUNC(ct.c_int,
                                 ct.POINTER(context),
                                 ct.POINTER(timeval))(
                                 ("libusb_handle_events_locked", dll), (
                                 (1, "ctx"),
                                 (1, "tv")))
+
 pollfds_handle_timeouts = CFUNC(ct.c_int,
                                 ct.POINTER(context))(
                                 ("libusb_pollfds_handle_timeouts", dll), (
                                 (1, "ctx"),))
+
 get_next_timeout        = CFUNC(ct.c_int,
                                 ct.POINTER(context),
                                 ct.POINTER(timeval))(
@@ -2218,10 +2322,12 @@ get_pollfds  = CFUNC(ct.POINTER(ct.POINTER(pollfd)),
                      ct.POINTER(context))(
                      ("libusb_get_pollfds", dll), (
                      (1, "ctx"),))
+
 free_pollfds = CFUNC(None,
                      ct.POINTER(ct.POINTER(pollfd)))(
                      ("libusb_free_pollfds", dll), (
                      (1, "pollfds"),))
+
 set_pollfd_notifiers = CFUNC(None,
                      ct.POINTER(context),
                      pollfd_added_cb,
@@ -2385,7 +2491,7 @@ hotplug_deregister_callback = CFUNC(None,
                                     (1, "ctx"),
                                     (1, "callback_handle")))
  
-# \ingroup libusb_lib
+# \ingroup libusb::lib
 # Available option values for libusb_set_option().
 
 option = ct.c_int
@@ -2425,7 +2531,6 @@ option = ct.c_int
 ) = (0, 1)
 
 def set_option(ctx, option, *values):
-
     if option == LIBUSB_OPTION_LOG_LEVEL:
         if not (LIBUSB_LOG_LEVEL_NONE <= values[0] <= LIBUSB_LOG_LEVEL_DEBUG):
             return LIBUSB_ERROR_INVALID_PARAM

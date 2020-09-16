@@ -1,5 +1,0 @@
-Url: https://codeload.github.com/libusb/libusb/zip/v1.0.22
-Completed: 2020-01-17 08:42:28
-File name: libusb-1.0.22.zip
-File date: 2020-01-17 08:42:28
-File size: 515029

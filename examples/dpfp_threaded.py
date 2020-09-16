@@ -458,7 +458,7 @@ def sighandler(signum, frame):
     request_exit(1)
 
 
-def main():
+def main(argv=sys.argv):
 
     global devh
     global img_transfer
@@ -562,4 +562,4 @@ def main():
     return abs(r)
 
 
-sys.exit(main() or 0)
+sys.exit(main())

@@ -1,5 +1,5 @@
 libusb
-=======
+======
 
 Python binding for the *libusb* C library.
 
@@ -60,7 +60,7 @@ Installation
 
 Prerequisites:
 
-+ Python 3.5 or higher
++ Python 3.6 or higher
 
   * https://www.python.org/
   * 3.7 with C libusb 1.0.22 is a primary test environment.
@@ -124,4 +124,5 @@ Authors
 .. |package| replace:: libusb
 .. |package_bold| replace:: **libusb**
 .. |respository| replace:: https://github.com/karpierz/libusb.git
+.. _PyPI record: https://pypi.org/project/libusb/
 .. _development page: https://github.com/karpierz/libusb/
