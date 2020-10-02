@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.0.23b2 (2020-09-30)
+---------------------
+- Setup update.
+- General update and cleanup.
+
 1.0.23b1 (2020-09-15)
 ---------------------
 - | Upgrade for Windows: libusb v.1.0.22 -> v.1.0.23

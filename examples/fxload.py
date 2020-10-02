@@ -1,6 +1,6 @@
 # Copyright (c) 2016-2020 Adam Karpierz
 # Licensed under the zlib/libpng License
-# https://opensource.org/licenses/zlib
+# https://opensource.org/licenses/Zlib
 
 # Copyright © 2001 Stephen Williams (steve@icarus.com)
 # Copyright © 2001-2002 David Brownell (dbrownell@users.sourceforge.net)
