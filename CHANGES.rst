@@ -1,9 +1,10 @@
 Changelog
 =========
 
-1.0.23b2 (2020-09-30)
+1.0.23b3 (2020-10-03)
 ---------------------
 - Setup update.
+- Removing dependence on atpublic.
 - General update and cleanup.
 
 1.0.23b1 (2020-09-15)
