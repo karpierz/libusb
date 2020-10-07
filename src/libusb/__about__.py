@@ -10,7 +10,7 @@ __title__        = "libusb"
 __summary__      = "Python binding for the libusb C library."
 __uri__          = "https://pypi.org/project/libusb/"
 __version_info__ = type("version_info", (), dict(major=1, minor=0, micro=23,
-                        releaselevel="beta", serial=3))
+                        releaselevel="beta", serial=4))
 __version__      = "{0.major}.{0.minor}.{0.micro}{1}{2}".format(__version_info__,
                    dict(alpha="a", beta="b", candidate="rc", final="",
                         post=".post", dev=".dev")[__version_info__.releaselevel],

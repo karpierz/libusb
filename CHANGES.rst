@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.0.23b4 (2020-10-05)
+---------------------
+- Ability to specify the underlying shared library programmatically.
+
 1.0.23b3 (2020-10-03)
 ---------------------
 - Setup update.

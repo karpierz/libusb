@@ -18,6 +18,17 @@ Overview
 
   `libusb-1.0 API Reference <http://api.libusb.info>`__
 
+|package_bold| uses the underlying *libusb* C shared library as specified in
+libusb.cfg (included libusb-X.X.* is the default), but there is also ability
+to specify it programmatically by one of the following ways:
+
+.. code:: python
+
+  import libusb
+  libusb.config(LIBUSB="libusb C shared library absolute path")
+  # or
+  libusb.config(LIBUSB=None)  # included libusb-X.X.* will be use
+
 About original libusb:
 ----------------------
 
