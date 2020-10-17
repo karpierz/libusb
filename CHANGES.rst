@@ -1,15 +1,13 @@
 Changelog
 =========
 
-1.0.23b4 (2020-10-05)
+1.0.23b5 (2020-10-17)
 ---------------------
 - Ability to specify the underlying shared library programmatically.
-
-1.0.23b3 (2020-10-03)
----------------------
+- General update and cleanup.
 - Setup update.
 - Removing dependence on atpublic.
-- General update and cleanup.
+- Fixed docs setup.
 
 1.0.23b1 (2020-09-15)
 ---------------------
