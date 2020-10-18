@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0.23b5 (2020-10-17)
+1.0.23b6 (2020-10-18)
 ---------------------
 - Ability to specify the underlying shared library programmatically.
 - General update and cleanup.
