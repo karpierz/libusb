@@ -73,7 +73,7 @@ def main(argv=sys.argv):
 
     global handle, done
 
-    hp = (usb.hotplug_callback_handle * 2)()
+    hp = [usb.hotplug_callback_handle() for i in range(2)]
 
     vendor_id  = int(argv[1]) if len(argv) > 1 else 0x045a
     product_id = int(argv[2]) if len(argv) > 2 else 0x5005

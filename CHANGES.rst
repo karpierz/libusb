@@ -1,13 +1,14 @@
 Changelog
 =========
 
-1.0.23b6 (2020-10-18)
+1.0.23b7 (2020-11-19)
 ---------------------
 - Ability to specify the underlying shared library programmatically.
 - General update and cleanup.
 - Setup update.
 - Removing dependence on atpublic.
 - Fixed docs setup.
+- Fix for hotplugtest example.
 
 1.0.23b1 (2020-09-15)
 ---------------------
