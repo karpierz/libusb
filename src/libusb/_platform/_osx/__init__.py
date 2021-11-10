@@ -11,8 +11,6 @@ is_32bit = (sys.maxsize <= 2**32)
 arch     = "x86" if is_32bit else "x64"
 arch_dir = os.path.join(this_dir, arch)
 
-raise NotImplementedError("This OS is not supported yet!")
-
 try:
     from ...__config__ import config
     DLL_PATH = config.get("LIBUSB", None)
