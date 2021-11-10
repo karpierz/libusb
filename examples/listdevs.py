@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2020 Adam Karpierz
+# Copyright (c) 2016-2021 Adam Karpierz
 # Licensed under the zlib/libpng License
 # https://opensource.org/licenses/Zlib
 
@@ -52,7 +52,7 @@ def print_devs(devs):
         i += 1
 
 
-def main(argv=sys.argv):
+def main(argv=sys.argv[1:]):
 
     r = usb.init(None)
     if r < 0:
@@ -73,4 +73,5 @@ def main(argv=sys.argv):
     return 0
 
 
-sys.exit(main())
+if __name__.rpartition(".")[-1] == "__main__":
+    sys.exit(main())

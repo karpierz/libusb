@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2020 Adam Karpierz
+# Copyright (c) 2016-2021 Adam Karpierz
 # Licensed under the zlib/libpng License
 # https://opensource.org/licenses/Zlib
 
@@ -21,26 +21,28 @@
 
 import sys
 import ctypes as ct
+
 import libusb as usb
+from libusb._platform import is_linux
 
 verbose = False
 
 
 def print_endpoint_comp(ep_comp):
     print("      USB 3.0 Endpoint Companion:")
-    print("        bMaxBurst:        {:d}".format(ep_comp.bMaxBurst))
-    print("        bmAttributes:     {:#04x}".format(ep_comp.bmAttributes))
-    print("        wBytesPerInterval: {:d}".format(ep_comp.wBytesPerInterval))
+    print("        bMaxBurst:           {:d}".format(ep_comp.bMaxBurst))
+    print("        bmAttributes:        {:02x}h".format(ep_comp.bmAttributes))
+    print("        wBytesPerInterval:   {:d}".format(ep_comp.wBytesPerInterval))
 
 
 def print_endpoint(endpoint):
     print("      Endpoint:")
-    print("        bEndpointAddress: {:02x}".format(endpoint.bEndpointAddress))
-    print("        bmAttributes:     {:02x}".format(endpoint.bmAttributes))
-    print("        wMaxPacketSize:   {:d}".format(endpoint.wMaxPacketSize))
-    print("        bInterval:        {:d}".format(endpoint.bInterval))
-    print("        bRefresh:         {:d}".format(endpoint.bRefresh))
-    print("        bSynchAddress:    {:d}".format(endpoint.bSynchAddress))
+    print("        bEndpointAddress:    {:02x}h".format(endpoint.bEndpointAddress))
+    print("        bmAttributes:        {:02x}h".format(endpoint.bmAttributes))
+    print("        wMaxPacketSize:      {:d}".format(endpoint.wMaxPacketSize))
+    print("        bInterval:           {:d}".format(endpoint.bInterval))
+    print("        bRefresh:            {:d}".format(endpoint.bRefresh))
+    print("        bSynchAddress:       {:d}".format(endpoint.bSynchAddress))
     i = 0
     while i < endpoint.extra_length:
         if endpoint.extra[i + 1] == usb.LIBUSB_DT_SS_ENDPOINT_COMPANION:
@@ -56,62 +58,69 @@ def print_endpoint(endpoint):
 
 def print_altsetting(interface):
     print("    Interface:")
-    print("      bInterfaceNumber:   {:d}".format(interface.bInterfaceNumber))
-    print("      bAlternateSetting:  {:d}".format(interface.bAlternateSetting))
-    print("      bNumEndpoints:      {:d}".format(interface.bNumEndpoints))
-    print("      bInterfaceClass:    {:d}".format(interface.bInterfaceClass))
-    print("      bInterfaceSubClass: {:d}".format(interface.bInterfaceSubClass))
-    print("      bInterfaceProtocol: {:d}".format(interface.bInterfaceProtocol))
-    print("      iInterface:         {:d}".format(interface.iInterface))
+    print("      bInterfaceNumber:      {:d}".format(interface.bInterfaceNumber))
+    print("      bAlternateSetting:     {:d}".format(interface.bAlternateSetting))
+    print("      bNumEndpoints:         {:d}".format(interface.bNumEndpoints))
+    print("      bInterfaceClass:       {:d}".format(interface.bInterfaceClass))
+    print("      bInterfaceSubClass:    {:d}".format(interface.bInterfaceSubClass))
+    print("      bInterfaceProtocol:    {:d}".format(interface.bInterfaceProtocol))
+    print("      iInterface:            {:d}".format(interface.iInterface))
     for i in range(interface.bNumEndpoints):
         print_endpoint(interface.endpoint[i])
 
 
 def print_2_0_ext_cap(usb_2_0_ext_cap):
     print("    USB 2.0 Extension Capabilities:")
-    print("      bDevCapabilityType: {:d}".format(usb_2_0_ext_cap.bDevCapabilityType))
-    print("      bmAttributes:       {:#x}".format(usb_2_0_ext_cap.bmAttributes))
+    print("      bDevCapabilityType:    {:d}".format(usb_2_0_ext_cap.bDevCapabilityType))
+    print("      bmAttributes:          {:08x}h".format(usb_2_0_ext_cap.bmAttributes))
 
 
-def print_ss_usb_cap(ss_usb_cap):
+def print_ss_usb_cap(ss_usb_cap: usb.ss_usb_device_capability_descriptor):
     print("    USB 3.0 Capabilities:")
-    print("      bDevCapabilityType: {:d}".format(ss_usb_cap.bDevCapabilityType))
-    print("      bmAttributes:       {:#x}".format(ss_usb_cap.bmAttributes))
-    print("      wSpeedSupported:    {:#x}".format(ss_usb_cap.wSpeedSupported))
+    print("      bDevCapabilityType:    {:d}".format(ss_usb_cap.bDevCapabilityType))
+    print("      bmAttributes:          {:02x}h".format(ss_usb_cap.bmAttributes))
+    print("      wSpeedSupported:       {:d}".format(ss_usb_cap.wSpeedSupported))
     print("      bFunctionalitySupport: {:d}".format(ss_usb_cap.bFunctionalitySupport))
-    print("      bU1devExitLat:      {:d}".format(ss_usb_cap.bU1DevExitLat))
-    print("      bU2devExitLat:      {:d}".format(ss_usb_cap.bU2DevExitLat))
+    print("      bU1devExitLat:         {:d}".format(ss_usb_cap.bU1DevExitLat))
+    print("      bU2devExitLat:         {:d}".format(ss_usb_cap.bU2DevExitLat))
 
 
-def print_bos(handle):
+def print_bos(handle: ct.POINTER(usb.device_handle)):
 
     bos = ct.POINTER(usb.bos_descriptor)()
-    ret = usb.get_bos_descriptor(ct.byref(handle), ct.byref(bos))
+    ret = usb.get_bos_descriptor(handle, ct.byref(bos))
     if ret < 0:
         return
     bos = bos[0]
 
     print("  Binary Object Store (BOS):")
-    print("    wTotalLength:       {:d}".format(bos.wTotalLength))
-    print("    bNumDeviceCaps:     {:d}".format(bos.bNumDeviceCaps))
+    print("    wTotalLength:            {:d}".format(bos.wTotalLength))
+    print("    bNumDeviceCaps:          {:d}".format(bos.bNumDeviceCaps))
 
-    if bos.dev_capability[0][0].bDevCapabilityType == usb.LIBUSB_BT_USB_2_0_EXTENSION:
-        usb_2_0_extension = ct.POINTER(usb.usb_2_0_extension_descriptor)()
-        ret =  usb.get_usb_2_0_extension_descriptor(None, bos.dev_capability[0],
-                                                    ct.byref(usb_2_0_extension))
-        if ret < 0:
-            return
-        print_2_0_ext_cap(usb_2_0_extension[0])
-        usb.free_usb_2_0_extension_descriptor(usb_2_0_extension)
+    for i in range(bos.bNumDeviceCaps):
+        dev_cap: ct.POINTER(usb.bos_dev_capability_descriptor) = bos.dev_capability[i]
 
-    if bos.dev_capability[0][0].bDevCapabilityType == usb.LIBUSB_BT_SS_USB_DEVICE_CAPABILITY:
-        dev_cap = ct.POINTER(usb.ss_usb_device_capability_descriptor)()
-        ret = usb.get_ss_usb_device_capability_descriptor(None, bos.dev_capability[0],
-                                                          ct.byref(dev_cap))
-        if ret < 0:
-            return
-        print_ss_usb_cap(dev_cap[0])
-        usb.free_ss_usb_device_capability_descriptor(dev_cap)
+        if dev_cap[0].bDevCapabilityType == usb.LIBUSB_BT_USB_2_0_EXTENSION:
+
+            usb_2_0_extension = ct.POINTER(usb.usb_2_0_extension_descriptor)()
+            ret = usb.get_usb_2_0_extension_descriptor(None, dev_cap,
+                                                       ct.byref(usb_2_0_extension))
+            if ret < 0:
+                return
+
+            print_2_0_ext_cap(usb_2_0_extension[0])
+            usb.free_usb_2_0_extension_descriptor(usb_2_0_extension)
+
+        elif dev_cap[0].bDevCapabilityType == usb.LIBUSB_BT_SS_USB_DEVICE_CAPABILITY:
+
+            ss_dev_cap = ct.POINTER(usb.ss_usb_device_capability_descriptor)()
+            ret = usb.get_ss_usb_device_capability_descriptor(None, dev_cap,
+                                                              ct.byref(ss_dev_cap))
+            if ret < 0:
+                return
+
+            print_ss_usb_cap(ss_dev_cap[0])
+            usb.free_ss_usb_device_capability_descriptor(ss_dev_cap)
 
     usb.free_bos_descriptor(ct.byref(bos))
 
@@ -121,73 +130,69 @@ def print_interface(interface):
         print_altsetting(interface.altsetting[i])
 
 
-def print_configuration(config):
+def print_configuration(config: usb.config_descriptor):
     print("  Configuration:")
-    print("    wTotalLength:         {:d}".format(config.wTotalLength))
-    print("    bNumInterfaces:       {:d}".format(config.bNumInterfaces))
-    print("    bConfigurationValue:  {:d}".format(config.bConfigurationValue))
-    print("    iConfiguration:       {:d}".format(config.iConfiguration))
-    print("    bmAttributes:         {:02x}".format(config.bmAttributes))
-    print("    MaxPower:             {:d}".format(config.MaxPower))
+    print("    wTotalLength:            {:d}".format(config.wTotalLength))
+    print("    bNumInterfaces:          {:d}".format(config.bNumInterfaces))
+    print("    bConfigurationValue:     {:d}".format(config.bConfigurationValue))
+    print("    iConfiguration:          {:d}".format(config.iConfiguration))
+    print("    bmAttributes:            {:02x}h".format(config.bmAttributes))
+    print("    MaxPower:                {:d}".format(config.MaxPower))
     for i in range(config.bNumInterfaces):
         print_interface(config.interface[i])
 
 
-def print_device(device_p, level):
+def print_device(dev: ct.POINTER(usb.device), handle: ct.POINTER(usb.device_handle)):
 
     global verbose
 
     string_descr = ct.create_string_buffer(256)
 
+    device_speed = usb.get_device_speed(dev)
+    if   device_speed == usb.LIBUSB_SPEED_LOW:        speed = "1.5M"
+    elif device_speed == usb.LIBUSB_SPEED_FULL:       speed = "12M"
+    elif device_speed == usb.LIBUSB_SPEED_HIGH:       speed = "480M"
+    elif device_speed == usb.LIBUSB_SPEED_SUPER:      speed = "5G"
+    elif device_speed == usb.LIBUSB_SPEED_SUPER_PLUS: speed = "10G"
+    else:                                             speed = "Unknown"
+
     desc = usb.device_descriptor()
-    ret = usb.get_device_descriptor(device_p, ct.byref(desc))
+    ret = usb.get_device_descriptor(dev, ct.byref(desc))
     if ret < 0:
         print("failed to get device descriptor", file=sys.stderr)
-        return -1
+        return
 
-    handle = ct.POINTER(usb.device_handle)()
-    ret = usb.open(device_p, ct.byref(handle))
-    if ret == usb.LIBUSB_SUCCESS:
+    print("Dev (bus {}, device {}): {:04X} - {:04X} speed: {}".format(
+           usb.get_bus_number(dev), usb.get_device_address(dev),
+           desc.idVendor, desc.idProduct, speed))
 
+    if not handle:
+        handle = ct.POINTER(usb.device_handle)()
+        usb.open(dev, ct.byref(handle))
+
+    if handle:
         if desc.iManufacturer:
             ret = usb.get_string_descriptor_ascii(handle, desc.iManufacturer,
                       ct.cast(string_descr, ct.POINTER(ct.c_ubyte)), ct.sizeof(string_descr))
             if ret > 0:
-                description = "{!s} - ".format(string_descr.value.decode())
-            else:
-                description = "{:04X} - ".format(desc.idVendor)
-        else:
-            description = "{:04X} - ".format(desc.idVendor)
+                print("  Manufacturer:              {}".format(string_descr.value.decode()))
 
         if desc.iProduct:
             ret = usb.get_string_descriptor_ascii(handle, desc.iProduct,
                       ct.cast(string_descr, ct.POINTER(ct.c_ubyte)), ct.sizeof(string_descr))
             if ret > 0:
-                description += "{!s}".format(string_descr.value.decode())
-            else:
-                description += "{:04X}".format(desc.idProduct)
-        else:
-            description += "{:04X}".format(desc.idProduct)
-    else:
-        description = "{:04X} - {:04X}".format(desc.idVendor, desc.idProduct)
+                print("  Product:                   {}".format(string_descr.value.decode()))
 
-    print("{:<{width}}Dev (bus {:d}, device {:d}): {}".format(" " * 20,
-          usb.get_bus_number(device_p), usb.get_device_address(device_p), description,
-          width=level * 2))
-
-    if handle and verbose:
-        if desc.iSerialNumber:
+        if verbose and desc.iSerialNumber:
             ret = usb.get_string_descriptor_ascii(handle, desc.iSerialNumber,
                       ct.cast(string_descr, ct.POINTER(ct.c_ubyte)), ct.sizeof(string_descr))
             if ret > 0:
-                print("{:<{width}}  - Serial Number: {!s}".format(" " * 20,
-                                                                  string_descr.value.decode(),
-                                                                  width=level * 2))
-    if verbose:
+                print("  Serial Number:             {}".format(string_descr.value.decode()))
 
+    if verbose:
         for i in range(desc.bNumConfigurations):
             config = ct.POINTER(usb.config_descriptor)()
-            ret = usb.get_config_descriptor(device_p, i, ct.byref(config))
+            ret = usb.get_config_descriptor(dev, i, ct.byref(config))
             if ret != usb.LIBUSB_SUCCESS:
                 print("  Couldn't retrieve descriptors")
                 continue
@@ -195,40 +200,78 @@ def print_device(device_p, level):
             usb.free_config_descriptor(config)
 
         if handle and desc.bcdUSB >= 0x0201:
-            print_bos(handle[0])
+            print_bos(handle)
 
     if handle:
         usb.close(handle)
 
-    return 0
 
+def test_wrapped_device(device_name: str) -> int:
+    if is_linux:
+        try:
+            fd = os.open(device_name, os.O_RDWR)
+        except OSError as exc:
+            print("Error could not open {}: {}".format(device_name, strerror(exc.errno)))
+            return 1
 
-def main(argv=sys.argv):
+        handle = ct.POINTER(usb.device_handle)()
+        r = usb.wrap_sys_device(None, fd, ct.byref(handle))
+        if r:
+            print("Error wrapping device: {}: {}".format(device_name, usb.strerror(r)))
+            os.close(fd)
+            return 1
+
+        print_device(usb.get_device(handle), handle)
+        os.close(fd)
+
+        return 0
+    else:
+        print("Testing wrapped devices is not supported on your platform")
+        return 1
+
+ 
+def main(argv=sys.argv[1:]):
 
     global verbose
-    if len(argv) > 1 and argv[1] == "-v":
-        verbose = True
+
+    device_name = None
+    i = 0
+    while i < len(argv):
+        if argv[i] == "-v":
+            verbose = True
+        elif argv[i] == "-d" and (i + 1) < len(argv):
+            i += 1
+            device_name = argv[i]
+        else:
+            print("Usage {} [-v] [-d </dev/bus/usb/...>]".format(sys.argv[0]))
+            print("Note use -d to test libusb.wrap_sys_device()")
+            return 1
+        i += 1
 
     r = usb.init(None)
     if r < 0:
         return r
 
     try:
-        devs = ct.POINTER(ct.POINTER(usb.device))()
-        cnt = usb.get_device_list(None, ct.byref(devs))
-        if cnt < 0:
-            return cnt
+        if device_name:
+            r = test_wrapped_device(device_name)
+        else:
+            devs = ct.POINTER(ct.POINTER(usb.device))()
+            cnt = usb.get_device_list(None, ct.byref(devs))
+            if cnt < 0:
+                return 1
 
-        i = 0
-        while devs[i]:
-            print_device(devs[i], 0)
-            i += 1
+            i = 0
+            while devs[i]:
+                print_device(devs[i], None)
+                i += 1
 
-        usb.free_device_list(devs, 1)
+            usb.free_device_list(devs, 1)
     finally:
         usb.exit(None)
 
-    return 0
+    return r
 
 
-sys.exit(main())
+if __name__.rpartition(".")[-1] == "__main__":
+    sys.exit(main())

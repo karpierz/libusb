@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2020 Adam Karpierz
+# Copyright (c) 2016-2021 Adam Karpierz
 # Licensed under the zlib/libpng License
 # https://opensource.org/licenses/Zlib
 

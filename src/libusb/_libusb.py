@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2020 Adam Karpierz
+# Copyright (c) 2016-2021 Adam Karpierz
 # Licensed under the zlib/libpng License
 # https://opensource.org/licenses/Zlib
 
@@ -7,6 +7,7 @@
 # Copyright (c) 2007-2008 Daniel Drake <dsd@gentoo.org>
 # Copyright (c) 2012 Pete Batard <pete@akeo.ie>
 # Copyright (c) 2012-2018 Nathan Hjelm <hjelmn@cs.unm.edu>
+# Copyright (©) 2014-2020 Chris Dickens <christopher.a.dickens@gmail.com>
 # For more information, please visit: http://libusb.info
 #
 # This library is free software; you can redistribute it and/or
@@ -34,7 +35,7 @@ from ._dll      import dll
 UINT_MAX = ct.c_uint(-1).value
 INT_MAX  = UINT_MAX >> 1
 
-def LIBUSB_DEPRECATED_FOR(f): pass  # __attribute__((deprecated("Use " #f " instead")))
+def LIBUSB_DEPRECATED_FOR(f): pass  # __attribute__ ((deprecated ("Use " #f " instead")))
 
 # \def LIBUSB_CALL
 # \ingroup libusb::misc
@@ -68,11 +69,11 @@ def LIBUSB_DEPRECATED_FOR(f): pass  # __attribute__((deprecated("Use " #f " inst
 # return type, before the function name. See internal documentation for
 # API_EXPORTED.
 
-#if defined(_WIN32) || defined(__CYGWIN__) || defined(_WIN32_WCE)
+#if defined(_WIN32) || defined(__CYGWIN__)
 #define LIBUSB_CALL WINAPI
 #else
 #define LIBUSB_CALL
-#endif
+#endif /* _WIN32 || __CYGWIN__ */
 
 # \def LIBUSB_API_VERSION
 # \ingroup libusb::misc
@@ -94,7 +95,7 @@ def LIBUSB_DEPRECATED_FOR(f): pass  # __attribute__((deprecated("Use " #f " inst
 # Internally, LIBUSB_API_VERSION is defined as follows:
 # (libusb major << 24) | (libusb minor << 16) | (16 bit incremental)
 
-LIBUSB_API_VERSION = 0x01000107
+LIBUSB_API_VERSION = 0x01000108
 
 # The following is kept for compatibility, but will be deprecated in the future
 LIBUSBX_API_VERSION = LIBUSB_API_VERSION
@@ -155,12 +156,12 @@ class_code = ct.c_int
     # Physical
     LIBUSB_CLASS_PHYSICAL,
 
+    # Image class
+    LIBUSB_CLASS_IMAGE,
+    LIBUSB_CLASS_PTP,  # legacy name from libusb-0.1 usb.h
+
     # Printer class
     LIBUSB_CLASS_PRINTER,
-
-    # Image class
-    LIBUSB_CLASS_PTP,  # legacy name from libusb-0.1 usb.h
-    LIBUSB_CLASS_IMAGE,
 
     # Mass storage class
     LIBUSB_CLASS_MASS_STORAGE,
@@ -189,13 +190,17 @@ class_code = ct.c_int
     # Wireless class
     LIBUSB_CLASS_WIRELESS,
 
+    # Miscellaneous class
+    LIBUSB_CLASS_MISCELLANEOUS,
+
     # Application class
     LIBUSB_CLASS_APPLICATION,
 
     # Class is vendor-specific
     LIBUSB_CLASS_VENDOR_SPEC,
 
-) = (0, 1, 2, 3, 5, 7, 6, 6, 8, 9, 10, 0x0b, 0x0d, 0x0e, 0x0f, 0xdc, 0xe0, 0xfe, 0xff)
+) = (0x00, 0x01, 0x02, 0x03, 0x05, 0x06, 0x06, 0x07, 0x08, 0x09,
+     0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0xdc, 0xe0, 0xef, 0xfe, 0xff)
 
 # \ingroup libusb::desc
 # Descriptor types as defined by the USB specification.
@@ -273,38 +278,35 @@ LIBUSB_ENDPOINT_DIR_MASK     = 0x80
 
 endpoint_direction = ct.c_int
 (
-    # In: device-to-host
-    LIBUSB_ENDPOINT_IN,
-
     # Out: host-to-device
     LIBUSB_ENDPOINT_OUT,
 
-) = (0x80, 0x00)
+    # In: device-to-host
+    LIBUSB_ENDPOINT_IN,
 
-#define LIBUSB_TRANSFER_TYPE_MASK  0x03  # in bmAttributes
+) = (0x00, 0x80)
+
+LIBUSB_TRANSFER_TYPE_MASK = 0x03  # in bmAttributes
 
 # \ingroup libusb::desc
 # Endpoint transfer type. Values for bits 0:1 of the
 # \ref libusb.endpoint_descriptor::bmAttributes "endpoint attributes" field.
 
-transfer_type = ct.c_int
+endpoint_transfer_type = ct.c_int
 (
     # Control endpoint
-    LIBUSB_TRANSFER_TYPE_CONTROL,
+    LIBUSB_ENDPOINT_TRANSFER_TYPE_CONTROL,
 
     # Isochronous endpoint
-    LIBUSB_TRANSFER_TYPE_ISOCHRONOUS,
+    LIBUSB_ENDPOINT_TRANSFER_TYPE_ISOCHRONOUS,
 
     # Bulk endpoint
-    LIBUSB_TRANSFER_TYPE_BULK,
+    LIBUSB_ENDPOINT_TRANSFER_TYPE_BULK,
 
     # Interrupt endpoint
-    LIBUSB_TRANSFER_TYPE_INTERRUPT,
+    LIBUSB_ENDPOINT_TRANSFER_TYPE_INTERRUPT,
 
-    # Stream endpoint
-    LIBUSB_TRANSFER_TYPE_BULK_STREAM,
-
-) = (0, 1, 2, 3, 4)
+) = (0x0, 0x1, 0x2, 0x3)
 
 # \ingroup libusb::misc
 # Standard requests, as defined in table 9-5 of the USB 3.0 specifications
@@ -354,7 +356,7 @@ standard_request = ct.c_int
     # received by the device.
     LIBUSB_SET_ISOCH_DELAY,
 
-) = (0x00, 0x01, 0x03, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x30, 0x31)
+) = (0x00, 0x01, 0x03, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x30, 0x31)
 
 # \ingroup libusb::misc
 # Request type bits of the
@@ -396,7 +398,7 @@ request_recipient = ct.c_int
 
 ) = (0x00, 0x01, 0x02, 0x03)
 
-#define LIBUSB_ISO_SYNC_TYPE_MASK  0x0C
+LIBUSB_ISO_SYNC_TYPE_MASK = 0x0c
 
 # \ingroup libusb::desc
 # Synchronization type for isochronous endpoints. Values for bits 2:3 of the
@@ -419,7 +421,7 @@ iso_sync_type = ct.c_int
 
 ) = (0, 1, 2, 3)
 
-#define LIBUSB_ISO_USAGE_TYPE_MASK  0x30
+LIBUSB_ISO_USAGE_TYPE_MASK = 0x30
 
 # \ingroup libusb::desc
 # Usage type for isochronous endpoints. Values for bits 4:5 of the
@@ -437,7 +439,70 @@ iso_usage_type = ct.c_int
     # Implicit feedback Data endpoint
     LIBUSB_ISO_USAGE_TYPE_IMPLICIT,
 
-) = (0, 1, 2)
+) = (0x0, 0x1, 0x2)
+
+# \ingroup libusb::desc
+# Supported speeds (wSpeedSupported) bitfield. Indicates what
+# speeds the device supports.
+
+supported_speed = ct.c_int
+(
+    # Low speed operation supported (1.5MBit/s).
+    LIBUSB_LOW_SPEED_OPERATION,
+
+    # Full speed operation supported (12MBit/s).
+    LIBUSB_FULL_SPEED_OPERATION,
+
+    # High speed operation supported (480MBit/s).
+    LIBUSB_HIGH_SPEED_OPERATION,
+
+    # Superspeed operation supported (5000MBit/s).
+    LIBUSB_SUPER_SPEED_OPERATION,
+
+) = (1 << 0, 1 << 1, 1 << 2, 1 << 3)
+
+# \ingroup libusb::desc
+# Masks for the bits of the
+# \ref libusb.usb_2_0_extension_descriptor::bmAttributes "bmAttributes" field
+# of the USB 2.0 Extension descriptor.
+
+usb_2_0_extension_attributes = ct.c_int
+(
+    # Supports Link Power Management (LPM)
+    LIBUSB_BM_LPM_SUPPORT,
+
+) = (1 << 1,)
+
+# \ingroup libusb::desc
+# Masks for the bits of the
+# \ref libusb.ss_usb_device_capability_descriptor::bmAttributes "bmAttributes" field
+# field of the SuperSpeed USB Device Capability descriptor.
+
+ss_usb_device_capability_attributes = ct.c_int
+(
+    # Supports Latency Tolerance Messages (LTM)
+    LIBUSB_BM_LTM_SUPPORT,
+
+) = (1 << 1,)
+
+# \ingroup libusb::desc
+# USB capability types
+
+bos_type = ct.c_int
+(
+    # Wireless USB device capability
+    LIBUSB_BT_WIRELESS_USB_DEVICE_CAPABILITY,
+
+    # USB 2.0 extensions
+    LIBUSB_BT_USB_2_0_EXTENSION,
+
+    # SuperSpeed USB device capability
+    LIBUSB_BT_SS_USB_DEVICE_CAPABILITY,
+
+    # Container ID type
+    LIBUSB_BT_CONTAINER_ID,
+
+) = (0x01, 0x02, 0x03, 0x04)
 
 # \ingroup libusb::desc
 # A structure representing the standard USB device descriptor. This
@@ -518,8 +583,8 @@ class endpoint_descriptor(ct.Structure):
 
     # Attributes which apply to the endpoint when it is configured using
     # the bConfigurationValue. Bits 0:1 determine the transfer type and
-    # correspond to \ref libusb.transfer_type. Bits 2:3 are only used for
-    # isochronous endpoints and correspond to \ref libusb.iso_sync_type.
+    # correspond to \ref libusb.endpoint_transfer_type. Bits 2:3 are only used
+    # for isochronous endpoints and correspond to \ref libusb.iso_sync_type.
     # Bits 4:5 are also only used for isochronous endpoints and correspond to
     # \ref libusb.iso_usage_type. Bits 6:7 are reserved.
     ("bmAttributes", ct.c_uint8),
@@ -682,14 +747,14 @@ class ss_endpoint_companion_descriptor(ct.Structure):
     #  receive as part of a burst.
     ("bMaxBurst", ct.c_uint8),
 
-    # In bulk EP:   bits 4:0 represents the maximum number of
-    #  streams the  EP supports. In isochronous EP: bits 1:0
-    #  represents the Mult  - a zero based value that determines
-    #  the  maximum number of packets within a service interval
+    # In bulk EP: bits 4:0 represents the maximum number of
+    # streams the EP supports. In isochronous EP: bits 1:0
+    # represents the Mult - a zero based value that determines
+    # the maximum number of packets within a service interval
     ("bmAttributes", ct.c_uint8),
 
-    # The   total number of bytes this EP will transfer every
-    #  service interval. valid only for periodic EPs.
+    # The total number of bytes this EP will transfer every
+    # service interval. Valid only for periodic EPs.
     ("wBytesPerInterval", ct.c_uint16),
 ]
 
@@ -845,6 +910,9 @@ class container_id_descriptor(ct.Structure):
 
 # \ingroup libusb::asyncio
 # Setup packet for control transfers.
+#if defined(_MSC_VER)
+#pragma pack(push, 1)
+#endif
 class control_setup(ct.Structure):
     _fields_ = [
 
@@ -871,6 +939,9 @@ class control_setup(ct.Structure):
     # Number of bytes to transfer
     ("wLength", ct.c_uint16),
 ]
+#if defined(_MSC_VER)
+#pragma pack(pop)
+#endif
 
 LIBUSB_CONTROL_SETUP_SIZE = ct.sizeof(control_setup)
 
@@ -972,69 +1043,6 @@ speed = ct.c_int
 
 ) = (0, 1, 2, 3, 4, 5)
 
-# \ingroup libusb::dev
-# Supported speeds (wSpeedSupported) bitfield. Indicates what
-# speeds the device supports.
-
-supported_speed = ct.c_int
-(
-    # Low speed operation supported (1.5MBit/s).
-    LIBUSB_LOW_SPEED_OPERATION,
-
-    # Full speed operation supported (12MBit/s).
-    LIBUSB_FULL_SPEED_OPERATION,
-
-    # High speed operation supported (480MBit/s).
-    LIBUSB_HIGH_SPEED_OPERATION,
-
-    # Superspeed operation supported (5000MBit/s).
-    LIBUSB_SUPER_SPEED_OPERATION,
-
-) = (1, 2, 4, 8)
-
-# \ingroup libusb::dev
-# Masks for the bits of the
-# \ref libusb.usb_2_0_extension_descriptor::bmAttributes "bmAttributes" field
-# of the USB 2.0 Extension descriptor.
-
-usb_2_0_extension_attributes = ct.c_int
-(
-    # Supports Link Power Management (LPM)
-    LIBUSB_BM_LPM_SUPPORT,
-
-) = (2,)
-
-# \ingroup libusb::dev
-# Masks for the bits of the
-# \ref libusb.ss_usb_device_capability_descriptor::bmAttributes "bmAttributes" field
-# field of the SuperSpeed USB Device Capability descriptor.
-
-ss_usb_device_capability_attributes = ct.c_int
-(
-    # Supports Latency Tolerance Messages (LTM)
-    LIBUSB_BM_LTM_SUPPORT,
-
-) = (2,)
-
-# \ingroup libusb::dev
-# USB capability types
-
-bos_type = ct.c_int
-(
-    # Wireless USB device capability
-    LIBUSB_BT_WIRELESS_USB_DEVICE_CAPABILITY,
-
-    # USB 2.0 extensions
-    LIBUSB_BT_USB_2_0_EXTENSION,
-
-    # SuperSpeed USB device capability
-    LIBUSB_BT_SS_USB_DEVICE_CAPABILITY,
-
-    # Container ID type
-    LIBUSB_BT_CONTAINER_ID,
-
-) = (1, 2, 3, 4)
-
 # \ingroup libusb::misc
 # Error codes. Most libusb functions return 0 on success or one of these
 # codes on failure.
@@ -1093,6 +1101,28 @@ error = ct.c_int
 
 # Total number of error codes in enum libusb.error
 LIBUSB_ERROR_COUNT = 14
+
+# \ingroup libusb::asyncio
+# Transfer type
+
+transfer_type = ct.c_int
+(
+    # Control transfer
+    LIBUSB_TRANSFER_TYPE_CONTROL,
+
+    # Isochronous transfer
+    LIBUSB_TRANSFER_TYPE_ISOCHRONOUS,
+
+    # Bulk transfer
+    LIBUSB_TRANSFER_TYPE_BULK,
+
+    # Interrupt transfer
+    LIBUSB_TRANSFER_TYPE_INTERRUPT,
+
+    # Bulk stream transfer
+    LIBUSB_TRANSFER_TYPE_BULK_STREAM,
+
+) = (0, 1, 2, 3, 4)
 
 # \ingroup libusb::asyncio
 # Transfer status codes
@@ -1218,7 +1248,7 @@ transfer._fields_ = [
     # Address of the endpoint where this transfer will be sent.
     ("endpoint", ct.c_ubyte),
 
-    # Type of the endpoint from \ref libusb.transfer_type
+    # Type of the transfer from \ref libusb.transfer_type
     ("type", ct.c_ubyte),
 
     # Timeout for this transfer in milliseconds. A value of 0 indicates no
@@ -1246,7 +1276,16 @@ transfer._fields_ = [
     # fails, or is cancelled.
     ("callback", transfer_cb_fn),
 
-    # User context data to pass to the callback function.
+    # User context data. Useful for associating specific data to a transfer
+    # that can be accessed from within the callback function.
+    #
+    # This field may be set manually or is taken as the `user_data` parameter
+    # of the following functions:
+    # - libusb.fill_bulk_transfer()
+    # - libusb.fill_bulk_stream_transfer()
+    # - libusb.fill_control_transfer()
+    # - libusb.fill_interrupt_transfer()
+    # - libusb.fill_iso_transfer()
     ("user_data", ct.c_void_p),
 
     # Data buffer
@@ -1287,18 +1326,22 @@ capability = ct.c_int
 
 # \ingroup libusb::lib
 # Log message levels.
-# - LIBUSB_LOG_LEVEL_NONE (0)    : no messages ever printed by the library (default)
-# - LIBUSB_LOG_LEVEL_ERROR (1)   : error messages are printed to stderr
-# - LIBUSB_LOG_LEVEL_WARNING (2) : warning and error messages are printed to stderr
-# - LIBUSB_LOG_LEVEL_INFO (3)    : informational messages are printed to stderr
-# - LIBUSB_LOG_LEVEL_DEBUG (4)   : debug and informational messages are printed to stderr
 
 log_level = ct.c_int
 (
+    # (0) : No messages ever emitted by the library (default)
     LIBUSB_LOG_LEVEL_NONE,
+
+    # (1) : Error messages are emitted
     LIBUSB_LOG_LEVEL_ERROR,
+
+    # (2) : Warning and error messages are emitted
     LIBUSB_LOG_LEVEL_WARNING,
+
+    # (3) : Informational, warning and error messages are emitted
     LIBUSB_LOG_LEVEL_INFO,
+
+    # (4) : All messages are emitted
     LIBUSB_LOG_LEVEL_DEBUG,
 
 ) = (0, 1, 2, 3, 4)
@@ -1309,10 +1352,10 @@ log_level = ct.c_int
 
 log_cb_mode = ct.c_int
 (
-    # Callback function handling all log mesages.
+    # Callback function handling all log messages.
     LIBUSB_LOG_CB_GLOBAL,
 
-    # Callback function handling context related log mesages.
+    # Callback function handling context related log messages.
     LIBUSB_LOG_CB_CONTEXT,
 
 ) = (1 << 0, 1 << 1)
@@ -1321,7 +1364,7 @@ log_cb_mode = ct.c_int
 # Callback function for handling log messages.
 # \param ctx the context which is related to the log message, or NULL if it
 #            is a global log message
-# \param level the log level, see \ref libusb_log_level for a description
+# \param level the log level, see \ref libusb.log_level for a description
 # \param str the log message
 # \see libusb.set_log_cb()
 
@@ -1372,7 +1415,7 @@ error_name  = CFUNC(ct.c_char_p,
                     (1, "errcode"),))
 
 strerror    = CFUNC(ct.c_char_p,
-                    error)(
+                    ct.c_int)(
                     ("libusb_strerror", dll), (
                     (1, "errcode"),))
 
@@ -2345,28 +2388,13 @@ set_pollfd_notifiers = CFUNC(None,
 # Callbacks handles are generated by libusb.hotplug_register_callback()
 # and can be used to deregister callbacks. Callback handles are unique
 # per libusb.context and it is safe to call libusb.hotplug_deregister_callback()
-# on an already deregisted callback.
+# on an already deregistered callback.
 #
 # Since version 1.0.16, \ref LIBUSB_API_VERSION >= 0x01000102
 #
 # For more information, see \ref libusb::hotplug.
 
 hotplug_callback_handle = ct.c_int
-
-# \ingroup libusb::hotplug
-#
-# Since version 1.0.16, \ref LIBUSB_API_VERSION >= 0x01000102
-#
-# Flags for hotplug events
-hotplug_flag = ct.c_int
-(
-    # Default value when not using any flags.
-    LIBUSB_HOTPLUG_NO_FLAGS,
-
-    # Arm the callback and fire it for all matching currently attached devices.
-    LIBUSB_HOTPLUG_ENUMERATE,
-
-) = (0, 1 << 0)
 
 # \ingroup libusb::hotplug
 #
@@ -2384,7 +2412,23 @@ hotplug_event = ct.c_int
     # It is safe to call libusb.get_device_descriptor on a device that has left
     LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
 
-) = (0x01, 0x02)
+) = (1 << 0, 1 << 1)
+
+# \ingroup libusb::hotplug
+#
+# Since version 1.0.16, \ref LIBUSB_API_VERSION >= 0x01000102
+#
+# Hotplug flags
+hotplug_flag = ct.c_int
+(
+    # Arm the callback and fire it for all matching currently attached devices.
+    LIBUSB_HOTPLUG_ENUMERATE,
+
+) = (1 << 0,)
+
+# \ingroup libusb::hotplug
+# Convenience macro when not using any flags
+LIBUSB_HOTPLUG_NO_FLAGS = 0
 
 # \ingroup libusb::hotplug
 # Wildcard matching for hotplug events
@@ -2441,9 +2485,10 @@ hotplug_callback_fn = CFUNC(ct.c_int,
 # Since version 1.0.16, \ref LIBUSB_API_VERSION >= 0x01000102
 #
 # :param ctx: context to register this callback with
-# :param events: bitwise or of events that will trigger this callback. See \ref
-#            libusb.hotplug_event
-# :param flags: hotplug callback flags. See \ref libusb.hotplug_flag
+# :param events: bitwise or of hotplug events that will trigger this callback.
+#                See \ref libusb.hotplug_event
+# :param flags: bitwise or of hotplug flags that affect registration.
+#               See \ref libusb.hotplug_flag
 # :param vendor_id: the vendor id to match or \ref libusb.LIBUSB_HOTPLUG_MATCH_ANY
 # :param product_id: the product id to match or \ref libusb.LIBUSB_HOTPLUG_MATCH_ANY
 # :param dev_class: the device class to match or \ref libusb.LIBUSB_HOTPLUG_MATCH_ANY
@@ -2454,8 +2499,8 @@ hotplug_callback_fn = CFUNC(ct.c_int,
 
 hotplug_register_callback = CFUNC(ct.c_int,
                                   ct.POINTER(context),
-                                  hotplug_event,
-                                  hotplug_flag,
+                                  ct.c_int,
+                                  ct.c_int,
                                   ct.c_int,
                                   ct.c_int,
                                   ct.c_int,
@@ -2490,9 +2535,26 @@ hotplug_deregister_callback = CFUNC(None,
                                     ("libusb_hotplug_deregister_callback", dll), (
                                     (1, "ctx"),
                                     (1, "callback_handle")))
+
+# \ingroup libusb::hotplug
+# Gets the user_data associated with a hotplug callback.
+#
+# Since version v1.0.24 \ref LIBUSB_API_VERSION >= 0x01000108
+#
+# :param ctx: context this callback is registered with
+# :param callback_handle: the handle of the callback to get the user_data of
+
+try:
+    hotplug_get_user_data   = CFUNC(ct.c_void_p,
+                                    ct.POINTER(context),
+                                    hotplug_callback_handle)(
+                                    ("libusb_hotplug_get_user_data", dll), (
+                                    (1, "ctx"),
+                                    (1, "callback_handle")))
+except: pass
  
 # \ingroup libusb::lib
-# Available option values for libusb_set_option().
+# Available option values for libusb.set_option().
 
 option = ct.c_int
 (
@@ -2521,14 +2583,25 @@ option = ct.c_int
 
     # Use the UsbDk backend for a specific context, if available.
     #
-    # This option should be set immediately after calling libusb_init(), otherwise
+    # This option should be set immediately after calling libusb.init(), otherwise
     # unspecified behavior may occur.
     #
     # Only valid on Windows.
     #
     LIBUSB_OPTION_USE_USBDK,
 
-) = (0, 1)
+    # Set libusb has weak authority. With this option, libusb will skip
+    # scan devices in libusb.init.
+    #
+    # This option should be set before calling libusb.init(), otherwise
+    # libusb.init will failed. Normally libusb.wrap_sys_device need set
+    # this option.
+    #
+    # Only valid on Linux-based operating system, such as Android.
+    #
+    LIBUSB_OPTION_WEAK_AUTHORITY, 
+
+) = (0, 1, 2)
 
 def set_option(ctx, option, *values):
     if option == LIBUSB_OPTION_LOG_LEVEL:

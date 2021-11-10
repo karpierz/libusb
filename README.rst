@@ -9,7 +9,11 @@ Overview
 | Python |package_bold| module is a low-level binding for *libusb* C library.
 | It is an effort to allow python programs full access to the API implemented
   and provided by the well known `*libusb* <https://libusb.info/>`__ library.
-|
+
+`PyPI record`_.
+
+`Documentation`_.
+
 | |package_bold| is a lightweight Python package, based on the *ctypes* library.
 | It is fully compliant implementation of the original C *libusb* 1.0 API
   by implementing whole its functionality in a clean Python instead of C.
@@ -27,7 +31,7 @@ to specify it programmatically by one of the following ways:
   import libusb
   libusb.config(LIBUSB="libusb C shared library absolute path")
   # or
-  libusb.config(LIBUSB=None)  # included libusb-X.X.* will be use
+  libusb.config(LIBUSB=None)  # included libusb-X.X.* will be used
 
 About original libusb:
 ----------------------
@@ -121,7 +125,7 @@ or on development mode:
 License
 =======
 
-  | Copyright (c) 2016-2020 Adam Karpierz
+  | Copyright (c) 2016-2021 Adam Karpierz
   | Licensed under the zlib/libpng License
   | https://opensource.org/licenses/Zlib
   | Please refer to the accompanying LICENSE file.
@@ -134,5 +138,6 @@ Authors
 .. |package| replace:: libusb
 .. |package_bold| replace:: **libusb**
 .. |respository| replace:: https://github.com/karpierz/libusb.git
-.. _development page: https://github.com/karpierz/libusb/
+.. _development page: https://github.com/karpierz/libusb
 .. _PyPI record: https://pypi.org/project/libusb/
+.. _Documentation: https://libusb.readthedocs.io/

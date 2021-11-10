@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2020 Adam Karpierz
+# Copyright (c) 2016-2021 Adam Karpierz
 # Licensed under the zlib/libpng License
 # https://opensource.org/licenses/Zlib
 
@@ -26,26 +26,8 @@
 import sys
 import errno
 import ctypes as ct
+
 import libusb as usb
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-
-#if !defined(_MSC_VER)
-#include <stdbool.h>
-#else
-#if ! defined(bool)
-#define bool int
-#endif
-#if ! defined(true)
-#define true (1 == 1)
-#endif
-#if ! defined(false)
-#define false (!true)
-#endif
-#endif
 
 FX_TYPE_UNDEFINED = -1
 FX_TYPE_AN21      = 0  # Original AnchorChips parts
@@ -90,9 +72,6 @@ FX_KNOWN_DEVICES = (
     fx_known_device(0x04b4, 0x00f3, FX_TYPE_FX3,   b"Cypress FX3"),
 )
 
-#extern void logerror(const char *format, ...)
-#    __attribute__ ((format(printf, 1, 2)));
-
 # This file contains functions for uploading firmware into Cypress
 # EZ-USB microcontrollers. These chips use control endpoint 0 and vendor
 # specific commands to support writing into the on-chip SRAM. They also
@@ -115,8 +94,8 @@ verbose = 1  # int
 # for Anchorchips EZ-USB or Cypress EZ-USB FX
 
 #static
-#@annotate(bool, addr=ct.c_uint32, size=ct.c_size_t)
-def fx_is_external(addr, size):
+#@annotate(addr=ct.c_uint32, size=ct.c_size_t)
+def fx_is_external(addr, size) -> bool:
 
     # with 8KB RAM, 0x0000-0x1b3f can be written
     # we can't tell if it's a 4KB device here
@@ -135,8 +114,8 @@ def fx_is_external(addr, size):
 # for Cypress EZ-USB FX2
 
 #static
-#@annotate(bool, addr=ct.c_uint32, size=ct.c_size_t)
-def fx2_is_external(addr, size):
+#@annotate(addr=ct.c_uint32, size=ct.c_size_t)
+def fx2_is_external(addr, size) -> bool:
 
     # 1st 8KB for data/code, 0x0000-0x1fff
     if addr <= 0x1fff:
@@ -153,8 +132,8 @@ def fx2_is_external(addr, size):
 # for Cypress EZ-USB FX2LP
 
 #static
-#@annotate(bool, addr=ct.c_uint32, size=ct.c_size_t)
-def fx2lp_is_external(addr, size):
+#@annotate(addr=ct.c_uint32, size=ct.c_size_t)
+def fx2lp_is_external(addr, size) -> bool:
 
     # 1st 16KB for data/code, 0x0000-0x3fff
     if addr <= 0x3fff:
@@ -182,11 +161,12 @@ RW_MEMORY   = 0xA3
 # Issues the specified vendor-specific write request.
 
 #static
-#@annotate(int, device=ct.POINTER(usb.device_handle), label=const char*)
+#@annotate(device=ct.POINTER(usb.device_handle), label=const char*)
 #          ct.c_uint8 opcode, ct.c_uint32 addr,
 #          const ct.POINTER(ct.c_ubyte) data, ct.c_size_t size)
-def ezusb_write(device, label, opcode, addr, data, size):
+def ezusb_write(device, label, opcode, addr, data, size) -> int:
 
+    from fxload import logerror
     global verbose
 
     if verbose > 1:
@@ -213,11 +193,12 @@ def ezusb_write(device, label, opcode, addr, data, size):
 # Issues the specified vendor-specific read request.
 
 #static
-#@annotate(int, device=ct.POINTER(usb.device_handle), label=const char*)
+#@annotate(device=ct.POINTER(usb.device_handle), label=const char*)
 #          ct.c_uint8 opcode, ct.c_uint32 addr,
 #          const ct.POINTER(ct.c_ubyte) data, ct.c_size_t size)
-def ezusb_read(device, label, opcode, addr, data, size):
+def ezusb_read(device, label, opcode, addr, data, size) -> int:
 
+    from fxload import logerror
     global verbose
 
     if verbose > 1:
@@ -245,9 +226,10 @@ def ezusb_read(device, label, opcode, addr, data, size):
 # Returns False on error.
 
 #static
-#@annotate(bool, device=ct.POINTER(usb.device_handle), addr=ct.c_uint32, do_run=bool)
-def ezusb_cpucs(device, addr, do_run):
+#@annotate(device=ct.POINTER(usb.device_handle), addr=ct.c_uint32)
+def ezusb_cpucs(device, addr, do_run: bool) -> bool:
 
+    from fxload import logerror
     global verbose
 
     data = ct.c_uint8(0x00 if do_run else 0x01)
@@ -279,9 +261,10 @@ def ezusb_cpucs(device, addr, do_run):
 # Returns False on error.
 
 #static
-#@annotate(bool, device=ct.POINTER(usb.device_handle), addr=ct.c_uint32)
-def ezusb_fx3_jump(device, addr):
+#@annotate(device=ct.POINTER(usb.device_handle), addr=ct.c_uint32)
+def ezusb_fx3_jump(device, addr) -> bool:
 
+    from fxload import logerror
     global verbose
 
     if verbose:
@@ -325,12 +308,13 @@ def ezusb_fx3_jump(device, addr):
 # overwriting a second stage loader.
 
 #static
-#@annotate(int, image=FILE*, context=void*,
+#@annotate(image=FILE*, context=void*,
 #          is_external=bool (*)(ct.c_uint32 addr, ct.c_size_t len),
 #          poke=int (*)(void* context, ct.c_uint32 addr, bool external,
 #                       const ct.POINTER(ct.c_ubyte) data, ct.c_size_t len))
-def parse_ihex(image, context, is_external, poke):
+def parse_ihex(image, context, is_external, poke) -> int:
 
+    from fxload import logerror
     global verbose
 
     data = (ct.c_ubyte * 1023)()
@@ -465,11 +449,11 @@ def parse_ihex(image, context, is_external, poke):
 # overwriting a second stage loader.
 
 #static
-#@annotate(int, image=FILE*, context=void*,
+#@annotate(image=FILE*, context=void*,
 #          is_external=bool (*)(ct.c_uint32 addr, ct.c_size_t len),
 #          poke=int (*)(void* context, ct.c_uint32 addr, bool external,
 #                       const ct.POINTER(ct.c_ubyte) data, ct.c_size_t len))
-def parse_bin(image, context, is_external, poke):
+def parse_bin(image, context, is_external, poke) -> int:
 
     data = (ct.c_ubyte * 4096)()
 
@@ -506,11 +490,13 @@ def parse_bin(image, context, is_external, poke):
 # overwriting a second stage loader.
 
 #static
-#@annotate(int, image=FILE*, context=void*,
+#@annotate(image=FILE*, context=void*,
 #          is_external=bool (*)(ct.c_uint32 addr, ct.c_size_t len),
 #          poke=int (*)(void* context, ct.c_uint32 addr, bool external,
 #                       const ct.POINTER(ct.c_ubyte) data, ct.c_size_t len))
-def parse_iic(image, context, is_external, poke):
+def parse_iic(image, context, is_external, poke) -> int:
+
+    from fxload import logerror
 
     data = (ct.c_ubyte * 4096)()
     block_header = (ct.c_uint8 * 4)()
@@ -594,9 +580,11 @@ class ram_poke_context(ct.Structure):
 RETRY_LIMIT = 5
 
 #static
-#@annotate(int, context=void*, addr=ct.c_uint32, external=bool,
+#@annotate(context=void*, addr=ct.c_uint32, external=bool,
 #          data=const ct.POINTER(ct.c_ubyte), size=ct.c_size_t)
-def ram_poke(context, addr, external, data, size):
+def ram_poke(context, addr, external, data, size) -> int:
+
+    from fxload import logerror
 
     ctx = ct.cast(context, ct.POINTER(ram_poke_context))[0]
 
@@ -647,9 +635,10 @@ def ram_poke(context, addr, external, data, size):
 # See http://www.cypress.com/?docID=41351 (AN76405 PDF) for more info.
 
 #static
-#@annotate(int, device=ct.POINTER(usb.device_handle), path=str)
-def fx3_load_ram(device, path):
+#@annotate(device=ct.POINTER(usb.device_handle), path=str)
+def fx3_load_ram(device, path) -> int:
 
+    from fxload import logerror
     global verbose
 
     bBuf  = ct.POINTER(ct.c_ubyte)
@@ -717,8 +706,8 @@ def fx3_load_ram(device, path):
 
             # coverity[tainted_data]
             try:
-               #dImageBuf = ct.POINTER(ct.c_uint32)()
-                dImageBuf = ct.cast(calloc(dLength, ct.sizeof(ct.c_uint32)), ct.POINTER(ct.c_uint32))
+                dImageBuf = (ct.c_uint32 * dLength)()
+                ct.memset(dImageBuf, b"\0", dLength * ct.sizeof(ct.c_uint32))
             except:
                 logerror("could not allocate buffer for image chunk\n")
                 return -4
@@ -773,8 +762,8 @@ def fx3_load_ram(device, path):
 #
 # The target processor is reset at the end of this upload.
 
-#@annotate(int, device=ct.POINTER(usb.device_handle), path=str, fx_type=ct.c_int, img_type=ct.c_int, stage=ct.c_int)
-def ezusb_load_ram(device, path, fx_type, img_type, stage):
+#@annotate(device=ct.POINTER(usb.device_handle), path=str, fx_type=ct.c_int, img_type=ct.c_int, stage=ct.c_int)
+def ezusb_load_ram(device, path, fx_type, img_type, stage) -> int:
 
     # Load a firmware file into target RAM. device is the open libusb
     # device, and the path is the name of the source file. Open the file,
@@ -789,6 +778,7 @@ def ezusb_load_ram(device, path, fx_type, img_type, stage):
     # memory is written, expecting a second stage loader to have already
     # been loaded.  Then file is re-parsed and on-chip memory is written.
 
+    from fxload import logerror
     global verbose
 
     if fx_type == FX_TYPE_FX3:
@@ -887,6 +877,6 @@ def ezusb_load_ram(device, path, fx_type, img_type, stage):
 # The caller must have preloaded a second stage loader that knows
 # how to respond to the EEPROM write request.
 
-#@annotate(int, device=ct.POINTER(usb.device_handle), path=str, fx_type=ct.c_int, img_type=ct.c_int, config=ct.c_int)
-def ezusb_load_eeprom(device, path, fx_type, img_type, config):
+#@annotate(device=ct.POINTER(usb.device_handle), path=str, fx_type=ct.c_int, img_type=ct.c_int, config=ct.c_int)
+def ezusb_load_eeprom(device, path, fx_type, img_type, config) -> int:
     raise NotImplementedError()

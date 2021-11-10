@@ -28,8 +28,9 @@ import sys
 import signal
 from datetime import datetime
 import ctypes as ct
-import libusb as usb
 
+import libusb as usb
+from libusb._platform import is_posix
 
 EP_DATA_IN = 0x82
 EP_ISO_IN  = 0x86
@@ -40,7 +41,8 @@ PID = 0x0763
 devh     = None
 tv_start = None
 
-do_exit   = False
+sig_atomic_t = int
+do_exit   = 0  # volatile sig_atomic_t
 num_bytes = 0
 num_xfer  = 0
 
@@ -137,7 +139,7 @@ def measure():
 
     diff_msec = int((tv_stop - tv_start).total_seconds() * 1000)
 
-    print("{} transfers (total {} bytes) in {} miliseconds => {} bytes/sec".format(
+    print("{} transfers (total {} bytes) in {} milliseconds => {} bytes/sec".format(
           num_xfer, num_bytes, diff_msec, (num_bytes * 1000) // diff_msec))
 
 
@@ -145,22 +147,24 @@ def sig_hdlr(signum, frame):
 
     global do_exit
 
-    if signum == signal.SIGINT:
-        measure()
-        do_exit = True
+    measure()
+    do_exit = 1
 
 
-def main(argv=sys.argv):
+def main(argv=sys.argv[1:]):
 
     global devh
     global VID, PID
     global do_exit
 
-    #sigact = struct_sigaction()
-    #sigact.sa_handler = sig_hdlr
-    #sigemptyset(ct.byref(sigact.sa_mask))
-    #sigact.sa_flags = 0
-    signal.signal(signal.SIGINT, sig_hdlr)
+    if is_posix:
+        sigact = struct_sigaction()
+        sigact.sa_handler = sig_hdlr
+        sigemptyset(ct.byref(sigact.sa_mask))
+        sigact.sa_flags = 0
+        sigaction(signal.SIGINT, ct.byref(sigact), NULL)
+    else:
+        signal.signal(signal.SIGINT, sig_hdlr)
 
     rc = usb.init(None)
     if rc < 0:
@@ -187,7 +191,7 @@ def main(argv=sys.argv):
 
         # Measurement has already been done by the signal handler.
 
-        usb.release_interface(devh, 0)
+        usb.release_interface(devh, 2)
     finally:
         if devh:
             usb.close(devh)
@@ -196,4 +200,5 @@ def main(argv=sys.argv):
     return rc
 
 
-sys.exit(main())
+if __name__.rpartition(".")[-1] == "__main__":
+    sys.exit(main())

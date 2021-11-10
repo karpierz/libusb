@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2020 Adam Karpierz
+# Copyright (c) 2016-2021 Adam Karpierz
 # Licensed under the zlib/libpng License
 # https://opensource.org/licenses/Zlib
 
@@ -25,15 +25,17 @@
 
 import sys
 import os
+import re
 import getopt
 import ctypes as ct
+
 import libusb as usb
-from libusb._platform import defined
+from libusb._platform import defined, is_windows
 from ezusb import FX_KNOWN_DEVICES, FX_TYPE_MAX, FX_TYPE_NAMES, IMG_TYPE_NAMES, FX_TYPE_UNDEFINED
 from ezusb import ezusb_load_ram
 from ezusb import verbose
 
-if not defined("_WIN32") or defined("__CYGWIN__"):
+if not is_windows or defined("__CYGWIN__"):
     #include <syslog.h>
     dosyslog = False  # bool
 
@@ -43,7 +45,8 @@ if not defined("FXLOAD_VERSION"):
 
 def logerror(fmt, *args):
 
-    if (not defined("_WIN32") or defined("__CYGWIN__")) and dosyslog:
+    global dosyslog
+    if (not is_windows or defined("__CYGWIN__")) and dosyslog:
         ap = va_list();
         va_start(ap, fmt);
         vsyslog(LOG_ERR, fmt, ap);
@@ -66,7 +69,7 @@ def print_usage(error_code):
     return error_code
 
 
-def main(argv=sys.argv):
+def main(argv=sys.argv[1:]):
 
     global verbose
 
@@ -98,21 +101,25 @@ def main(argv=sys.argv):
     desc   = usb.device_descriptor()
 
     try:
-        opts, args = getopt.getopt(argv[1:], "qvV?hd:p:i:I:s:S:t:")
+        opts, args = getopt.getopt(argv, "qvV?hd:p:i:I:s:S:t:")
     except getopt.GetoptError:
         return print_usage(-1)
 
     for opt, optarg in opts:
         if opt == "-d":
             device_id = optarg
-            if sscanf(device_id, "%x:%x" , ct.byref(vid), ct.byref(pid)) != 2:
+            match = re.match(r"([-+]?(0[xX])?[\dA-Fa-f]+):([-+]?(0[xX])?[\dA-Fa-f]+)", device_id)
+            if not match:
                 print("please specify VID & PID as \"vid:pid\" in hexadecimal format", file=sys.stderr)
                 return -1
+            vid, pid = int(match.group(1)), int(match.group(2))
         elif opt == "-p":
             device_path = optarg
-            if sscanf(device_path, "%u,%u", ct.byref(busnum), ct.byref(devaddr)) != 2:
+            match = re.match(r"(\d+),(\d+)", device_path)
+            if not match:
                 print("please specify bus number & device number as \"bus,dev\" in decimal format", file=sys.stderr)
                 return -1
+            busnum, devaddr = int(match.group(1)), int(match.group(2))
         elif opt in ("-i", "-I"):
             paths[FIRMWARE] = optarg
         elif opt in ("-s", "-S"):
@@ -279,4 +286,5 @@ def main(argv=sys.argv):
     return status
 
 
-sys.exit(main())
+if __name__.rpartition(".")[-1] == "__main__":
+    sys.exit(main())

@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2020 Adam Karpierz
+# Copyright (c) 2016-2021 Adam Karpierz
 # Licensed under the zlib/libpng License
 # https://opensource.org/licenses/Zlib
 
@@ -22,25 +22,19 @@
 
 import sys
 import os
+import re
 import ctypes as ct
+
 import libusb as usb
+from libusb._platform import is_windows
+if is_windows: import win32
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-
-#if defined(_WIN32)
-#define msleep(msecs) Sleep(msecs)
-#else
-#include <time.h>
-#define msleep(msecs) nanosleep(&(struct timespec){msecs / 1000, (msecs * 1000000) % 1000000000UL}, NULL);
-#endif
-
-#if defined(_MSC_VER)
-#define snprintf _snprintf
-#endif
+def msleep(msecs: int):
+    if is_windows:
+       win32.Sleep(msecs)
+    else:
+       ts = struct_timespec({ msecs / 1000, (msecs % 1000) * 1000000 })
+       nanosleep(ct.byref(ts), NULL)
 
 # Future versions of libusb will use usb_interface instead of interface
 # in usb.config_descriptor => catter for that
@@ -189,8 +183,8 @@ def uuid_to_string(uuid):
 
 
 #static
-#@annotate(int, handle=ct.POINTER(usb.device_handle))
-def display_ps3_status(handle):
+#@annotate(handle=ct.POINTER(usb.device_handle))
+def display_ps3_status(handle) -> int:
 
     # The PS3 Controller is really a HID device that got its HID Report Descriptors
     # removed by Sony
@@ -281,8 +275,8 @@ def display_ps3_status(handle):
 
 
 #static
-#@annotate(int, handle=ct.POINTER(usb.device_handle))
-def display_xbox_status(handle):
+#@annotate(handle=ct.POINTER(usb.device_handle))
+def display_xbox_status(handle) -> int:
 
     # The XBOX Controller is really a HID device that got its HID Report Descriptors
     # removed by Microsoft.
@@ -322,8 +316,8 @@ def display_xbox_status(handle):
 
 
 #static
-#@annotate(int, handle=ct.POINTER(usb.device_handle), left=ct.c_uint8, right=ct.c_uint8)
-def set_xbox_actuators(handle, left, right):
+#@annotate(handle=ct.POINTER(usb.device_handle), left=ct.c_uint8, right=ct.c_uint8)
+def set_xbox_actuators(handle, left, right) -> int:
 
     print("\nWriting XBox Controller Output Report...")
 
@@ -405,8 +399,8 @@ def send_mass_storage_command(handle, endpoint, lun, cdb, direction, data_length
 
 
 #static
-#@annotate(int, handle=ct.POINTER(usb.device_handle), endpoint=int, ct.c_uint32 expected_tag)
-def get_mass_storage_status(handle, endpoint, expected_tag):
+#@annotate(handle=ct.POINTER(usb.device_handle), endpoint=int, ct.c_uint32 expected_tag)
+def get_mass_storage_status(handle, endpoint, expected_tag) -> int:
 
     #int r;
 
@@ -488,8 +482,8 @@ def get_sense(handle, endpoint_in, endpoint_out):
 
 
 #static
-#@annotate(int, handle=ct.POINTER(usb.device_handle), endpoint_in=int, endpoint_out=int)
-def test_mass_storage(handle, endpoint_in, endpoint_out):
+#@annotate(handle=ct.POINTER(usb.device_handle), endpoint_in=int, endpoint_out=int)
+def test_mass_storage(handle, endpoint_in, endpoint_out) -> int:
 
     # Mass Storage device to test bulk transfers (non destructive test)
 
@@ -572,7 +566,8 @@ def test_mass_storage(handle, endpoint_in, endpoint_out):
 
     # coverity[tainted_data]
     try:
-        data = ct.cast(calloc(1, block_size), ct.POINTER(ct.c_ubyte)) # unsigned char*
+        data = (ct.c_ubyte * block_size)()
+        ct.memset(data, b"\0", block_size * ct.sizeof(ct.c_ubyte))
     except:
         perr("   unable to allocate data buffer\n")
         return -1
@@ -602,7 +597,7 @@ def test_mass_storage(handle, endpoint_in, endpoint_out):
                     if fd.fwrite(data, ct.c_size_t(size).value) != ct.c_uint(size).value:
                         perr("   unable to write binary data\n")
 
-    free(data)
+    del data
 
     return 0
 
@@ -659,8 +654,8 @@ def get_hid_record_size(hid_report_descriptor, size, type):
 
 
 #static
-#@annotate(int, handle=ct.POINTER(usb.device_handle), endpoint_in=int)
-def test_hid(handle, endpoint_in):
+#@annotate(handle=ct.POINTER(usb.device_handle), endpoint_in=int)
+def test_hid(handle, endpoint_in) -> int:
 
     global binary_dump
     global binary_name
@@ -668,7 +663,7 @@ def test_hid(handle, endpoint_in):
     #int r;
 
     hid_report_descriptor = (ct.c_uint8 * 256)()
-    report_buffer = ct.POINTER(ct.c_uint8)
+    report_buffer = ct.POINTER(ct.c_uint8)()
 
     print("\nReading HID Report Descriptors:")
     descriptor_size = usb.control_transfer(handle,
@@ -697,8 +692,10 @@ def test_hid(handle, endpoint_in):
     if size <= 0:
         print("\nSkipping Feature Report readout (None detected)")
     else:
-        report_buffer = ct.cast(calloc(size, 1), ct.POINTER(ct.c_uint8))
-        if not report_buffer:
+        try:
+            report_buffer = (ct.c_uint8 * size)()
+            ct.memset(report_buffer, b"\0", size * ct.sizeof(ct.c_uint8))
+        except:
             return -1
 
         print("\nReading Feature Report (length {})...".format(size))
@@ -721,14 +718,16 @@ def test_hid(handle, endpoint_in):
             else:
                 print("   Error: {}".format(usb.strerror(usb.error(r))))
 
-        free(report_buffer)
+        del report_buffer
 
     size = get_hid_record_size(hid_report_descriptor, descriptor_size, HID_REPORT_TYPE_INPUT)
     if size <= 0:
         print("\nSkipping Input Report readout (None detected)")
     else:
-        report_buffer = ct.cast(calloc(size, 1), ct.POINTER(ct.c_uint8))
-        if not report_buffer:
+        try:
+            report_buffer = (ct.c_uint8 * size)()
+            ct.memset(report_buffer, b"\0", size * ct.sizeof(ct.c_uint8))
+        except:
             return -1
 
         print("\nReading Input Report (length {})...".format(size))
@@ -759,7 +758,7 @@ def test_hid(handle, endpoint_in):
         else:
             print("   {}".format(usb.strerror(usb.error(r))))
 
-        free(report_buffer)
+        del report_buffer
 
     return 0
 
@@ -870,8 +869,8 @@ def print_device_cap(dev_cap):
 
 
 #static
-#@annotate(int, ct.c_uint16 vid, ct.c_uint16 pid)
-def test_device(vid, pid):
+#@annotate(ct.c_uint16 vid, ct.c_uint16 pid)
+def test_device(vid, pid) -> int:
 
     #int r;
 
@@ -1059,6 +1058,9 @@ def main(argv=sys.argv):
     global binary_dump
     global binary_name
 
+    #static
+    debug_env_str = "LIBUSB_DEBUG=4"  # usb.LIBUSB_LOG_LEVEL_DEBUG
+
     show_help  = False  # bool
     debug_mode = False  # bool
     error_lang = None   # char*
@@ -1130,13 +1132,13 @@ def main(argv=sys.argv):
         else:
             for i in range(arglen):
                 if argv[j][i] == ':':
-                    tmp_vid = 0  # unsigned int
-                    tmp_pid = 0  # unsigned int
-                    if sscanf(argv[j], "%x:%x" , ct.pointer(tmp_vid), ct.pointer(tmp_pid)) != 2:
+                    match = re.match(r"([-+]?(0[xX])?[\dA-Fa-f]+):([-+]?(0[xX])?[\dA-Fa-f]+)", argv[j])
+                    if not match:
                         print("   Please specify VID & PID as \"vid:pid\" in hexadecimal format")
                         return 1
-                    VID = ct.c_uint16(tmp_vid)
-                    PID = ct.c_uint16(tmp_pid)
+                    tmp_vid, tmp_pid = int(match.group(1)), int(match.group(2))
+                    VID = ct.c_uint16(tmp_vid).value
+                    PID = ct.c_uint16(tmp_pid).value
                     break
             else:
                 show_help = True
@@ -1163,7 +1165,8 @@ def main(argv=sys.argv):
     old_dbg_str = os.environ.get("LIBUSB_DEBUG", None)
     if debug_mode:
         try:
-            os.environ["LIBUSB_DEBUG"] = "4"  # usb.LIBUSB_LOG_LEVEL_DEBUG
+            env_var, _, env_value = debug_env_str.partition("=")
+            os.environ[env_var] = env_value
         except:
             print("Unable to set debug level")
 
@@ -1195,4 +1198,5 @@ def main(argv=sys.argv):
     return 0
 
 
-sys.exit(main())
+if __name__.rpartition(".")[-1] == "__main__":
+    sys.exit(main())

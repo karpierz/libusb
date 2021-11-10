@@ -1,6 +1,14 @@
 Changelog
 =========
 
+1.0.24b1 (2021-11-10)
+---------------------
+- Upgrade for Windows: libusb v.1.0.23 -> v.1.0.24
+- Copyright year update.
+- *backward incompatibility* - libusb.cfg is now a regular INI file.
+- Fixes for examples (but still some examples don't work properly).
+- Setup update.
+
 1.0.23b7 (2020-11-19)
 ---------------------
 - Ability to specify the underlying shared library programmatically.
@@ -14,7 +22,7 @@ Changelog
 ---------------------
 - | Upgrade for Windows: libusb v.1.0.22 -> v.1.0.23
   | (partially; without libusb_wrap_sys_device, because
-  | original Windows dlls do not export this function).
+  |  original Windows v.1.0.23 dlls do not export this function).
 - Add support for Python 3.9.
 - Drop support for Python 3.5.
 - Setup update.

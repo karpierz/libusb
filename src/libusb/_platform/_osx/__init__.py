@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2020 Adam Karpierz
+# Copyright (c) 2016-2021 Adam Karpierz
 # Licensed under the zlib/libpng License
 # https://opensource.org/licenses/Zlib
 
@@ -14,7 +14,11 @@ arch_dir = os.path.join(this_dir, arch)
 raise NotImplementedError("This OS is not supported yet!")
 
 try:
-    from ...__config__ import LIBUSB as DLL_PATH
+    from ...__config__ import config
+    DLL_PATH = config.get("LIBUSB", None)
+    del config
+    if DLL_PATH is None or DLL_PATH in ("", "None"):
+        raise ImportError()
 except ImportError:
     DLL_PATH = os.path.join(arch_dir, "libusb-1.0.dylib")
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2020 Adam Karpierz
+# Copyright (c) 2016-2021 Adam Karpierz
 # Licensed under the zlib/libpng License
 # https://opensource.org/licenses/Zlib
 
@@ -21,8 +21,8 @@
 
 import sys
 import ctypes as ct
-import libusb as usb
 
+import libusb as usb
 
 handle = ct.POINTER(usb.device_handle)()
 done = 0
@@ -69,15 +69,15 @@ def hotplug_callback_detach(ctx, dev, event, user_data):
     return 0
 
 
-def main(argv=sys.argv):
+def main(argv=sys.argv[1:]):
 
     global handle, done
 
     hp = [usb.hotplug_callback_handle() for i in range(2)]
 
-    vendor_id  = int(argv[1]) if len(argv) > 1 else 0x045a
-    product_id = int(argv[2]) if len(argv) > 2 else 0x5005
-    class_id   = int(argv[3]) if len(argv) > 3 else usb.LIBUSB_HOTPLUG_MATCH_ANY
+    vendor_id  = int(argv[0]) if len(argv) > 0 else 0x045a
+    product_id = int(argv[1]) if len(argv) > 1 else 0x5005
+    class_id   = int(argv[2]) if len(argv) > 2 else usb.LIBUSB_HOTPLUG_MATCH_ANY
 
     rc = usb.init(None)
     if rc < 0:
@@ -86,7 +86,7 @@ def main(argv=sys.argv):
 
     try:
         if not usb.has_capability(usb.LIBUSB_CAP_HAS_HOTPLUG):
-            print("Hotplug capabilites are not supported on this platform")
+            print("Hotplug capabilities are not supported on this platform")
             return 1
 
         rc = usb.hotplug_register_callback(None,
@@ -117,4 +117,5 @@ def main(argv=sys.argv):
     return 0
 
 
-sys.exit(main())
+if __name__.rpartition(".")[-1] == "__main__":
+    sys.exit(main())
