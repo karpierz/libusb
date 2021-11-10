@@ -4,6 +4,7 @@ Changelog
 1.0.24b1 (2021-11-10)
 ---------------------
 - Upgrade for Windows: libusb v.1.0.23 -> v.1.0.24
+- Add support for macOS (thank you very much dccote@Github!).
 - Copyright year update.
 - *backward incompatibility* - libusb.cfg is now a regular INI file.
 - Fixes for examples (but still some examples don't work properly).
