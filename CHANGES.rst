@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.0.24b2 (2022-01-09)
+---------------------
+- Drop support for Python 3.6.
+- Copyright year update.
+- Setup update.
+
 1.0.24b1 (2021-11-10)
 ---------------------
 - Upgrade for Windows: libusb v.1.0.23 -> v.1.0.24

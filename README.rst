@@ -75,7 +75,7 @@ Installation
 
 Prerequisites:
 
-+ Python 3.6 or higher
++ Python 3.7 or higher
 
   * https://www.python.org/
   * 3.7 with C libusb 1.0.22 is a primary test environment.
@@ -125,7 +125,7 @@ or on development mode:
 License
 =======
 
-  | Copyright (c) 2016-2021 Adam Karpierz
+  | Copyright (c) 2016-2022 Adam Karpierz
   | Licensed under the zlib/libpng License
   | https://opensource.org/licenses/Zlib
   | Please refer to the accompanying LICENSE file.
