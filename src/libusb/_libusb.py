@@ -95,7 +95,7 @@ def LIBUSB_DEPRECATED_FOR(f): pass  # __attribute__ ((deprecated ("Use " #f " in
 # Internally, LIBUSB_API_VERSION is defined as follows:
 # (libusb major << 24) | (libusb minor << 16) | (16 bit incremental)
 
-LIBUSB_API_VERSION = 0x01000108
+LIBUSB_API_VERSION = 0x01000109
 
 # The following is kept for compatibility, but will be deprecated in the future
 LIBUSBX_API_VERSION = LIBUSB_API_VERSION
@@ -910,7 +910,7 @@ class container_id_descriptor(ct.Structure):
 
 # \ingroup libusb::asyncio
 # Setup packet for control transfers.
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 #pragma pack(push, 1)
 #endif
 class control_setup(ct.Structure):
@@ -939,7 +939,7 @@ class control_setup(ct.Structure):
     # Number of bytes to transfer
     ("wLength", ct.c_uint16),
 ]
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 #pragma pack(pop)
 #endif
 
@@ -984,8 +984,9 @@ class version(ct.Structure):
 # Sessions are created by libusb.init() and destroyed through libusb.exit().
 # If your application is guaranteed to only ever include a single libusb
 # user (i.e. you), you do not have to worry about contexts: pass NULL in
-# every function call where a context is required. The default context
-# will be used.
+# every function call where a context is required, and the default context
+# will be used. Note that libusb.set_option(NULL, ...) is special, and adds
+# an option to a list of default options for new contexts.
 #
 # For more information, see \ref libusb.contexts.
 
@@ -994,7 +995,7 @@ class context(ct.Structure): pass
 # \ingroup libusb::dev
 # Structure representing a USB device detected on the system. This is an
 # opaque type for which you are only ever provided with a pointer, usually
-# originating from libusb.get_device_list().
+# originating from libusb.get_device_list() or libusb.hotplug_register_callback().
 #
 # Certain operations can be performed on a device, but in order to do any
 # I/O you will have to first obtain a device handle using libusb.open().
@@ -1348,6 +1349,9 @@ log_level = ct.c_int
  
 # \ingroup libusb::lib
 # Log callback mode.
+#
+# Since version 1.0.23, \ref LIBUSB_API_VERSION >= 0x01000107
+#
 # \see libusb.set_log_cb()
 
 log_cb_mode = ct.c_int
@@ -1366,6 +1370,9 @@ log_cb_mode = ct.c_int
 #            is a global log message
 # \param level the log level, see \ref libusb.log_level for a description
 # \param str the log message
+#
+# Since version 1.0.23, \ref LIBUSB_API_VERSION >= 0x01000107
+#
 # \see libusb.set_log_cb()
 
 log_cb = CFUNC(None, ct.POINTER(context), log_level, ct.c_char_p)
@@ -2590,18 +2597,29 @@ option = ct.c_int
     #
     LIBUSB_OPTION_USE_USBDK,
 
-    # Set libusb has weak authority. With this option, libusb will skip
-    # scan devices in libusb.init.
+    # Do not scan for devices
     #
-    # This option should be set before calling libusb.init(), otherwise
-    # libusb.init will failed. Normally libusb.wrap_sys_device need set
-    # this option.
+    # With this option set, libusb will skip scanning devices in
+    # libusb.init(). Must be set before calling libusb.init().
     #
-    # Only valid on Linux-based operating system, such as Android.
+    # Hotplug functionality will also be deactivated.
     #
-    LIBUSB_OPTION_WEAK_AUTHORITY, 
+    # The option is useful in combination with libusb_wrap_sys_device(),
+    # which can access a device directly without prior device scanning.
+    #
+    # This is typically needed on Android, where access to USB devices
+    # is limited.
+    #
+    # For LIBUSB_API_VERSION 0x01000108 it was called LIBUSB_OPTION_WEAK_AUTHORITY
+    #
+    # Only valid on Linux.
+    #
+    LIBUSB_OPTION_NO_DEVICE_DISCOVERY,
 
-) = (0, 1, 2)
+    LIBUSB_OPTION_MAX,
+
+) = (0, 1, 2, 3)
+LIBUSB_OPTION_WEAK_AUTHORITY = LIBUSB_OPTION_NO_DEVICE_DISCOVERY
 
 def set_option(ctx, option, *values):
     if option == LIBUSB_OPTION_LOG_LEVEL:

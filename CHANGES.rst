@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.0.26b1 (2022-07-17)
+---------------------
+- Upgrade for Windows: libusb v.1.0.24 -> v.1.0.26
+- Update for MacOS (v.11.6 64bit).
+- Setup update.
+
 1.0.24b3 (2022-01-10)
 ---------------------
 - Drop support for Python 3.6.

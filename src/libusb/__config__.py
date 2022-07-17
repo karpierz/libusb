@@ -1,1 +1,1 @@
-from . import _config as _ ; _.make_config("libusb.cfg", "libusb") ; del _
+from . import _config as _ ; _.make_config("libusb.cfg") ; del _

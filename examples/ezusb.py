@@ -187,7 +187,10 @@ def ezusb_write(device, label, opcode, addr, data, size) -> int:
         else:
             logerror("{} ==> {}\n", label, status)
 
-    return 0 if status >= 0 else -errno.EIO
+    if status < 0:
+        ct.set_errno(errno.EIO)
+        return -1
+    return 0
 
 
 # Issues the specified vendor-specific read request.
@@ -219,7 +222,10 @@ def ezusb_read(device, label, opcode, addr, data, size) -> int:
         else:
             logerror("{} ==> {}\n", label, status)
 
-    return 0 if status >= 0 else -errno.EIO
+    if status < 0:
+        ct.set_errno(errno.EIO)
+        return -1
+    return 0
 
 
 # Modifies the CPUCS register to stop or reset the CPU.
@@ -257,7 +263,7 @@ def ezusb_cpucs(device, addr, do_run: bool) -> bool:
         return True
 
 
-# Send an FX3 jumpt to address command
+# Send an FX3 jump to address command
 # Returns False on error.
 
 #static
@@ -592,7 +598,8 @@ def ram_poke(context, addr, external, data, size) -> int:
     if ctx_mode == internal_only:    # CPU should be stopped
         if external:
             logerror("can't write {} bytes external memory at {:#010x}\n", size, addr)
-            return -errno.EINVAL
+            ct.set_errno(errno.EINVAL)
+            return -1
     elif ctx_mode == skip_internal:  # CPU must be running
         if not external:
             if verbose >= 2:
@@ -605,10 +612,12 @@ def ram_poke(context, addr, external, data, size) -> int:
             return 0
     elif ctx_mode == _undef:
         logerror("bug\n")
-        return -errno.EDOM
+        ct.set_errno(errno.EDOM)
+        return -1
     else:
         logerror("bug\n")
-        return -errno.EDOM
+        ct.set_errno(errno.EDOM)
+        return -1
 
     ctx.total += size
     ctx.count += 1

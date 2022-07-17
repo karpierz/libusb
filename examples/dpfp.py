@@ -190,7 +190,10 @@ def find_dpfp_device() -> int:
     global devh
     global VID, PID
     devh = usb.open_device_with_vid_pid(None, VID, PID)
-    return 0 if devh else -errno.ENODEV
+    if not devh:
+        ct.set_errno(errno.ENODEV)
+        return -1
+    return 0
 
 
 def print_f0_data() ->int:
@@ -287,12 +290,14 @@ def set_mode_async(data) -> int:
     try:
         buf = (ct.c_ubyte * (usb.LIBUSB_CONTROL_SETUP_SIZE + 1))()
     except:
-        return -errno.ENOMEM
+        ct.set_errno(errno.ENOMEM)
+        return -1
 
     transfer = usb.alloc_transfer(0)
     if not transfer:
         del buf
-        return -errno.ENOMEM
+        ct.set_errno(errno.ENOMEM)
+        return -1
 
     print("async set mode {:02x}".format(data))
     usb.fill_control_setup(buf, CTRL_OUT, USB_RQ, 0x4e, 0, 1)
@@ -519,11 +524,13 @@ def alloc_transfers() -> int:
 
     img_transfer = usb.alloc_transfer(0)
     if not img_transfer:
-        return -errno.ENOMEM
+        ct.set_errno(errno.ENOMEM)
+        return -1
 
     irq_transfer = usb.alloc_transfer(0)
     if not irq_transfer:
-        return -errno.ENOMEM
+        ct.set_errno(errno.ENOMEM)
+        return -1
 
     usb.fill_bulk_transfer(img_transfer, devh, EP_DATA,
                            imgbuf, ct.sizeof(imgbuf),

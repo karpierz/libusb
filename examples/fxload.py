@@ -163,7 +163,7 @@ def main(argv=sys.argv[1:]):
         return -1
 
     try:
-        usb.set_option(None, usb.LIBUSB_OPTION_LOG_LEVEL, verbose)
+        usb.set_debug(None, verbose)
 
         # try to pick up missing parameters from known devices
         if target_type is None or device_id is None or device_path is not None:

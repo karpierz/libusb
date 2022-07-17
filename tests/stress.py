@@ -110,9 +110,12 @@ def test_default_context_change() -> int:
             testlib.logf("Failed to init libusb: {:d}", r)
             return test_result.TEST_STATUS_FAILURE
 
-        # Enable debug output, to be sure to use the context
-        usb.set_option(None, usb.LIBUSB_OPTION_LOG_LEVEL, usb.LIBUSB_LOG_LEVEL_DEBUG)
-        usb.set_option(ctx,  usb.LIBUSB_OPTION_LOG_LEVEL, usb.LIBUSB_LOG_LEVEL_DEBUG)
+        # Enable debug output on new context, to be sure to use the context
+        usb.set_debug(ctx, usb.LIBUSB_LOG_LEVEL_DEBUG)
+
+        # Enable debug output on the default context. This should work even before
+        # the context has been created.
+        usb.set_debug(None, usb.LIBUSB_LOG_LEVEL_DEBUG)
 
         # Now create a reference to the default context
         r = usb.init(None)

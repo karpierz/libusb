@@ -244,7 +244,7 @@ def display_ps3_status(handle) -> int:
     if   pressed == 0x01: print("\tSELECT pressed")
     elif pressed == 0x02: print("\tLEFT 3 pressed")
     elif pressed == 0x04: print("\tRIGHT 3 pressed")
-    elif pressed == 0x08: print("\tSTART presed")
+    elif pressed == 0x08: print("\tSTART pressed")
     elif pressed == 0x10: print("\tUP pressed")
     elif pressed == 0x20: print("\tRIGHT pressed")
     elif pressed == 0x40: print("\tDOWN pressed")
@@ -253,7 +253,7 @@ def display_ps3_status(handle) -> int:
     if   pressed == 0x01: print("\tLEFT 2 pressed")
     elif pressed == 0x02: print("\tRIGHT 2 pressed")
     elif pressed == 0x04: print("\tLEFT 1 pressed")
-    elif pressed == 0x08: print("\tRIGHT 1 presed")
+    elif pressed == 0x08: print("\tRIGHT 1 pressed")
     elif pressed == 0x10: print("\tTRIANGLE pressed")
     elif pressed == 0x20: print("\tCIRCLE pressed")
     elif pressed == 0x40: print("\tCROSS pressed")
@@ -941,10 +941,12 @@ def test_device(vid, pid) -> int:
             print("no descriptor")
 
         print("\nReading first configuration descriptor:")
-        conf_desc = usb.config_descriptor*()
+        conf_desc = ct.POINTER(usb.config_descriptor)()
         r = usb.get_config_descriptor(dev, 0, ct.byref(conf_desc))
         if r < 0:
             return err_exit(r)
+        print("              total length: {}".format(conf_desc[0].wTotalLength))
+        print("         descriptor length: {}".format(conf_desc[0].bLength))
         nb_ifaces = conf_desc[0].bNumInterfaces  # int
         print("             nb interfaces: {}".format(nb_ifaces))
         first_iface = (conf_desc[0].usb_interface[0].altsetting[0].bInterfaceNumber
@@ -994,6 +996,8 @@ def test_device(vid, pid) -> int:
 
         usb.set_auto_detach_kernel_driver(handle, 1)
         for iface in range(nb_ifaces):
+            ret = usb.kernel_driver_active(handle, iface)
+            print("\nKernel driver attached for interface {}: {}".format(iface, ret))
             print("\nClaiming interface {}...".format(iface))
             r = usb.claim_interface(handle, iface)
             if r != usb.LIBUSB_SUCCESS:
@@ -1007,13 +1011,17 @@ def test_device(vid, pid) -> int:
             if usb.get_string_descriptor_ascii(handle, string_index[i],
                    ct.cast(string, ct.POINTER(ct.c_ubyte)), ct.sizeof(string)) > 0:
                 print("   String ({:#04X}): \"{}\"".format(string_index[i], string))
-        # Read the OS String Descriptor
+
+        print("\nReading OS string descriptor:", end="")
         r = usb.get_string_descriptor(handle, MS_OS_DESC_STRING_INDEX, 0,
                                       ct.cast(string, ct.POINTER(ct.c_ubyte)), MS_OS_DESC_STRING_LENGTH)
         if r == MS_OS_DESC_STRING_LENGTH and memcmp(ms_os_desc_string, string, sizeof(ms_os_desc_string)) == 0:
             # If this is a Microsoft OS String Descriptor,
             # attempt to read the WinUSB extended Feature Descriptors
+            print()
             read_ms_winsub_feature_descriptors(handle, string[MS_OS_DESC_VENDOR_CODE_OFFSET], first_iface)
+        else:
+            print(" no descriptor")
 
         if test_mode == USE_PS3:
             r = display_ps3_status(handle)
@@ -1180,7 +1188,7 @@ def main(argv=sys.argv):
     try:
         # If not set externally, and no debug option was given, use info log level
         if old_dbg_str is None and not debug_mode:
-            usb.set_option(None, usb.LIBUSB_OPTION_LOG_LEVEL, usb.LIBUSB_LOG_LEVEL_INFO)
+            usb.set_debug(None, usb.LIBUSB_LOG_LEVEL_INFO)
         if error_lang is not None:
             r = usb.setlocale(error_lang)
             if r < 0:

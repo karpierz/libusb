@@ -11,6 +11,9 @@ is_32bit = (sys.maxsize <= 2**32)
 arch     = "x86" if is_32bit else "x64"
 arch_dir = os.path.join(this_dir, arch)
 
+if is_32bit:
+    raise NotImplementedError("This 32 bit OS is not supported already!")
+
 try:
     from ...__config__ import config
     DLL_PATH = config.get("LIBUSB", None)
@@ -18,7 +21,7 @@ try:
     if DLL_PATH is None or DLL_PATH in ("", "None"):
         raise ImportError()
 except ImportError:
-    DLL_PATH = os.path.join(arch_dir, "libusb-1.0.dylib")
+    DLL_PATH = os.path.join(arch_dir, "libusb-1.0.0.dylib")
 
 from ctypes  import CDLL as DLL
 from _ctypes import dlclose

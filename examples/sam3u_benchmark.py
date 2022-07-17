@@ -101,7 +101,8 @@ def benchmark_in(ep):
 
     xfr = usb.alloc_transfer(num_iso_pack)
     if not xfr:
-        return -errno.ENOMEM
+        ct.set_errno(errno.ENOMEM)
+        return -1
 
     if ep == EP_ISO_IN:
         usb.fill_iso_transfer(xfr, devh, ep, buf, ct.sizeof(buf),
