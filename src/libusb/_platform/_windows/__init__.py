@@ -20,9 +20,12 @@ try:
 except ImportError:
     DLL_PATH = os.path.join(arch_dir, "libusb-1.0.dll")
 
-from ctypes  import WinDLL as DLL
-from _ctypes import FreeLibrary as dlclose
-from ctypes  import WINFUNCTYPE as CFUNC
+from ctypes import WinDLL as DLL
+try:
+    from _ctypes import FreeLibrary as dlclose
+except ImportError:
+    dlclose = lambda handle: 0
+from ctypes import WINFUNCTYPE as CFUNC
 
 # Winsock doesn't have this POSIX type; it's used for the
 # tv_usec value of struct timeval.

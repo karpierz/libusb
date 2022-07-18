@@ -1,15 +1,17 @@
 Changelog
 =========
 
-1.0.26b1 (2022-07-17)
+1.0.26b2 (2022-07-18)
 ---------------------
 - Upgrade for Windows: libusb v.1.0.24 -> v.1.0.26
 - Update for MacOS (v.11.6 64bit).
+- Add support for Python 3.10 and 3.11
+- Add support for PyPy 3.7, 3.8 and 3.9
 - Setup update.
 
 1.0.24b3 (2022-01-10)
 ---------------------
-- Drop support for Python 3.6.
+- Drop support for Python 3.6
 - Copyright year update.
 - Setup update.
 
@@ -36,8 +38,8 @@ Changelog
 - | Upgrade for Windows: libusb v.1.0.22 -> v.1.0.23
   | (partially; without libusb_wrap_sys_device, because
   |  original Windows v.1.0.23 dlls do not export this function).
-- Add support for Python 3.9.
-- Drop support for Python 3.5.
+- Add support for Python 3.9
+- Drop support for Python 3.5
 - Setup update.
 - Cleanup.
 
@@ -58,9 +60,9 @@ Changelog
 
 1.0.22b5 (2019-11-14)
 ---------------------
-- Drop support for Python 2.
-- Drop support for Python 3.4.
-- Add support for Python 3.8.
+- Drop support for Python 2
+- Drop support for Python 3.4
+- Add support for Python 3.8
 - Setup update and cleanup.
 
 1.0.22b4 (2019-02-15)

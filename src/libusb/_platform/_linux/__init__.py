@@ -18,7 +18,7 @@ try:
     if DLL_PATH is None or DLL_PATH in ("", "None"):
         raise ImportError()
 except ImportError:
-    DLL_PATH = os.path.join(arch_dir, "libusb-1.0.so.0.3.0")
+    DLL_PATH = os.path.join(arch_dir, "libusb-1.0.so") # libusb-1.0.so.0.3.0
 
 from ctypes  import CDLL as DLL
 from _ctypes import dlclose
