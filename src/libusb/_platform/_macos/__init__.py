@@ -16,7 +16,7 @@ def macos_version():
     return tuple(int(x) for x in platform.mac_ver()[0].split("."))[:2]
 
 if is_32bit:
-    raise NotImplementedError("This 32 bit OS is not supported already!")
+    raise NotImplementedError("This OS is not supported in 32 bit!")
 
 try:
     from ...__config__ import config
