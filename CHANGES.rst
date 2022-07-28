@@ -1,10 +1,15 @@
 Changelog
 =========
 
+1.0.26b3 (2022-07-25)
+---------------------
+- Setup update (currently based mainly on pyproject.toml).
+- Update for macOS (dlls are included for v.10.7+ and v.11.6+ 64bit).
+
 1.0.26b2 (2022-07-18)
 ---------------------
 - Upgrade for Windows: libusb v.1.0.24 -> v.1.0.26
-- Update for MacOS (v.11.6 64bit).
+- Update for macOS (v.11.6 64bit).
 - Add support for Python 3.10 and 3.11
 - Add support for PyPy 3.7, 3.8 and 3.9
 - Setup update.

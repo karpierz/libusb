@@ -11,6 +11,10 @@ is_32bit = (sys.maxsize <= 2**32)
 arch     = "x86" if is_32bit else "x64"
 arch_dir = os.path.join(this_dir, arch)
 
+def macos_version():
+    import platform
+    return tuple(int(x) for x in platform.mac_ver()[0].split("."))[:2]
+
 if is_32bit:
     raise NotImplementedError("This 32 bit OS is not supported already!")
 
@@ -21,7 +25,13 @@ try:
     if DLL_PATH is None or DLL_PATH in ("", "None"):
         raise ImportError()
 except ImportError:
-    DLL_PATH = os.path.join(arch_dir, "libusb-1.0.0.dylib")
+    version = macos_version()
+    #"""Return True if the platform is Mac OS 10.4 or older."""
+    if version < (10, 7):
+        raise NotImplementedError("This OS version ({}) is not supported!"
+                                  .format(".".join(str(x) for x in version)))
+    ver_dir = "11.6" if version >= (11, 6) or version >= (10, 16) else "10.7"
+    DLL_PATH = os.path.join(arch_dir, ver_dir, "libusb-1.0.0.dylib")
 
 from ctypes  import CDLL as DLL
 from _ctypes import dlclose
