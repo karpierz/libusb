@@ -25,13 +25,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 import ctypes as ct
-intptr_t = (ct.c_int32 if ct.sizeof(ct.c_void_p) == ct.sizeof(ct.c_int32) else ct.c_int64)
 
 from ._platform import CFUNC
 from ._platform import timeval
 from ._dll      import dll
 
-#include <limits.h>
+intptr_t = (ct.c_int32 if ct.sizeof(ct.c_void_p) == ct.sizeof(ct.c_int32) else ct.c_int64)
+
+# include <limits.h>
 UINT_MAX = ct.c_uint(-1).value
 INT_MAX  = UINT_MAX >> 1
 
@@ -69,11 +70,11 @@ def LIBUSB_DEPRECATED_FOR(f): pass  # __attribute__ ((deprecated ("Use " #f " in
 # return type, before the function name. See internal documentation for
 # API_EXPORTED.
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-#define LIBUSB_CALL WINAPI
-#else
-#define LIBUSB_CALL
-#endif /* _WIN32 || __CYGWIN__ */
+# if defined(_WIN32) || defined(__CYGWIN__)
+# define LIBUSB_CALL WINAPI
+# else
+# define LIBUSB_CALL
+# endif /* _WIN32 || __CYGWIN__ */
 
 # \def LIBUSB_API_VERSION
 # \ingroup libusb::misc
@@ -107,7 +108,7 @@ LIBUSBX_API_VERSION = LIBUSB_API_VERSION
 # :param x: the host-endian value to convert
 # :returns: the value in little-endian byte order
 
-#static inline
+# static inline
 @CFUNC(ct.c_uint16, ct.c_uint16)
 def cpu_to_le16(x):
 
@@ -264,10 +265,10 @@ LIBUSB_BT_SS_USB_DEVICE_CAPABILITY_SIZE = 10
 LIBUSB_BT_CONTAINER_ID_SIZE             = 20
 
 # We unwrap the BOS => define its max size
-LIBUSB_DT_BOS_MAX_SIZE = (LIBUSB_DT_BOS_SIZE +
-                          LIBUSB_BT_USB_2_0_EXTENSION_SIZE +
-                          LIBUSB_BT_SS_USB_DEVICE_CAPABILITY_SIZE +
-                          LIBUSB_BT_CONTAINER_ID_SIZE)
+LIBUSB_DT_BOS_MAX_SIZE = (LIBUSB_DT_BOS_SIZE
+                          + LIBUSB_BT_USB_2_0_EXTENSION_SIZE
+                          + LIBUSB_BT_SS_USB_DEVICE_CAPABILITY_SIZE
+                          + LIBUSB_BT_CONTAINER_ID_SIZE)
 
 LIBUSB_ENDPOINT_ADDRESS_MASK = 0x0f  # in bEndpointAddress
 LIBUSB_ENDPOINT_DIR_MASK     = 0x80
@@ -910,9 +911,9 @@ class container_id_descriptor(ct.Structure):
 
 # \ingroup libusb::asyncio
 # Setup packet for control transfers.
-#if defined(_MSC_VER) || defined(__WATCOMC__)
-#pragma pack(push, 1)
-#endif
+# if defined(_MSC_VER) || defined(__WATCOMC__)
+# pragma pack(push, 1)
+# endif
 class control_setup(ct.Structure):
     _fields_ = [
 
@@ -939,9 +940,9 @@ class control_setup(ct.Structure):
     # Number of bytes to transfer
     ("wLength", ct.c_uint16),
 ]
-#if defined(_MSC_VER) || defined(__WATCOMC__)
-#pragma pack(pop)
-#endif
+# if defined(_MSC_VER) || defined(__WATCOMC__)
+# pragma pack(pop)
+# endif
 
 LIBUSB_CONTROL_SETUP_SIZE = ct.sizeof(control_setup)
 
@@ -1155,7 +1156,7 @@ transfer_status = ct.c_int
     # NB! Remember to update libusb.error_name()
     # when adding new status codes here.
 
-) = range(0,7)
+) = range(0, 7)
 
 # \ingroup libusb::asyncio
 # libusb.transfer_flags values
@@ -1346,7 +1347,7 @@ log_level = ct.c_int
     LIBUSB_LOG_LEVEL_DEBUG,
 
 ) = (0, 1, 2, 3, 4)
- 
+
 # \ingroup libusb::lib
 # Log callback mode.
 #
@@ -1386,7 +1387,7 @@ init        = CFUNC(ct.c_int,
                     ("libusb_init", dll), (
                     (1, "ctx"),))
 
-exit        = CFUNC(None,
+exit        = CFUNC(None,  # noqa: A001
                     ct.POINTER(context))(
                     ("libusb_exit", dll), (
                     (1, "ctx"),))
@@ -1409,7 +1410,7 @@ try:
                     (1, "ctx"),
                     (1, "cb"),
                     (1, "mode")))
-except: pass
+except: pass  # noqa: E722
 
 has_capability = CFUNC(ct.c_int,
                     ct.c_uint32)(
@@ -1640,9 +1641,9 @@ try:
               (1, "ctx"),
               (1, "sys_dev"),
               (1, "dev_handle")))
-except: pass
+except: pass  # noqa: E722
 
-open  = CFUNC(ct.c_int,
+open  = CFUNC(ct.c_int,  # noqa: A001
               ct.POINTER(device),
               ct.POINTER(ct.POINTER(device_handle)))(
               ("libusb_open", dll), (
@@ -1788,11 +1789,11 @@ set_auto_detach_kernel_driver = CFUNC(ct.c_int,
 # :param transfer: a transfer
 # :returns: pointer to the first byte of the data section
 
-#static inline
-#@CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer))
+# static inline
+# @CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer))
 def control_transfer_get_data(transfer):
     transfer = transfer[0]
-    return transfer.buffer + LIBUSB_CONTROL_SETUP_SIZE;
+    return ct.cast(transfer.buffer + LIBUSB_CONTROL_SETUP_SIZE, ct.POINTER(ct.c_ubyte))
 
 # \ingroup libusb::asyncio
 # Get the control setup packet of a control transfer. This convenience
@@ -1806,11 +1807,11 @@ def control_transfer_get_data(transfer):
 # :param transfer: a transfer
 # :returns: a casted pointer to the start of the transfer data buffer
 
-#static inline
-#@CFUNC(ct.POINTER(control_setup), ct.POINTER(transfer))
+# static inline
+# @CFUNC(ct.POINTER(control_setup), ct.POINTER(transfer))
 def control_transfer_get_setup(transfer):
     transfer = transfer[0]
-    return ct.cast(buffer, ct.POINTER(transfer.buffer))
+    return ct.cast(transfer.buffer, ct.POINTER(control_setup))
 
 # \ingroup libusb::asyncio
 # Helper function to populate the setup packet (first 8 bytes of the data
@@ -1835,7 +1836,7 @@ def control_transfer_get_setup(transfer):
 # \ref libusb.control_setup::wLength "wLength" field of
 # \ref libusb.control_setup
 
-#static inline
+# static inline
 @CFUNC(None,
        ct.POINTER(ct.c_ubyte), ct.c_uint8,  ct.c_uint8,  ct.c_uint16, ct.c_uint16, ct.c_uint16)
 def fill_control_setup(buffer, bmRequestType, bRequest, wValue, wIndex, wLength):
@@ -1904,7 +1905,7 @@ transfer_set_stream_id = CFUNC(None,
 # :param user_data: user data to pass to callback function
 # :param timeout: timeout for the transfer in milliseconds
 
-#static inline
+# static inline
 @CFUNC(None,
        ct.POINTER(transfer), ct.POINTER(device_handle),
        ct.POINTER(ct.c_ubyte), transfer_cb_fn, ct.c_void_p, ct.c_uint)
@@ -1934,7 +1935,7 @@ def fill_control_transfer(transfer, dev_handle, buffer, callback, user_data, tim
 # :param user_data: user data to pass to callback function
 # :param timeout: timeout for the transfer in milliseconds
 
-#static inline
+# static inline
 @CFUNC(None,
        ct.POINTER(transfer), ct.POINTER(device_handle), ct.c_ubyte,
        ct.POINTER(ct.c_ubyte), ct.c_int, transfer_cb_fn, ct.c_void_p, ct.c_uint)
@@ -1966,7 +1967,7 @@ def fill_bulk_transfer(transfer, dev_handle, endpoint,
 # :param user_data: user data to pass to callback function
 # :param timeout: timeout for the transfer in milliseconds
 
-#static inline
+# static inline
 @CFUNC(None,
        ct.POINTER(transfer), ct.POINTER(device_handle), ct.c_ubyte, ct.c_uint32,
        ct.POINTER(ct.c_ubyte), ct.c_int, transfer_cb_fn, ct.c_void_p, ct.c_uint)
@@ -1990,7 +1991,7 @@ def fill_bulk_stream_transfer(transfer, dev_handle, endpoint, stream_id,
 # :param user_data: user data to pass to callback function
 # :param timeout: timeout for the transfer in milliseconds
 
-#static inline
+# static inline
 @CFUNC(None,
        ct.POINTER(transfer), ct.POINTER(device_handle), ct.c_ubyte,
        ct.POINTER(ct.c_ubyte), ct.c_int, transfer_cb_fn, ct.c_void_p, ct.c_uint)
@@ -2020,7 +2021,7 @@ def fill_interrupt_transfer(transfer, dev_handle, endpoint,
 # :param user_data: user data to pass to callback function
 # :param timeout: timeout for the transfer in milliseconds
 
-#static inline
+# static inline
 @CFUNC(None,
        ct.POINTER(transfer), ct.POINTER(device_handle), ct.c_ubyte,
        ct.POINTER(ct.c_ubyte), ct.c_int, ct.c_int, transfer_cb_fn, ct.c_void_p, ct.c_uint)
@@ -2045,7 +2046,7 @@ def fill_iso_transfer(transfer, dev_handle, endpoint,
 # :param length: the length to set in each isochronous packet descriptor
 # \see libusb.get_max_packet_size()
 
-#static inline
+# static inline
 @CFUNC(None, ct.POINTER(transfer), ct.c_uint)
 def set_iso_packet_lengths(transfer, length):
     transfer = transfer[0]
@@ -2068,8 +2069,8 @@ def set_iso_packet_lengths(transfer, length):
 # or NULL if the packet does not exist.
 # \see libusb.get_iso_packet_buffer_simple()
 
-#static inline
-#@CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer), ct.c_uint)
+# static inline
+# @CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer), ct.c_uint)
 def get_iso_packet_buffer(transfer, packet):
     packet = packet.value
 
@@ -2077,18 +2078,18 @@ def get_iso_packet_buffer(transfer, packet):
     # signed integers almost everywhere else. range-check and convert to
     # signed to avoid compiler warnings. FIXME for libusb-2.
     if packet > INT_MAX:
-        return NULL;
+        return None
 
     transfer = transfer[0]
 
     if packet >= transfer.num_iso_packets:
-        return NULL;
+        return None
 
     offset = 0
     for i in range(packet):
         offset += transfer.iso_packet_desc[i].length
 
-    return transfer.buffer + offset;
+    return ct.cast(transfer.buffer + offset, ct.POINTER(ct.c_ubyte))
 
 # \ingroup libusb::asyncio
 # Convenience function to locate the position of an isochronous packet
@@ -2109,8 +2110,8 @@ def get_iso_packet_buffer(transfer, packet):
 # or NULL if the packet does not exist.
 # \see libusb.get_iso_packet_buffer()
 
-#static inline
-#@CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer), ct.c_uint)
+# static inline
+# @CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer), ct.c_uint)
 def get_iso_packet_buffer_simple(transfer, packet):
     packet = packet.value
 
@@ -2118,14 +2119,16 @@ def get_iso_packet_buffer_simple(transfer, packet):
     # signed integers almost everywhere else. range-check and convert to
     # signed to avoid compiler warnings. FIXME for libusb-2.
     if packet > INT_MAX:
-        return NULL;
+        return None
 
     transfer = transfer[0]
 
     if packet >= transfer.num_iso_packets:
-        return NULL;
+        return None
 
-    return transfer.buffer + (ct.c_int(transfer.iso_packet_desc[0].length) * packet);
+    return ct.cast(transfer.buffer
+                   + ct.c_int(transfer.iso_packet_desc[0].length).value * packet,
+                   ct.POINTER(ct.c_ubyte))
 
 ## sync I/O ##
 
@@ -2190,7 +2193,7 @@ interrupt_transfer = CFUNC(ct.c_int,
 # :param length: size of data buffer
 # :returns: number of bytes returned in data, or LIBUSB_ERROR code on failure
 
-#static inline
+# static inline
 @CFUNC(ct.c_int,
        ct.POINTER(device_handle), ct.c_uint8, ct.c_uint8, ct.POINTER(ct.c_ubyte), ct.c_int)
 def get_descriptor(dev_handle, desc_type, desc_index, data, length):
@@ -2213,7 +2216,7 @@ def get_descriptor(dev_handle, desc_type, desc_index, data, length):
 # :returns: number of bytes returned in data, or LIBUSB_ERROR code on failure
 # \see libusb.get_string_descriptor_ascii()
 
-#static inline
+# static inline
 @CFUNC(ct.c_int,
        ct.POINTER(device_handle), ct.c_uint8, ct.c_uint16, ct.POINTER(ct.c_ubyte), ct.c_int)
 def get_string_descriptor(dev_handle, desc_index, langid, data, length):
@@ -2558,8 +2561,8 @@ try:
                                     ("libusb_hotplug_get_user_data", dll), (
                                     (1, "ctx"),
                                     (1, "callback_handle")))
-except: pass
- 
+except: pass  # noqa: E722
+
 # \ingroup libusb::lib
 # Available option values for libusb.set_option().
 

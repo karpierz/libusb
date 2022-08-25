@@ -26,27 +26,26 @@ try:
         raise ImportError()
 except ImportError:
     version = macos_version()
-    #"""Return True if the platform is Mac OS 10.4 or older."""
     if version < (10, 7):
         raise NotImplementedError("This OS version ({}) is not supported!"
                                   .format(".".join(str(x) for x in version)))
     ver_dir = "11.6" if version >= (11, 6) or version >= (10, 16) else "10.7"
     DLL_PATH = os.path.join(arch_dir, ver_dir, "libusb-1.0.0.dylib")
 
-from ctypes  import CDLL as DLL
-from _ctypes import dlclose
-from ctypes  import CFUNCTYPE as CFUNC
+from ctypes  import CDLL as DLL         # noqa: E402
+from _ctypes import dlclose             # noqa: E402
+from ctypes  import CFUNCTYPE as CFUNC  # noqa: E402
 
 # X32 kernel interface is 64-bit.
-if False:#if defined __x86_64__ && defined __ILP32__
+if False:  # if defined __x86_64__ && defined __ILP32__
     # quad_t is also 64 bits.
     time_t = suseconds_t = ct.c_longlong
 else:
     time_t = suseconds_t = ct.c_long
-#endif
+# endif
 
 # Taken from the file <sys/time.h>
-#include <time.h>
+# #include <time.h>
 #
 # struct timeval {
 #     time_t      tv_sec;   /* Seconds. */

@@ -1,6 +1,14 @@
 Changelog
 =========
 
+1.0.26b4 (2022-08-25)
+---------------------
+- | Downgrade of included shared libraries for Linux:
+  | libusb v.1.0.26 -> v.1.0.24 (for now based on Debian's 11 (bullseye)),
+  | because of loading issues of v.1.0.26 from Debian's 12 (bookworm)
+  | shared libraries.
+- Setup update.
+
 1.0.26b3 (2022-07-25)
 ---------------------
 - Setup update (currently based mainly on pyproject.toml).

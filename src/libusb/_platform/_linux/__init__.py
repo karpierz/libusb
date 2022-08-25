@@ -18,22 +18,22 @@ try:
     if DLL_PATH is None or DLL_PATH in ("", "None"):
         raise ImportError()
 except ImportError:
-    DLL_PATH = os.path.join(arch_dir, "libusb-1.0.so") # libusb-1.0.so.0.3.0
+    DLL_PATH = os.path.join(arch_dir, "libusb-1.0.so")  # libusb-1.0.so.0.3.0
 
-from ctypes  import CDLL as DLL
-from _ctypes import dlclose
-from ctypes  import CFUNCTYPE as CFUNC
+from ctypes  import CDLL as DLL         # noqa: E402
+from _ctypes import dlclose             # noqa: E402
+from ctypes  import CFUNCTYPE as CFUNC  # noqa: E402
 
 # X32 kernel interface is 64-bit.
-if False:#if defined __x86_64__ && defined __ILP32__
+if False:  # if defined __x86_64__ && defined __ILP32__
     # quad_t is also 64 bits.
     time_t = suseconds_t = ct.c_longlong
 else:
     time_t = suseconds_t = ct.c_long
-#endif
+# endif
 
 # Taken from the file <sys/time.h>
-#include <time.h>
+# #include <time.h>
 #
 # struct timeval {
 #     time_t      tv_sec;   /* Seconds. */
