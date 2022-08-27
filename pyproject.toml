@@ -150,7 +150,7 @@ ignore = ['E126','E203','E221','E251','E302','E701','E702','E731',
 #select =
 #select = ['E','W','F','N','I']
 per-file-ignores = [
-    '*/libusb/_libusb.py: E305',  # ,D204
+    '*/libusb/_libusb.py: E305',
     '*/libusb/_platform/__init__.py: E305',
     '*/libusb/_platform/_windows/__init__.py: E305',
     '*/libusb/_platform/_macos/__init__.py: E305',
