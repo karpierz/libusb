@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.0.26b5 (2022-09-10)
+---------------------
+- Tox configuration has been moved to pyproject.toml
+
 1.0.26b4 (2022-08-25)
 ---------------------
 - | Downgrade of included shared libraries for Linux:
