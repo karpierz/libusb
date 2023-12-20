@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.0.26rc2 (2023-12-20)
+----------------------
+- Add linux aarch64 support.
+
 1.0.26rc1 (2023-12-15)
 ----------------------
 - Add support for Python 3.12
