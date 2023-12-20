@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2022 Adam Karpierz
+# Copyright (c) 2016-2024 Adam Karpierz
 # Licensed under the zlib/libpng License
 # https://opensource.org/licenses/Zlib
 
@@ -45,7 +45,7 @@ if defined("DPFP_THREADED"):
 
         def semaphore_create() -> semaphore_t:
             name = "/org.libusb.example.dpfp_threaded:%d" % int(getpid())
-            semaphore: semaphore_t = sem_open(name, O_CREAT | O_EXCL, 0, 0) 
+            semaphore: semaphore_t = sem_open(name, O_CREAT | O_EXCL, 0, 0)
             if semaphore == SEM_FAILED:
                 return NULL;
             # Remove semaphore so that it does not persist after process exits
