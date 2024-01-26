@@ -1,6 +1,6 @@
-# Copyright (c) 2016-2024 Adam Karpierz
+# Copyright (c) 2016 Adam Karpierz
 # Licensed under the zlib/libpng License
-# https://opensource.org/licenses/Zlib
+# https://opensource.org/license/zlib
 
 # Test suite program based of libusb-0.1-compat testlibusb
 # Copyright (c) 2013 Nathan Hjelm <hjelmn@mac.ccom>

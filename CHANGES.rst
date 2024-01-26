@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.0.26rc3 (2024-01-25)
+----------------------
+- Setup update (now based on tox >= 4.0).
+- Cleanup.
+
 1.0.26rc2 (2023-12-20)
 ----------------------
 - Add linux aarch64 support.

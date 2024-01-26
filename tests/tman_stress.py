@@ -1,6 +1,6 @@
-# Copyright (c) 2016-2024 Adam Karpierz
+# Copyright (c) 2016 Adam Karpierz
 # Licensed under the zlib/libpng License
-# https://opensource.org/licenses/Zlib
+# https://opensource.org/license/zlib
 
 # libusb stress test program to perform simple stress tests
 # Copyright © 2012 Toby Gray <toby.gray@realvnc.com>
