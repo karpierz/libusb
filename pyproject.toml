@@ -8,7 +8,7 @@ requires = ['setuptools>=68.2.2', 'wheel>=0.42.0', 'packaging>=23.2.0', 'tox>=4.
 
 [project]
 name        = 'libusb'
-version     = '1.0.26rc3'
+version     = '1.0.26rc4'
 description = 'Python binding for the libusb C library.'
 urls.Homepage      = 'https://pypi.org/project/libusb/'
 urls.Documentation = 'https://libusb.readthedocs.io/'
@@ -47,7 +47,7 @@ requires-python = '>=3.8.1,<4.0.0'
 dependencies = [
     # mandatory
     'setuptools>=68.2.2',
-    'pkg-about>=1.1.3',
+    'pkg-about>=1.1.5',
     # others
 ]
 dynamic = ['readme']
@@ -174,21 +174,21 @@ count = true
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{38,39,310,311,312}, pypy{39,310}win, docs
+envlist = py{38,39,310,311,312}, pypy{39,310}, docs
 labels =
-    py = py{38,39,310,311,312}, pypy{39,310}win
+    py = py{38,39,310,311,312}, pypy{39,310}
     prepare = prepare
     coverage = coverage
     lint = lint
     docs = docs
-    build  = py{38,39,310,311,312}, pypy{39,310}win, docs, build
-    deploy = py{38,39,310,311,312}, pypy{39,310}win, docs, build, publish
+    build  = py{38,39,310,311,312}, pypy{39,310}, docs, build
+    deploy = py{38,39,310,311,312}, pypy{39,310}, docs, build, publish
 minversion = 4.11.3
 skip_missing_interpreters = true
 requires =
     {[base]deps}
     virtualenv>=20.25.0
-    tox-backtick>=0.4.3
+    tox-backtick>=0.4.4
     tox-tags>=0.2.0
 
 [base]
@@ -209,12 +209,6 @@ commands =
 extras = test
 deps =
     {[base]deps}
-
-[testenv:pypy39win]
-basepython = C:\\PyPy39\\pypy.exe
-
-[testenv:pypy310win]
-basepython = C:\\PyPy310\\pypy.exe
 
 [testenv:prepare]
 basepython = {[base]basepython}
@@ -250,7 +244,7 @@ extras = doc
 deps =
 
 [testenv:build]
-depends = py{38,39,310,311,312}, pypy{39,310}win, docs
+depends = py{38,39,310,311,312}, pypy{39,310}, docs
 basepython = {[base]basepython}
 setenv =
     {[testenv]setenv}
