@@ -34,17 +34,19 @@ import libusb as usb
 from libusb._platform import defined, is_posix, is_windows
 if is_windows: import win32
 
+usb_strerror = lambda r: usb.strerror(r).decode("utf-8")
+
 if defined("DPFP_THREADED"):
 
     if is_posix:
 
-        THREAD_RETURN_VALUE = NULL
         semaphore_t = ct.POINTER(sem_t)
         thread_t    = pthread_t
         thread_return_t = ct.c_void_p
+        THREAD_RETURN_VALUE = NULL
 
         def semaphore_create() -> semaphore_t:
-            name = "/org.libusb.example.dpfp_threaded:%d" % int(getpid())
+            name = "/org.libusb.example.dpfp_threaded:{:d}".format(int(getpid()))
             semaphore: semaphore_t = sem_open(name, O_CREAT | O_EXCL, 0, 0)
             if semaphore == SEM_FAILED:
                 return NULL;
@@ -61,7 +63,7 @@ if defined("DPFP_THREADED"):
         def semaphore_destroy(semaphore: semaphore_t):
             sem_close(semaphore)
 
-        # void *(*thread_entry)(arg: ct.c_void_p)
+        # thread_return_t (*thread_entry)(arg: ct.c_void_p)
         def thread_create(thread: ct.POINTER(thread_t),
                           thread_entry,
                           arg: ct.c_void_p) -> int:
@@ -73,7 +75,6 @@ if defined("DPFP_THREADED"):
 
     elif is_windows:
 
-        THREAD_RETURN_VALUE = 0
         semaphore_t = win32.HANDLE
         thread_t    = win32.HANDLE
         if defined("__CYGWIN__"):
@@ -81,6 +82,7 @@ if defined("DPFP_THREADED"):
         else:
            #thread_return_t = ct.c_uint
             thread_return_t = win32.DWORD
+        THREAD_RETURN_VALUE = 0
 
         def semaphore_create() -> semaphore_t:
             return win32.CreateSemaphore(None, 0, 1, None)
@@ -543,7 +545,6 @@ def alloc_transfers() -> int:
 
 #static
 def sighandler(signum, frame):
-
     request_exit(1)
 
 
@@ -571,9 +572,12 @@ def main(argv=sys.argv[1:]):
     global irq_transfer
     global do_exit
 
-    r = usb.init(None)
+    r = (usb.init_context(None, None, 0)
+         if hasattr(usb, "init_context") else
+         usb.init(None))
     if r < 0:
-        print("failed to initialise libusb {} - {}".format(r, usb.strerror(r)), file=sys.stderr)
+        print("failed to initialise libusb {} - {}".format(r, usb_strerror(r)),
+              file=sys.stderr)
         sys.exit(1)
 
     r = find_dpfp_device()
@@ -584,7 +588,8 @@ def main(argv=sys.argv[1:]):
 
         r = usb.claim_interface(devh, 0)
         if r < 0:
-            print("claim interface error {} - {}".format(r, usb.strerror(r)), file=sys.stderr)
+            print("claim interface error {} - {}".format(r, usb_strerror(r)),
+                  file=sys.stderr)
             return abs(r)
         print("claimed interface")
 
@@ -642,12 +647,14 @@ def main(argv=sys.argv[1:]):
             if img_transfer:
                 r = usb.cancel_transfer(img_transfer)
                 if r < 0:
-                    print("failed to cancel transfer {} - {}".format(r, usb.strerror(r)), file=sys.stderr)
+                    print("failed to cancel transfer {} - {}".format(r, usb_strerror(r)),
+                          file=sys.stderr)
 
             if irq_transfer:
                 r = usb.cancel_transfer(irq_transfer)
                 if r < 0:
-                    print("failed to cancel transfer {} - {}".format(r, usb.strerror(r)), file=sys.stderr)
+                    print("failed to cancel transfer {} - {}".format(r, usb_strerror(r)),
+                          file=sys.stderr)
 
             while img_transfer or irq_transfer:
                 if usb.handle_events(None) < 0:

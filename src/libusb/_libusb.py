@@ -6,9 +6,9 @@
 # Copyright (c) 2001 Johannes Erdfelt <johannes@erdfelt.com>
 # Copyright (c) 2007-2008 Daniel Drake <dsd@gentoo.org>
 # Copyright (c) 2012 Pete Batard <pete@akeo.ie>
-# Copyright (c) 2012-2018 Nathan Hjelm <hjelmn@cs.unm.edu>
+# Copyright (c) 2012-2023 Nathan Hjelm <hjelmn@cs.unm.edu>
 # Copyright (c) 2014-2020 Chris Dickens <christopher.a.dickens@gmail.com>
-# For more information, please visit: http://libusb.info
+# For more information, please visit: https://libusb.info
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -28,6 +28,7 @@ import ctypes as ct
 
 from ._platform import CFUNC
 from ._platform import timeval
+from ._platform import defined
 from ._dll      import dll
 
 intptr_t = (ct.c_int32 if ct.sizeof(ct.c_void_p) == ct.sizeof(ct.c_int32) else ct.c_int64)
@@ -36,7 +37,7 @@ intptr_t = (ct.c_int32 if ct.sizeof(ct.c_void_p) == ct.sizeof(ct.c_int32) else c
 UINT_MAX = ct.c_uint(-1).value
 INT_MAX  = UINT_MAX >> 1
 
-def LIBUSB_DEPRECATED_FOR(f): pass  # __attribute__ ((deprecated ("Use " #f " instead")))
+def LIBUSB_DEPRECATED_FOR(f): pass
 
 # \def LIBUSB_CALL
 # \ingroup libusb::misc
@@ -72,19 +73,24 @@ def LIBUSB_DEPRECATED_FOR(f): pass  # __attribute__ ((deprecated ("Use " #f " in
 
 # if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBUSB_CALL WINAPI
+# define LIBUSB_CALLV WINAPIV
 # else
 # define LIBUSB_CALL
+# define LIBUSB_CALLV
 # endif /* _WIN32 || __CYGWIN__ */
 
 # \def LIBUSB_API_VERSION
 # \ingroup libusb::misc
 # libusb's API version.
 #
-# Since version 1.0.13, to help with feature detection, libusb defines
+# Since version 1.0.18, to help with feature detection, libusb defines
 # a LIBUSB_API_VERSION macro that gets increased every time there is a
 # significant change to the API, such as the introduction of a new call,
 # the definition of a new macro/enum member, or any other element that
 # libusb applications may want to detect at compilation time.
+#
+# Between versions 1.0.13 and 1.0.17 (inclusive) the older spelling of
+# LIBUSBX_API_VERSION was used.
 #
 # The macro is typically used in an application as follows:
 # \code
@@ -95,10 +101,34 @@ def LIBUSB_DEPRECATED_FOR(f): pass  # __attribute__ ((deprecated ("Use " #f " in
 #
 # Internally, LIBUSB_API_VERSION is defined as follows:
 # (libusb major << 24) | (libusb minor << 16) | (16 bit incremental)
+#
+# The incremental component has changed as follows:
+# <ul>
+# <li>libusbx version 1.0.13: LIBUSBX_API_VERSION = 0x01000100
+# <li>libusbx version 1.0.14: LIBUSBX_API_VERSION = 0x010000FF
+# <li>libusbx version 1.0.15: LIBUSBX_API_VERSION = 0x01000101
+# <li>libusbx version 1.0.16: LIBUSBX_API_VERSION = 0x01000102
+# <li>libusbx version 1.0.17: LIBUSBX_API_VERSION = 0x01000102
+# <li>libusb version 1.0.18: LIBUSB_API_VERSION = 0x01000102
+# <li>libusb version 1.0.19: LIBUSB_API_VERSION = 0x01000103
+# <li>libusb version 1.0.20: LIBUSB_API_VERSION = 0x01000104
+# <li>libusb version 1.0.21: LIBUSB_API_VERSION = 0x01000105
+# <li>libusb version 1.0.22: LIBUSB_API_VERSION = 0x01000106
+# <li>libusb version 1.0.23: LIBUSB_API_VERSION = 0x01000107
+# <li>libusb version 1.0.24: LIBUSB_API_VERSION = 0x01000108
+# <li>libusb version 1.0.25: LIBUSB_API_VERSION = 0x01000109
+# <li>libusb version 1.0.26: LIBUSB_API_VERSION = 0x01000109
+# <li>libusb version 1.0.27: LIBUSB_API_VERSION = 0x0100010A
+# </ul>
 
 LIBUSB_API_VERSION = 0x01000109
 
-# The following is kept for compatibility, but will be deprecated in the future
+# \def LIBUSBX_API_VERSION
+# \ingroup libusb_misc
+#
+# This is the older spelling, kept for backwards compatibility of code
+# needing to test for older library versions where the newer spelling
+# did not exist.
 LIBUSBX_API_VERSION = LIBUSB_API_VERSION
 
 # \ingroup libusb::misc
@@ -222,6 +252,10 @@ descriptor_type = ct.c_int
     # Endpoint descriptor. See libusb.endpoint_descriptor.
     LIBUSB_DT_ENDPOINT,
 
+    # Interface Association Descriptor.
+    # See libusb.interface_association_descriptor
+    LIBUSB_DT_INTERFACE_ASSOCIATION,
+
     # BOS descriptor
     LIBUSB_DT_BOS,
 
@@ -246,7 +280,7 @@ descriptor_type = ct.c_int
     # SuperSpeed Endpoint Companion descriptor
     LIBUSB_DT_SS_ENDPOINT_COMPANION,
 
-) = (0x01, 0x02, 0x03, 0x04, 0x05, 0x0f, 0x10, 0x21, 0x22, 0x23, 0x29, 0x2a, 0x30)
+) = (0x01, 0x02, 0x03, 0x04, 0x05, 0x0b, 0x0f, 0x10, 0x21, 0x22, 0x23, 0x29, 0x2a, 0x30)
 
 # Descriptor sizes per descriptor type
 LIBUSB_DT_DEVICE_SIZE                = 18
@@ -263,6 +297,7 @@ LIBUSB_DT_DEVICE_CAPABILITY_SIZE     = 3
 LIBUSB_BT_USB_2_0_EXTENSION_SIZE        = 7
 LIBUSB_BT_SS_USB_DEVICE_CAPABILITY_SIZE = 10
 LIBUSB_BT_CONTAINER_ID_SIZE             = 20
+LIBUSB_BT_PLATFORM_DESCRIPTOR_MIN_SIZE  = 20
 
 # We unwrap the BOS => define its max size
 LIBUSB_DT_BOS_MAX_SIZE = (LIBUSB_DT_BOS_SIZE
@@ -503,7 +538,10 @@ bos_type = ct.c_int
     # Container ID type
     LIBUSB_BT_CONTAINER_ID,
 
-) = (0x01, 0x02, 0x03, 0x04)
+    # Platform descriptor
+    LIBUSB_BT_PLATFORM_DESCRIPTOR,
+
+) = (0x01, 0x02, 0x03, 0x04, 0x05)
 
 # \ingroup libusb::desc
 # A structure representing the standard USB device descriptor. This
@@ -609,6 +647,65 @@ class endpoint_descriptor(ct.Structure):
 
     # Length of the extra descriptors, in bytes. Must be non-negative.
     ("extra_length", ct.c_int),
+]
+
+# \ingroup libusb_desc
+# A structure representing the standard USB interface association descriptor.
+# This descriptor is documented in section 9.6.4 of the USB 3.0 specification.
+# All multiple-byte fields are represented in host-endian format.
+
+class interface_association_descriptor(ct.Structure):
+    _fields_ = [
+
+    # Size of this descriptor (in bytes)
+    ("bLength", ct.c_uint8),
+
+    # Descriptor type. Will have value
+    # \ref libusb.descriptor_type::LIBUSB_DT_INTERFACE_ASSOCIATION
+    # LIBUSB_DT_INTERFACE_ASSOCIATION in this context.
+    ("bDescriptorType", ct.c_uint8),
+
+    # Interface number of the first interface that is associated
+    # with this function
+    ("bFirstInterface", ct.c_uint8),
+
+    # Number of contiguous interfaces that are associated with
+    # this function
+    ("bInterfaceCount", ct.c_uint8),
+
+    # USB-IF class code for this function.
+    # A value of zero is not allowed in this descriptor.
+    # If this field is 0xff, the function class is vendor-specific.
+    # All other values are reserved for assignment by the USB-IF.
+    ("bFunctionClass", ct.c_uint8),
+
+    # USB-IF subclass code for this function.
+    # If this field is not set to 0xff, all values are reserved
+    # for assignment by the USB-IF
+    ("bFunctionSubClass", ct.c_uint8),
+
+    # USB-IF protocol code for this function.
+    # These codes are qualified by the values of the bFunctionClass
+    # and bFunctionSubClass fields.
+    ("bFunctionProtocol", ct.c_uint8),
+
+    # Index of string descriptor describing this function
+    ("iFunction", ct.c_uint8),
+]
+
+# \ingroup libusb_desc
+# Structure containing an array of 0 or more interface association
+# descriptors
+
+class interface_association_descriptor_array(ct.Structure):
+    _fields_ = [
+
+    # Array of interface association descriptors. The size of this array
+    # is determined by the length field.
+    ("iad", ct.POINTER(interface_association_descriptor)),
+
+    # Number of interface association descriptors contained. Read-only.
+    ("length", ct.c_int),
 ]
 
 # \ingroup libusb::desc
@@ -909,6 +1006,36 @@ class container_id_descriptor(ct.Structure):
     ("ContainerID", (ct.c_uint8 * 16)),
 ]
 
+# \ingroup libusb_desc
+# A structure representing a Platform descriptor.
+# This descriptor is documented in section 9.6.2.4 of the USB 3.2 specification.
+
+class platform_descriptor(ct.Structure):
+    _fields_ = [
+
+    # Size of this descriptor (in bytes)
+    ("bLength", ct.c_uint8),
+
+    # Descriptor type. Will have value
+    # \ref libusb.descriptor_type::LIBUSB_DT_DEVICE_CAPABILITY
+    # LIBUSB_DT_DEVICE_CAPABILITY in this context.
+    ("bDescriptorType", ct.c_uint8),
+
+    # Capability type. Will have value
+    # \ref libusb.capability_type::LIBUSB_BT_PLATFORM_DESCRIPTOR
+    # LIBUSB_BT_CONTAINER_ID in this context.
+    ("bDevCapabilityType", ct.c_uint8),
+
+    # Reserved field
+    ("bReserved", ct.c_uint8),
+
+    # 128 bit UUID
+    ("PlatformCapabilityUUID", (ct.c_uint8 * 16)),
+
+    # Capability data (bLength - 20)
+    ("CapabilityData", (ct.c_uint8 * 0)),
+]
+
 # \ingroup libusb::asyncio
 # Setup packet for control transfers.
 # if defined(_MSC_VER) || defined(__WATCOMC__)
@@ -982,7 +1109,7 @@ class version(ct.Structure):
 # libusb.exit() will not destroy resources that the other user is still
 # using.
 #
-# Sessions are created by libusb.init() and destroyed through libusb.exit().
+# Sessions are created by libusb.init_context() and destroyed through libusb.exit().
 # If your application is guaranteed to only ever include a single libusb
 # user (i.e. you), you do not have to worry about contexts: pass NULL in
 # every function call where a context is required, and the default context
@@ -1197,7 +1324,8 @@ transfer_flags = ct.c_int
     #
     # This flag is currently only supported on Linux.
     # On other systems, libusb.submit_transfer() will return
-    # LIBUSB_ERROR_NOT_SUPPORTED for every transfer where this flag is set.
+    # \ref LIBUSB_ERROR_NOT_SUPPORTED for every transfer where this
+    # flag is set.
     #
     # Available since libusb-1.0.9.
     LIBUSB_TRANSFER_ADD_ZERO_PACKET,
@@ -1366,6 +1494,80 @@ log_cb_mode = ct.c_int
 ) = (1 << 0, 1 << 1)
 
 # \ingroup libusb::lib
+# Available option values for libusb.set_option() and libusb.init_context().
+
+option = ct.c_int
+(
+    # Set the log message verbosity.
+    #
+    # This option must be provided an argument of type \ref libusb.log_level.
+    # The default level is LIBUSB_LOG_LEVEL_NONE, which means no messages are ever
+    # printed. If you choose to increase the message verbosity level, ensure
+    # that your application does not close the stderr file descriptor.
+    #
+    # You are advised to use level LIBUSB_LOG_LEVEL_WARNING. libusb is conservative
+    # with its message logging and most of the time, will only log messages that
+    # explain error conditions and other oddities. This will help you debug
+    # your software.
+    #
+    # If the LIBUSB_DEBUG environment variable was set when libusb was
+    # initialized, this option does nothing: the message verbosity is fixed
+    # to the value in the environment variable.
+    #
+    # If libusb was compiled without any message logging, this option does
+    # nothing: you'll never get any messages.
+    #
+    # If libusb was compiled with verbose debug message logging, this option
+    # does nothing: you'll always get messages from all levels.
+    #
+    LIBUSB_OPTION_LOG_LEVEL,
+
+    # Use the UsbDk backend for a specific context, if available.
+    #
+    # This option should be set at initialization with libusb.init_context()
+    # otherwise unspecified behavior may occur.
+    #
+    # Only valid on Windows. Ignored on all other platforms.
+    #
+    LIBUSB_OPTION_USE_USBDK,
+
+    # Do not scan for devices
+    #
+    # With this option set, libusb will skip scanning devices in
+    # libusb.init_context().
+    #
+    # Hotplug functionality will also be deactivated.
+    #
+    # The option is useful in combination with libusb.wrap_sys_device(),
+    # which can access a device directly without prior device scanning.
+    #
+    # This is typically needed on Android, where access to USB devices
+    # is limited.
+    #
+    # This option should only be used with libusb.init_context()
+    # otherwise unspecified behavior may occur.
+    #
+    # Only valid on Linux. Ignored on all other platforms.
+    #
+    LIBUSB_OPTION_NO_DEVICE_DISCOVERY,
+
+    # Set the context log callback function.
+    #
+    # Set the log callback function either on a context or globally. This
+    # option must be provided an argument of type \ref libusb.log_cb.
+    # Using this option with a NULL context is equivalent to calling
+    # libusb.set_log_cb() with mode \ref LIBUSB_LOG_CB_GLOBAL.
+    # Using it with a non-NULL context is equivalent to calling
+    # libusb.set_log_cb() with mode \ref LIBUSB_LOG_CB_CONTEXT.
+    #
+    LIBUSB_OPTION_LOG_CB,
+
+    LIBUSB_OPTION_MAX,
+
+) = (0, 1, 2, 3, 4)
+LIBUSB_OPTION_WEAK_AUTHORITY = LIBUSB_OPTION_NO_DEVICE_DISCOVERY
+
+# \ingroup libusb::lib
 # Callback function for handling log messages.
 # \param ctx the context which is related to the log message, or NULL if it
 #            is a global log message
@@ -1378,6 +1580,21 @@ log_cb_mode = ct.c_int
 
 log_cb = CFUNC(None, ct.POINTER(context), log_level, ct.c_char_p)
 
+# \ingroup libusb_lib
+# Structure used for setting options through \ref libusb.init_context.
+
+class init_option(ct.Structure):
+    class _Value(ct.Union):
+        _fields_ = [
+        ("ival",      ct.c_int),
+        ("log_cbval", log_cb),]
+    _fields_ = [
+    # Which option to set
+    ("option", option),
+    # An integer value used by the option (if applicable).
+    ("value", _Value),
+]
+
 
 get_version = CFUNC(ct.POINTER(version))(
                     ("libusb_get_version", dll),)
@@ -1387,12 +1604,21 @@ init        = CFUNC(ct.c_int,
                     ("libusb_init", dll), (
                     (1, "ctx"),))
 
+try:
+    init_context = CFUNC(ct.c_int,
+                    ct.POINTER(ct.POINTER(context)),
+                    ct.POINTER(init_option),
+                    ct.c_int)(
+                    ("libusb_init_context", dll), (
+                    (1, "ctx"),
+                    (1, "options"),
+                    (1, "num_options")))
+except: pass  # noqa: E722
+
 exit        = CFUNC(None,  # noqa: A001
                     ct.POINTER(context))(
                     ("libusb_exit", dll), (
                     (1, "ctx"),))
-
-LIBUSB_DEPRECATED_FOR("set_option")
 
 set_debug   = CFUNC(None,
                     ct.POINTER(context),
@@ -1400,6 +1626,7 @@ set_debug   = CFUNC(None,
                     ("libusb_set_debug", dll), (
                     (1, "ctx"),
                     (1, "level")))
+# may be deprecated in the future in favor of lubusb.init_context()+libusb.set_option()
 
 try:
     set_log_cb = CFUNC(None,
@@ -1570,6 +1797,22 @@ free_container_id_descriptor = CFUNC(None,
                                 ("libusb_free_container_id_descriptor", dll), (
                                 (1, "container_id"),))
 
+try:
+    get_platform_descriptor = CFUNC(ct.c_int,
+                                ct.POINTER(context),
+                                ct.POINTER(bos_dev_capability_descriptor),
+                                ct.POINTER(ct.POINTER(platform_descriptor)))(
+                                ("libusb_get_platform_descriptor", dll), (
+                                (1, "ctx"),
+                                (1, "dev_cap"),
+                                (1, "platform_descriptor")))
+
+    free_platform_descriptor = CFUNC(None,
+                                ct.POINTER(platform_descriptor))(
+                                ("libusb_free_platform_descriptor", dll), (
+                                (1, "platform_descriptor"),))
+except: pass  # noqa: E722
+
 get_bus_number          = CFUNC(ct.c_uint8,
                                 ct.POINTER(device))(
                                 ("libusb_get_bus_number", dll), (
@@ -1631,6 +1874,43 @@ get_max_iso_packet_size = CFUNC(ct.c_int,
                                 (1, "dev"),
                                 (1, "endpoint")))
 
+try:
+    get_max_alt_packet_size = CFUNC(ct.c_int,
+                                ct.POINTER(device),
+                                ct.c_int,
+                                ct.c_int,
+                                ct.c_ubyte)(
+                                ("libusb_get_max_alt_packet_size", dll), (
+                                (1, "dev"),
+                                (1, "interface_number"),
+                                (1, "alternate_setting"),
+                                (1, "endpoint")))
+except: pass  # noqa: E722
+
+
+try:
+    get_interface_association_descriptors = CFUNC(ct.c_int,
+                                ct.POINTER(device),
+                                ct.c_uint8,
+                                ct.POINTER(ct.POINTER(interface_association_descriptor_array)))(
+                                ("libusb_get_interface_association_descriptors", dll), (
+                                (1, "dev"),
+                                (1, "config_index"),
+                                (1, "iad_array")))
+
+    get_active_interface_association_descriptors = CFUNC(ct.c_int,
+                                ct.POINTER(device),
+                                ct.POINTER(ct.POINTER(interface_association_descriptor_array)))(
+                                ("libusb_get_active_interface_association_descriptors", dll), (
+                                (1, "dev"),
+                                (1, "iad_array")))
+
+    free_interface_association_descriptors = CFUNC(None,
+                                ct.POINTER(interface_association_descriptor_array))(
+                                ("libusb_free_interface_association_descriptors", dll), (
+                                (1, "iad_array")))
+except: pass  # noqa: E722
+
 
 try:
     wrap_sys_device = CFUNC(ct.c_int,
@@ -1678,13 +1958,13 @@ release_interface = CFUNC(ct.c_int,
 
 
 open_device_with_vid_pid = CFUNC(ct.POINTER(device_handle),
-                                 ct.POINTER(context),
-                                 ct.c_uint16,
-                                 ct.c_uint16)(
-                                 ("libusb_open_device_with_vid_pid", dll), (
-                                 (1, "ctx"),
-                                 (1, "vendor_id"),
-                                 (1, "product_id")))
+                          ct.POINTER(context),
+                          ct.c_uint16,
+                          ct.c_uint16)(
+                          ("libusb_open_device_with_vid_pid", dll), (
+                          (1, "ctx"),
+                          (1, "vendor_id"),
+                          (1, "product_id")))
 
 
 set_interface_alt_setting = CFUNC(ct.c_int,
@@ -2505,7 +2785,7 @@ hotplug_callback_fn = CFUNC(ct.c_int,
 # :param cb_fn: the function to be invoked on a matching event/device
 # :param user_data: user data to pass to the callback function
 # \param[out] callback_handle pointer to store the handle of the allocated callback (can be NULL)
-# :returns: LIBUSB_SUCCESS on success LIBUSB_ERROR code on failure
+# :returns: \ref LIBUSB_SUCCESS on success LIBUSB_ERROR code on failure
 
 hotplug_register_callback = CFUNC(ct.c_int,
                                   ct.POINTER(context),
@@ -2563,76 +2843,43 @@ try:
                                     (1, "callback_handle")))
 except: pass  # noqa: E722
 
-# \ingroup libusb::lib
-# Available option values for libusb.set_option().
+_set_option_int = CFUNC(ct.c_int,
+                     ct.POINTER(context),
+                     option,
+                     ct.c_int)(
+                     ("libusb_set_option", dll), (
+                     (1, "ctx"),
+                     (1, "option"),
+                     (1, "value")))
 
-option = ct.c_int
-(
-    # Set the log message verbosity.
-    #
-    # The default level is LIBUSB_LOG_LEVEL_NONE, which means no messages are ever
-    # printed. If you choose to increase the message verbosity level, ensure
-    # that your application does not close the stderr file descriptor.
-    #
-    # You are advised to use level LIBUSB_LOG_LEVEL_WARNING. libusb is conservative
-    # with its message logging and most of the time, will only log messages that
-    # explain error conditions and other oddities. This will help you debug
-    # your software.
-    #
-    # If the LIBUSB_DEBUG environment variable was set when libusb was
-    # initialized, this function does nothing: the message verbosity is fixed
-    # to the value in the environment variable.
-    #
-    # If libusb was compiled without any message logging, this function does
-    # nothing: you'll never get any messages.
-    #
-    # If libusb was compiled with verbose debug message logging, this function
-    # does nothing: you'll always get messages from all levels.
-    #
-    LIBUSB_OPTION_LOG_LEVEL,
+_set_option_log_cb = CFUNC(ct.c_int,
+                     ct.POINTER(context),
+                     option,
+                     log_cb)(
+                     ("libusb_set_option", dll), (
+                     (1, "ctx"),
+                     (1, "option"),
+                     (1, "value")))
 
-    # Use the UsbDk backend for a specific context, if available.
-    #
-    # This option should be set immediately after calling libusb.init(), otherwise
-    # unspecified behavior may occur.
-    #
-    # Only valid on Windows.
-    #
-    LIBUSB_OPTION_USE_USBDK,
-
-    # Do not scan for devices
-    #
-    # With this option set, libusb will skip scanning devices in
-    # libusb.init(). Must be set before calling libusb.init().
-    #
-    # Hotplug functionality will also be deactivated.
-    #
-    # The option is useful in combination with libusb_wrap_sys_device(),
-    # which can access a device directly without prior device scanning.
-    #
-    # This is typically needed on Android, where access to USB devices
-    # is limited.
-    #
-    # For LIBUSB_API_VERSION 0x01000108 it was called LIBUSB_OPTION_WEAK_AUTHORITY
-    #
-    # Only valid on Linux.
-    #
-    LIBUSB_OPTION_NO_DEVICE_DISCOVERY,
-
-    LIBUSB_OPTION_MAX,
-
-) = (0, 1, 2, 3)
-LIBUSB_OPTION_WEAK_AUTHORITY = LIBUSB_OPTION_NO_DEVICE_DISCOVERY
-
-def set_option(ctx, option, *values):
+def set_option(ctx, option, *values):  # LIBUSB_CALLV
     if option == LIBUSB_OPTION_LOG_LEVEL:
-        if not (LIBUSB_LOG_LEVEL_NONE <= values[0] <= LIBUSB_LOG_LEVEL_DEBUG):
-            return LIBUSB_ERROR_INVALID_PARAM
-        set_debug(ctx, values[0])
-        return LIBUSB_SUCCESS
-    elif option == LIBUSB_OPTION_USE_USBDK:
-        return LIBUSB_ERROR_NOT_SUPPORTED
+        return _set_option_int(ctx, option, values[0])
+    elif option == LIBUSB_OPTION_LOG_CB:
+        return _set_option_log_cb(ctx, option, values[0])
+    elif option in [LIBUSB_OPTION_USE_USBDK,
+                    LIBUSB_OPTION_NO_DEVICE_DISCOVERY]:
+        return _set_option_int(ctx, option, 0)
     else:
-        return LIBUSB_ERROR_INVALID_PARAM
+        return _set_option_int(ctx, option, 0)
+
+#if defined("ENABLE_LOGGING") and not defined("ENABLE_DEBUG_LOGGING"):
+context._fields_ = [
+    ("debug",       log_level),
+    ("debug_fixed", ct.c_int),
+    ("log_handler", log_cb),
+]
+#endif
+
+del defined
 
 # eof

@@ -21,9 +21,17 @@
 
 import sys
 import os
+import enum
+import operator
+import ctypes as ct
+
+import libusb as usb
+
+# test_spec   === libusb_testlib_test
+# test_result === libusb_testlib_result
 
 
-class test_result:
+class test_result(enum.IntEnum):
     """Values returned from a test function to indicate test result"""
     # Indicates that the test ran successfully.
     TEST_STATUS_SUCCESS = 0
@@ -172,4 +180,92 @@ def run_tests(argv: list, tests: list) -> int:
     logf("Error in {:d} tests", error_count)
     logf("Skipped {:d} tests", skip_count)
 
-    return int(pass_count != run_count)
+    return fail_count + error_count
+
+
+def TEST_CLEAN_EXIT(test_ctx, code):
+    if test_ctx:
+        usb.exit(test_ctx)
+    unsetenv("LIBUSB_DEBUG")
+    if code != test_result.TEST_STATUS_SUCCESS:
+        raise AssertionError(code)
+    return code
+
+
+def EXPECT_SUCCESS(test_ctx, expr):
+    # Fail the test if the expression does not evaluate to libusb.LIBUSB_SUCCESS.
+    result = int(expr)
+    if result != usb.LIBUSB_SUCCESS:  #expr
+        logf("Not success ({}) at {}:{:d}",
+             expr, current_file(2), current_line(2))
+        TEST_CLEAN_EXIT(test_ctx, test_result.TEST_STATUS_FAILURE)
+
+
+def EXPECT_EQ(test_ctx, lhs, rhs):
+    _EXPECT(test_ctx, operator.eq, lhs, rhs)
+
+def EXPECT_NE(test_ctx, lhs, rhs):
+    _EXPECT(test_ctx, operator.ne, lhs, rhs)
+
+def EXPECT_LT(test_ctx, lhs, rhs):
+    _EXPECT(test_ctx, operator.lt, lhs, rhs)
+
+def EXPECT_GT(test_ctx, lhs, rhs):
+    _EXPECT(test_ctx, operator.gt, lhs, rhs)
+
+def EXPECT_LE(test_ctx, lhs, rhs):
+    _EXPECT(test_ctx, operator.le, lhs, rhs)
+
+def EXPECT_GE(test_ctx, lhs, rhs):
+    _EXPECT(test_ctx, operator.ge, lhs, rhs)
+
+def _EXPECT(test_ctx, operator, lhs, rhs):
+    # Use relational operator to compare two values and fail the test if the
+    # comparison is false. Intended to compare integer or pointer types.
+    #
+    # Example: _EXPECT(test_ctx, operator.eq, 0, 1) -> fail,
+    #          _EXPECT(test_ctx, operator.eq, 0, 0) -> ok.
+    _lhs = ct.c_int64(usb.intptr_t(lhs).value).value
+    _rhs = ct.c_int64(usb.intptr_t(rhs).value).value
+    if not operator(_lhs, _rhs):
+        logf("Expected {} ({:d}) {} {} ({:d}) at {}:{:d}",
+             #lhs, _lhs, #operator, #rhs, _rhs,
+             lhs,  _lhs, operator.__name__,  rhs,  _rhs,
+             current_file(3), current_line(3))
+        TEST_CLEAN_EXIT(test_ctx, test_result.TEST_STATUS_FAILURE)
+
+
+def current_file(level=1):
+    from sys import _getframe
+    from inspect import getframeinfo
+    return getframeinfo(_getframe(level)).filename
+
+def current_line(level=1):
+    from sys import _getframe
+    from inspect import getframeinfo
+    return getframeinfo(_getframe(level)).lineno
+
+
+#if is_windows and not defined("__CYGWIN__"):
+
+def setenv(env: str, value: str, *, overwrite: bool = True) -> int:
+    if os.environ.get(env) is not None and not overwrite:
+        return 0
+    # return _putenv_s(env, value)
+    try:
+        os.environ[env] = value
+    except Exception as exc:
+        return exc.errno
+    else:
+        return 0
+
+def unsetenv(env: str) -> int:
+    # return _putenv_s(env, "");
+    try:
+        os.environ.pop(env, None)
+    except Exception as exc:
+        return exc.errno
+    else:
+        return 0
+
+#endif

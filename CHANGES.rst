@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.0.26 (2024-02-05)
+-------------------
+- API partially updated from 1.0.27 but still supports only 1.0.26.
+- Improvements and some little bugfixes.
+- Examples and tests are upgraded from 1.0.27.
+
 1.0.26rc4 (2024-01-25)
 ----------------------
 - Setup update (now based on tox >= 4.0).

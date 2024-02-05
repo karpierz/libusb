@@ -29,6 +29,8 @@ import ctypes as ct
 
 import libusb as usb
 
+usb_error_name = lambda status: usb.error_name(status).decode("utf-8")
+
 FX_TYPE_UNDEFINED = -1
 FX_TYPE_AN21      = 0  # Original AnchorChips parts
 FX_TYPE_FX1       = 1  # Updated Cypress versions
@@ -170,7 +172,7 @@ def ezusb_write(device, label, opcode, addr, data, size) -> int:
     global verbose
 
     if verbose > 1:
-        logerror("{}, addr {:#010x} len %4u ({:#06x})\n",
+        logerror("{}, addr {:#010x} len {:4d} ({:#06x})\n",
                  label, addr, size, size)
     status = usb.control_transfer(device,
                                   usb.LIBUSB_ENDPOINT_OUT |
@@ -183,7 +185,7 @@ def ezusb_write(device, label, opcode, addr, data, size) -> int:
                                   1000)
     if status != ct.c_int(size).value:
         if status < 0:
-            logerror("{}: {}\n", label, usb.error_name(status))
+            logerror("{}: {}\n", label, usb_error_name(status))
         else:
             logerror("{} ==> {}\n", label, status)
 
@@ -205,7 +207,7 @@ def ezusb_read(device, label, opcode, addr, data, size) -> int:
     global verbose
 
     if verbose > 1:
-        logerror("{}, addr {:#010x} len %4u ({:#06x})\n",
+        logerror("{}, addr {:#010x} len {:4d} ({:#06x})\n",
                  label, addr, size, size)
     status = usb.control_transfer(device,
                                   usb.LIBUSB_ENDPOINT_IN |
@@ -218,7 +220,7 @@ def ezusb_read(device, label, opcode, addr, data, size) -> int:
                                   1000)
     if status != ct.c_int(size).value:
         if status < 0:
-            logerror("{}: {}\n", label, usb.error_name(status))
+            logerror("{}: {}\n", label, usb_error_name(status))
         else:
             logerror("{} ==> {}\n", label, status)
 
@@ -255,7 +257,7 @@ def ezusb_cpucs(device, addr, do_run: bool) -> bool:
         (not do_run or status != usb.LIBUSB_ERROR_IO)):
         mesg = "can't modify CPUCS"
         if status < 0:
-            logerror("{}: {}\n", mesg, usb.error_name(status))
+            logerror("{}: {}\n", mesg, usb_error_name(status))
         else:
             logerror("{}\n", mesg)
         return False
@@ -287,7 +289,7 @@ def ezusb_fx3_jump(device, addr) -> bool:
     if status != 0 and status != usb.LIBUSB_ERROR_IO:
         mesg = "failed to send jump command"
         if status < 0:
-            logerror("{}: {}\n", mesg, usb.error_name(status))
+            logerror("{}: {}\n", mesg, usb_error_name(status))
         else:
             logerror("{}\n", mesg)
         return False
@@ -396,7 +398,7 @@ def parse_ihex(image, context, is_external, poke) -> int:
             break;
 
         if rec_type != 0:
-            logerror("unsupported record type: %u\n", rec_type)
+            logerror("unsupported record type: {:d}\n", rec_type)
             return -3
 
         if size * 2 + 11 > strlen(buf):

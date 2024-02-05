@@ -29,6 +29,9 @@ import libusb as usb
 from libusb._platform import is_windows
 if is_windows: import win32
 
+usb_strerror   = lambda r: usb.strerror(r).decode("utf-8")
+usb_error_name = lambda status: usb.error_name(status).decode("utf-8")
+
 def msleep(msecs: int):
     if is_windows:
        win32.Sleep(msecs)
@@ -37,7 +40,7 @@ def msleep(msecs: int):
        nanosleep(ct.byref(ts), NULL)
 
 # Future versions of libusb will use usb_interface instead of interface
-# in usb.config_descriptor => catter for that
+# in libusb.config_descriptor => catter for that
 #define usb_interface interface
 
 # Global variables
@@ -48,10 +51,11 @@ force_device_request = False  # bool # For WCID descriptor queries
 
 def perr(fmt, *args):
     print(fmt.format(*args), file=sys.stderr, end="")
+    sys.stderr.flush()
 
 def err_exit(errcode):
-   perr("   {}\n", usb.strerror(usb.error(errcode)))
-   return -1
+    perr("   {}\n", usb.strerror(errcode).decode("utf-8"))
+    return -1
 
 B           = lambda x: 1 if x != 0 else 0
 be_to_int32 = lambda buf: (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3]
@@ -166,7 +170,7 @@ def display_buffer_hex(buffer, size):
                 if buffer[i + j] < 32 or buffer[i + j] > 126:
                     print(".", end="")
                 else:
-                    print("%c", buffer[i + j], end="")
+                    print("%c" % buffer[i + j], end="")
     print()
 
 
@@ -258,17 +262,17 @@ def display_ps3_status(handle) -> int:
     elif pressed == 0x20: print("\tCIRCLE pressed")
     elif pressed == 0x40: print("\tCROSS pressed")
     elif pressed == 0x80: print("\tSQUARE pressed")
-    print("\tPS button: {}".format(input_report[4]))
-    print("\tLeft Analog (X,Y): ({},{})".format(input_report[6],  input_report[7]))
-    print("\tRight Analog (X,Y): ({},{})".format(input_report[8], input_report[9]))
-    print("\tL2 Value: {}\tR2 Value: {}".format(input_report[18], input_report[19]))
-    print("\tL1 Value: {}\tR1 Value: {}".format(input_report[20], input_report[21]))
-    print("\tRoll (x axis): {} Yaw (y axis): {} Pitch (z axis) {}".format(
+    print("\tPS button: {:d}".format(input_report[4]))
+    print("\tLeft Analog (X,Y): ({:d},{:d})".format(input_report[6],  input_report[7]))
+    print("\tRight Analog (X,Y): ({:d},{:d})".format(input_report[8], input_report[9]))
+    print("\tL2 Value: {:d}\tR2 Value: {:d}".format(input_report[18], input_report[19]))
+    print("\tL1 Value: {:d}\tR1 Value: {:d}".format(input_report[20], input_report[21]))
+    print("\tRoll (x axis): {:d} Yaw (y axis): {:d} Pitch (z axis) {:d}".format(
             #(((input_report[42] + 128) % 256) - 128),
-            int8_t(input_report[42]),
-            int8_t(input_report[44]),
-            int8_t(input_report[46])))
-    print("\tAcceleration: {}".format(int8_t(input_report[48])))
+            ct.c_int8(input_report[42]).value,
+            ct.c_int8(input_report[44]).value,
+            ct.c_int8(input_report[46]).value))
+    print("\tAcceleration: {:d}".format(ct.c_int8(input_report[48]).value))
     print()
 
     return 0
@@ -296,20 +300,20 @@ def display_xbox_status(handle) -> int:
     if r < 0:
         return err_exit(r)
     print("   D-pad: {:02X}".format(input_report[2] & 0x0F))
-    print("   Start:{}, Back:{}, "
-          "Left Stick Press:{}, Right Stick Press:{}".format(
+    print("   Start:{:d}, Back:{:d}, "
+          "Left Stick Press:{:d}, Right Stick Press:{:d}".format(
           B(input_report[2] & 0x10), B(input_report[2] & 0x20),
           B(input_report[2] & 0x40), B(input_report[2] & 0x80)))
     # A, B, X, Y, Black, White are pressure sensitive
-    print("   A:{}, B:{}, X:{}, Y:{}, White:{}, Black:{}".format(
+    print("   A:{:d}, B:{:d}, X:{:d}, Y:{:d}, White:{:d}, Black:{:d}".format(
           input_report[4], input_report[5], input_report[6],
           input_report[7], input_report[9], input_report[8]))
-    print("   Left Trigger: {}, Right Trigger: {}".format(
+    print("   Left Trigger: {:d}, Right Trigger: {:d}".format(
           input_report[10], input_report[11]))
-    print("   Left Analog (X,Y): ({},{})".format(
+    print("   Left Analog (X,Y): ({:d},{:d})".format(
           int16_t((input_report[13] << 8) | input_report[12]),
           int16_t((input_report[15] << 8) | input_report[14])))
-    print("   Right Analog (X,Y): ({},{})".format(
+    print("   Right Analog (X,Y): ({:d},{:d})".format(
           int16_t((input_report[17] << 8) | input_report[16]),
           int16_t((input_report[19] << 8) | input_report[18])))
     return 0
@@ -362,7 +366,7 @@ def send_mass_storage_command(handle, endpoint, lun, cdb, direction, data_length
    #ct.c_uint8 cdb_len;
     cdb_len = cdb_length[cdb[0]]
     if cdb_len == 0 or cdb_len > ct.sizeof(cbw.CBWCB):
-        perr("send_mass_storage_command: don't know how to handle this command ({:02X}, length {})\n",
+        perr("send_mass_storage_command: don't know how to handle this command ({:02X}, length {:d})\n",
              cdb[0], cdb_len)
         return -1
 
@@ -391,10 +395,10 @@ def send_mass_storage_command(handle, endpoint, lun, cdb, direction, data_length
         if r != usb.LIBUSB_ERROR_PIPE or i >= RETRY_MAX:
             break
     if r != usb.LIBUSB_SUCCESS:
-        perr("   send_mass_storage_command: {}\n", usb.strerror(usb.error(r)))
+        perr("   send_mass_storage_command: {}\n", usb_strerror(r))
         return -1
 
-    print("   sent {} CDB bytes".format(cdb_len))
+    print("   sent {:d} CDB bytes".format(cdb_len))
     return 0
 
 
@@ -418,11 +422,11 @@ def get_mass_storage_status(handle, endpoint, expected_tag) -> int:
         if r != usb.LIBUSB_ERROR_PIPE or i >= RETRY_MAX:
             break
     if r != usb.LIBUSB_SUCCESS:
-        perr("   get_mass_storage_status: {}\n", usb.strerror(usb.error(r)))
+        perr("   get_mass_storage_status: {}\n", usb_strerror(r))
         return -1
     size = size.value
     if size != 13:
-        perr("   get_mass_storage_status: received {} bytes (expected 13)\n", size)
+        perr("   get_mass_storage_status: received {:d} bytes (expected 13)\n", size)
         return -1
     if csw.dCSWTag != expected_tag:
         perr("   get_mass_storage_status: mismatched tags (expected {:08X}, received {:08X})\n",
@@ -463,11 +467,11 @@ def get_sense(handle, endpoint_in, endpoint_out):
     size = ct.c_int()
     rc = usb.bulk_transfer(handle, endpoint_in, ct.cast(ct.pointer(sense), ct.POINTER(ct.c_ubyte)), REQUEST_SENSE_LENGTH, ct.byref(size), 1000)
     if rc < 0:
-        print("usb.bulk_transfer failed: {}".format(usb.error_name(rc)))
+        print("libusb.bulk_transfer failed: {}".format(usb_error_name(rc)))
         return
 
     size = size.value
-    print("   received {} bytes".format(size))
+    print("   received {:d} bytes".format(size))
 
     if sense[0] != 0x70 and sense[0] != 0x71:
         perr("   ERROR No sense data\n")
@@ -493,7 +497,7 @@ def test_mass_storage(handle, endpoint_in, endpoint_out) -> int:
     #int r;
     #ct.c_uint32 i
 
-    print("Reading Max LUN:")
+    print("\nReading Max LUN:")
     lun = ct.c_uint8()
     r = usb.control_transfer(handle,
                              usb.LIBUSB_ENDPOINT_IN |
@@ -506,14 +510,17 @@ def test_mass_storage(handle, endpoint_in, endpoint_out) -> int:
     lun = lun.value
     # Some devices send a STALL instead of the actual value.
     # In such cases we should set lun to 0.
-    if r == 0:
+    if r == usb.LIBUSB_ERROR_PIPE:
         lun = 0
+        print("   Stalled, setting Max LUN to 0")
     elif r < 0:
-        perr("   Failed: {}".format(usb.strerror(usb.error(r))))
-    print("   Max LUN = {}".format(lun))
+        perr("   Failed.\n")
+        return r
+    else:
+        print("   Max LUN = {:d}".format(lun))
 
     # Send Inquiry
-    print("Sending Inquiry:")
+    print("\nSending Inquiry:")
     buffer = (ct.c_uint8 * 64)()
     cdb    = (ct.c_uint8 * 16)()  # SCSI Command Descriptor Block
     cdb[0] = 0x12  # Inquiry
@@ -526,7 +533,7 @@ def test_mass_storage(handle, endpoint_in, endpoint_out) -> int:
     if r < 0:
         return err_exit(r)
     size = size.value
-    print("   received {} bytes".format(size))
+    print("   received {:d} bytes".format(size))
     # The following strings are not zero terminated
     vid = (ct.c_char * 9)()
     pid = (ct.c_char * 9)()
@@ -538,12 +545,12 @@ def test_mass_storage(handle, endpoint_in, endpoint_out) -> int:
     vid[8] = 0
     pid[8] = 0
     rev[4] = 0
-    print("   VID:PID:REV \"%8s\":\"%8s\":\"%4s\"".format(vid, pid, rev))
+    print("   VID:PID:REV \"{:>8s}\":\"{:>8s}\":\"{:>4s}\"".format(vid, pid, rev))
     if get_mass_storage_status(handle, endpoint_in, expected_tag) == -2:
         get_sense(handle, endpoint_in, endpoint_out)
 
     # Read capacity
-    print("Reading Capacity:")
+    print("\nReading Capacity:")
     buffer = (ct.c_uint8 * 64)()
     cdb    = (ct.c_uint8 * 16)()  # SCSI Command Descriptor Block
     cdb[0] = 0x25  # Read Capacity
@@ -555,11 +562,11 @@ def test_mass_storage(handle, endpoint_in, endpoint_out) -> int:
     if r < 0:
         return err_exit(r)
     size = size.value
-    print("   received {} bytes".format(size))
+    print("   received {:d} bytes".format(size))
     max_lba     = be_to_int32(buffer[0:])
     block_size  = be_to_int32(buffer[4:])
     device_size = (max_lba + 1.0) * block_size / (1024 * 1024 * 1024)
-    print("   Max LBA: {:08X}, Block Size: {:08X} (%.2f GB)".format(
+    print("   Max LBA: {:08X}, Block Size: {:08X} ({:.2f} GB)".format(
           max_lba, block_size, device_size))
     if get_mass_storage_status(handle, endpoint_in, expected_tag) == -2:
         get_sense(handle, endpoint_in, endpoint_out)
@@ -573,7 +580,7 @@ def test_mass_storage(handle, endpoint_in, endpoint_out) -> int:
         return -1
 
     # Send Read
-    print("Attempting to read %u bytes:".format(block_size))
+    print("\nAttempting to read {:d} bytes:".format(block_size))
     cdb    = (ct.c_uint8 * 16)()  # SCSI Command Descriptor Block
     cdb[0] = 0x28  # Read(10)
     cdb[8] = 0x01  # 1 block
@@ -583,7 +590,7 @@ def test_mass_storage(handle, endpoint_in, endpoint_out) -> int:
     size = ct.c_int()
     usb.bulk_transfer(handle, endpoint_in, data, block_size, ct.byref(size), 5000)
     size = size.value
-    print("   READ: received {} bytes".format(size))
+    print("   READ: received {:d} bytes".format(size))
     if get_mass_storage_status(handle, endpoint_in, expected_tag) == -2:
         get_sense(handle, endpoint_in, endpoint_out)
     else:
@@ -698,7 +705,7 @@ def test_hid(handle, endpoint_in) -> int:
         except:
             return -1
 
-        print("\nReading Feature Report (length {})...".format(size))
+        print("\nReading Feature Report (length {:d})...".format(size))
         r = usb.control_transfer(handle,
                                  usb.LIBUSB_ENDPOINT_IN |
                                  usb.LIBUSB_REQUEST_TYPE_CLASS |
@@ -716,7 +723,7 @@ def test_hid(handle, endpoint_in) -> int:
                 print("   Detected stall - resetting pipe...")
                 usb.clear_halt(handle, 0)
             else:
-                print("   Error: {}".format(usb.strerror(usb.error(r))))
+                print("   Error: {}".format(usb_strerror(r)))
 
         del report_buffer
 
@@ -730,7 +737,7 @@ def test_hid(handle, endpoint_in) -> int:
         except:
             return -1
 
-        print("\nReading Input Report (length {})...".format(size))
+        print("\nReading Input Report (length {:d})...".format(size))
         r = usb.control_transfer(handle,
                                  usb.LIBUSB_ENDPOINT_IN |
                                  usb.LIBUSB_REQUEST_TYPE_CLASS |
@@ -748,7 +755,7 @@ def test_hid(handle, endpoint_in) -> int:
                 print("   Detected stall - resetting pipe...")
                 usb.clear_halt(handle, 0)
             else:
-                print("   Error: {}".format(usb.strerror(usb.error(r))))
+                print("   Error: {}".format(usb_strerror(r)))
 
         # Attempt a bulk read from endpoint 0 (this should just return a raw input report)
         print("\nTesting interrupt read using endpoint {:02X}...".format(endpoint_in))
@@ -756,7 +763,7 @@ def test_hid(handle, endpoint_in) -> int:
         if r >= 0:
             display_buffer_hex(report_buffer, size)
         else:
-            print("   {}".format(usb.strerror(usb.error(r))))
+            print("   {}".format(usb_strerror(r)))
 
         del report_buffer
 
@@ -798,8 +805,8 @@ def read_ms_winsub_feature_descriptors(handle, bRequest, iface_number):
 
     for i in range(2):
 
-        print("\nReading {} OS Feature Descriptor (wIndex = 0x%04d):".format(
-              os_fd[i].desc, os_fd[i].index))
+        print("\nReading {} OS Feature Descriptor (wIndex = 0x{:04x}):".format(
+              os_fd[i].desc.decode("utf-8"), os_fd[i].index))
 
         # Read the header part
         r = usb.control_transfer(handle,
@@ -811,7 +818,8 @@ def read_ms_winsub_feature_descriptors(handle, bRequest, iface_number):
                                  os_desc, os_fd[i].header_size,
                                  1000)
         if r < os_fd[i].header_size:
-            perr("   Failed: {}", usb.strerror(usb.error(r)) if r < 0 else "header size is too small")
+            perr("   Failed: {}", usb_strerror(r)
+                                  if r < 0 else "header size is too small")
             return
         le_type_punning_IS_fine = ct.cast(os_desc, ct.c_void_p)
         length = ct.cast(le_type_punning_IS_fine, ct.POINTER(ct.c_uint32))[0].value  # ct.c_uint32
@@ -827,7 +835,7 @@ def read_ms_winsub_feature_descriptors(handle, bRequest, iface_number):
                                  os_desc, ct.c_uint16(length),
                                  1000)
         if r < 0:
-            perr("   Failed: {}", usb.strerror(usb.error(r)))
+            perr("   Failed: {}", usb_strerror(r))
             return
         else:
             display_buffer_hex(os_desc, r)
@@ -864,6 +872,17 @@ def print_device_cap(dev_cap):
             print("    Container ID:\n      {}".format(uuid_to_string(container_id[0].ContainerID)))
             usb.free_container_id_descriptor(container_id)
 
+    elif dev_cap[0].bDevCapabilityType == usb.LIBUSB_BT_PLATFORM_DESCRIPTOR:
+
+        platform_descriptor = ct.POINTER(usb.platform_descriptor)()
+        usb.get_platform_descriptor(None, dev_cap, ct.byref(platform_descriptor))
+        if platform_descriptor:
+            print("    Platform descriptor:")
+            print("      bLength                : {:d}".format(platform_descriptor[0].bLength))
+            print("      PlatformCapabilityUUID : {}".format(uuid_to_string(platform_descriptor[0].PlatformCapabilityUUID)))
+            display_buffer_hex(platform_descriptor[0].CapabilityData, platform_descriptor[0].bLength - 20)
+            print()
+            usb.free_platform_descriptor(platform_descriptor)
     else:
         print("    Unknown BOS device capability {:02x}:".format(dev_cap[0].bDevCapabilityType))
 
@@ -871,6 +890,8 @@ def print_device_cap(dev_cap):
 #static
 #@annotate(ct.c_uint16 vid, ct.c_uint16 pid)
 def test_device(vid, pid) -> int:
+
+    global test_mode
 
     #int r;
 
@@ -931,7 +952,7 @@ def test_device(vid, pid) -> int:
         string_index[2] = dev_desc.iSerialNumber
 
         print("\nReading BOS descriptor: ", end="")
-        bos_desc = usb.bos_descriptor*()
+        bos_desc = ct.POINTER(usb.bos_descriptor)()
         if usb.get_bos_descriptor(handle, ct.byref(bos_desc)) == usb.LIBUSB_SUCCESS:
             print("{} caps".format(bos_desc[0].bNumDeviceCaps))
             for i in range(bos_desc[0].bNumDeviceCaps):
@@ -949,10 +970,10 @@ def test_device(vid, pid) -> int:
         print("         descriptor length: {}".format(conf_desc[0].bLength))
         nb_ifaces = conf_desc[0].bNumInterfaces  # int
         print("             nb interfaces: {}".format(nb_ifaces))
-        first_iface = (conf_desc[0].usb_interface[0].altsetting[0].bInterfaceNumber
+        first_iface = (conf_desc[0].interface[0].altsetting[0].bInterfaceNumber
                        if nb_ifaces > 0 else -1)
         for i in range(nb_ifaces):
-            usb_interface = conf_desc[0].usb_interface[i]
+            usb_interface = conf_desc[0].interface[i]
             print("              interface[{}]: id = {}".format(
                   i, usb_interface.altsetting[0].bInterfaceNumber))
             for j in range(usb_interface.num_altsetting):
@@ -996,12 +1017,21 @@ def test_device(vid, pid) -> int:
 
         usb.set_auto_detach_kernel_driver(handle, 1)
         for iface in range(nb_ifaces):
+            print("\nKernel driver attached for interface {}: ".format(iface), end="")
             ret = usb.kernel_driver_active(handle, iface)
-            print("\nKernel driver attached for interface {}: {}".format(iface, ret))
+            if ret == 0:
+                print("none")
+            elif ret == 1:
+                print("yes")
+            elif ret == usb.LIBUSB_ERROR_NOT_SUPPORTED:
+                print("(not supported)")
+            else:
+                perr("\n   Failed (error {}) {}\n", ret, usb_strerror(ret))
+
             print("\nClaiming interface {}...".format(iface))
             r = usb.claim_interface(handle, iface)
             if r != usb.LIBUSB_SUCCESS:
-                perr("   Failed.\n")
+                perr("   Failed (error {}) {}\n", ret, usb_strerror(ret))
 
         print("\nReading string descriptors:")
         string = (ct.c_char * 128)()
@@ -1009,19 +1039,49 @@ def test_device(vid, pid) -> int:
             if string_index[i] == 0:
                 continue
             if usb.get_string_descriptor_ascii(handle, string_index[i],
-                   ct.cast(string, ct.POINTER(ct.c_ubyte)), ct.sizeof(string)) > 0:
-                print("   String ({:#04X}): \"{}\"".format(string_index[i], string))
+                    ct.cast(string, ct.POINTER(ct.c_ubyte)), ct.sizeof(string)) > 0:
+                print("   String ({:#04x}): \"{}\"".format(
+                      string_index[i], string[:].rstrip(b"\0").decode("utf-8")))
 
         print("\nReading OS string descriptor:", end="")
         r = usb.get_string_descriptor(handle, MS_OS_DESC_STRING_INDEX, 0,
                                       ct.cast(string, ct.POINTER(ct.c_ubyte)), MS_OS_DESC_STRING_LENGTH)
-        if r == MS_OS_DESC_STRING_LENGTH and memcmp(ms_os_desc_string, string, sizeof(ms_os_desc_string)) == 0:
+        if (r == MS_OS_DESC_STRING_LENGTH and ms_os_desc_string[:ct.sizeof(ms_os_desc_string)]
+                     == ct.cast(string, ct.POINTER(ct.c_uint8))[:ct.sizeof(ms_os_desc_string)]):
             # If this is a Microsoft OS String Descriptor,
             # attempt to read the WinUSB extended Feature Descriptors
             print()
-            read_ms_winsub_feature_descriptors(handle, string[MS_OS_DESC_VENDOR_CODE_OFFSET], first_iface)
+            read_ms_winsub_feature_descriptors(handle,
+                                               ct.c_uint8(ord(string[MS_OS_DESC_VENDOR_CODE_OFFSET])),
+                                               first_iface)
         else:
             print(" no descriptor")
+
+        if hasattr(usb, "get_interface_association_descriptors"):
+            # Read IADs
+            print("\nReading interface association descriptors (IADs) for first configuration:")
+            iad_array = ct.POINTER(usb.interface_association_descriptor_array)()
+            r = usb.get_interface_association_descriptors(dev, 0, ct.byref(iad_array))
+            if r == usb.LIBUSB_SUCCESS:
+                print("    nb IADs: {}".format(iad_array[0].length))
+                for i in range(iad_array[0].length):
+                    iad: usb.interface_association_descriptor = iad_array[0].iad[i]
+                    print("      IAD {}:".format(i))
+                    print("            bFirstInterface: {}".format(iad.bFirstInterface))
+                    print("            bInterfaceCount: {}".format(iad.bInterfaceCount))
+                    print("             bFunctionClass: {:02X}".format(iad.bFunctionClass))
+                    print("          bFunctionSubClass: {:02X}".format(iad.bFunctionSubClass))
+                    print("          bFunctionProtocol: {:02X}".format(iad.bFunctionProtocol))
+                    if iad.iFunction:
+                        if usb.get_string_descriptor_ascii(handle, iad.iFunction,
+                                ct.cast(string, ct.POINTER(ct.c_ubyte)), ct.sizeof(string)) > 0:
+                            print("                  iFunction: {} ({})".format(iad.iFunction, string))
+                        else:
+                            print("                  iFunction: {} "
+                                  "(libusb.get_string_descriptor_ascii failed!)".format(iad.iFunction))
+                    else:
+                        print("                  iFunction: 0")
+                usb.free_interface_association_descriptors(iad_array)
 
         if test_mode == USE_PS3:
             r = display_ps3_status(handle)
@@ -1065,9 +1125,6 @@ def main(argv=sys.argv):
     global test_mode
     global binary_dump
     global binary_name
-
-    #static
-    debug_env_str = "LIBUSB_DEBUG=4"  # usb.LIBUSB_LOG_LEVEL_DEBUG
 
     show_help  = False  # bool
     debug_mode = False  # bool
@@ -1144,7 +1201,7 @@ def main(argv=sys.argv):
                     if not match:
                         print("   Please specify VID & PID as \"vid:pid\" in hexadecimal format")
                         return 1
-                    tmp_vid, tmp_pid = int(match.group(1)), int(match.group(2))
+                    tmp_vid, tmp_pid = int(match.group(1), base=16), int(match.group(3), base=16)
                     VID = ct.c_uint16(tmp_vid).value
                     PID = ct.c_uint16(tmp_pid).value
                     break
@@ -1167,21 +1224,35 @@ def main(argv=sys.argv):
         print("If only the vid:pid is provided, xusb attempts to run the most appropriate test")
         return 0
 
-    # xusb is commonly used as a debug tool, so it's convenient to have debug output
-    # during usb.init(), but since we can't call on usb.set_option() before usb.init(),
-    # we use the env variable method
-    old_dbg_str = os.environ.get("LIBUSB_DEBUG", None)
-    if debug_mode:
-        try:
-            env_var, _, env_value = debug_env_str.partition("=")
-            os.environ[env_var] = env_value
-        except:
-            print("Unable to set debug level")
-
     version = usb.get_version()[0]
     print("Using libusb v{}.{}.{}.{}\n".format(
           version.major, version.minor, version.micro, version.nano))
-    r = usb.init(None)
+
+    if hasattr(usb, "init_context"):
+        # xusb is commonly used as a debug tool, so it's convenient to have debug output
+        # during libusb.init_context().
+        old_dbg_str = None
+        if debug_mode:
+            options = usb.init_option()
+            options.option = usb.LIBUSB_OPTION_LOG_LEVEL
+            options.value.ival = usb.LIBUSB_LOG_LEVEL_DEBUG
+            r = usb.init_context(None, ct.byref(options), 1)
+        else:
+            r = usb.init_context(None, None, 0)
+    else:
+        # xusb is commonly used as a debug tool, so it's convenient to have debug output
+        # during libusb.init(), but since we can't call on libusb.set_option() before
+        # libusb.init(), we use the env variable method
+        old_dbg_str = os.environ.get("LIBUSB_DEBUG", None)
+        if debug_mode:
+            debug_env_str = "LIBUSB_DEBUG=4"  # usb.LIBUSB_LOG_LEVEL_DEBUG
+            try:
+                env_var, _, env_value = debug_env_str.partition("=")
+                os.environ[env_var] = env_value
+            except:
+                print("Unable to set debug level")
+        r = usb.init(None)
+
     if r < 0:
         return r
 
@@ -1193,7 +1264,7 @@ def main(argv=sys.argv):
             r = usb.setlocale(error_lang)
             if r < 0:
                 print("Invalid or unsupported locale '{}': {}".format(
-                      error_lang, usb.strerror(usb.error(r))))
+                      error_lang, usb_strerror(r)))
 
         test_device(VID, PID)
     finally:

@@ -8,7 +8,7 @@ requires = ['setuptools>=68.2.2', 'wheel>=0.42.0', 'packaging>=23.2.0', 'tox>=4.
 
 [project]
 name        = 'libusb'
-version     = '1.0.26rc4'
+version     = '1.0.26'
 description = 'Python binding for the libusb C library.'
 urls.Homepage      = 'https://pypi.org/project/libusb/'
 urls.Documentation = 'https://libusb.readthedocs.io/'

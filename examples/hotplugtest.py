@@ -24,6 +24,8 @@ import ctypes as ct
 
 import libusb as usb
 
+usb_strerror = lambda r: usb.strerror(r).decode("utf-8")
+
 handle = ct.POINTER(usb.device_handle)()
 done = 0
 
@@ -35,10 +37,12 @@ def hotplug_callback(ctx, dev, event, user_data):
 
     desc = usb.device_descriptor()
     rc = usb.get_device_descriptor(dev, ct.byref(desc))
-    if rc != usb.LIBUSB_SUCCESS:
-        print("Error getting device descriptor", file=sys.stderr)
-
-    print("Device attached: {:04x}:{:04x}".format(desc.idVendor, desc.idProduct))
+    if rc == usb.LIBUSB_SUCCESS:
+        print("Device attached: {:04x}:{:04x}".format(desc.idVendor, desc.idProduct))
+    else:
+        print("Device attached")
+        print("Error getting device descriptor: {}".format(usb_strerror(rc)),
+              file=sys.stderr)
 
     if handle:
         usb.close(handle)
@@ -46,7 +50,8 @@ def hotplug_callback(ctx, dev, event, user_data):
 
     rc = usb.open(dev, ct.byref(handle))
     if rc != usb.LIBUSB_SUCCESS:
-        print("Error opening device", file=sys.stderr)
+        print("No access to device: {}".format(usb_strerror(rc)),
+              file=sys.stderr)
 
     done += 1
 
@@ -58,7 +63,14 @@ def hotplug_callback_detach(ctx, dev, event, user_data):
 
     global handle, done
 
-    print("Device detached")
+    desc = usb.device_descriptor()
+    rc = usb.get_device_descriptor(dev, ct.byref(desc))
+    if rc == usb.LIBUSB_SUCCESS:
+        print("Device detached: {:04x}:{:04x}".format(desc.idVendor, desc.idProduct))
+    else:
+        print("Device detached")
+        print("Error getting device descriptor: {}".format(usb_strerror(rc)),
+              file=sys.stderr)
 
     if handle:
         usb.close(handle)
@@ -75,13 +87,15 @@ def main(argv=sys.argv[1:]):
 
     hp = [usb.hotplug_callback_handle() for i in range(2)]
 
-    vendor_id  = int(argv[0]) if len(argv) > 0 else 0x045a
-    product_id = int(argv[1]) if len(argv) > 1 else 0x5005
+    vendor_id  = int(argv[0]) if len(argv) > 0 else usb.LIBUSB_HOTPLUG_MATCH_ANY
+    product_id = int(argv[1]) if len(argv) > 1 else usb.LIBUSB_HOTPLUG_MATCH_ANY
     class_id   = int(argv[2]) if len(argv) > 2 else usb.LIBUSB_HOTPLUG_MATCH_ANY
 
-    rc = usb.init(None)
-    if rc < 0:
-        print("failed to initialise libusb: {}".format(usb.error_name(rc)))
+    rc = (usb.init_context(None, None, 0)
+          if hasattr(usb, "init_context") else
+          usb.init(None))
+    if rc != usb.LIBUSB_SUCCESS:
+        print("failed to initialise libusb: {}".format(usb_strerror(rc)))
         return 1
 
     try:
@@ -107,8 +121,8 @@ def main(argv=sys.argv[1:]):
 
         while done < 2:
             rc = usb.handle_events(None)
-            if rc < 0:
-                print("libusb.handle_events() failed: {}".format(usb.error_name(rc)))
+            if rc != usb.LIBUSB_SUCCESS:
+                print("libusb.handle_events() failed: {}".format(usb_strerror(rc)))
     finally:
         if handle:
             usb.close(handle)

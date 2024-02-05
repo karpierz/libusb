@@ -54,7 +54,9 @@ def print_devs(devs):
 
 def main(argv=sys.argv[1:]):
 
-    r = usb.init(None)
+    r = (usb.init_context(None, None, 0)
+         if hasattr(usb, "init_context") else
+         usb.init(None))
     if r < 0:
         return r
 

@@ -33,7 +33,7 @@
 #define UNUSED_DATA __attribute__ ((unused)) gconstpointer unused_data
 
 /* avoid leak reports inside assertions; leaking stuff on assertion failures does not matter in tests */
-#if !defined(__clang__)
+#if !defined(__clang__) && __GNUC__ > 9
 #pragma GCC diagnostic ignored "-Wanalyzer-malloc-leak"
 #pragma GCC diagnostic ignored "-Wanalyzer-file-leak"
 #endif
@@ -89,7 +89,7 @@ typedef struct {
 	GList *flying_urbs;
 	GList *discarded_urbs;
 
-	/* GMutex confuses tsan unecessarily */
+	/* GMutex confuses TSan unnecessarily */
 	pthread_mutex_t mutex;
 } UMockdevTestbedFixture;
 
@@ -245,7 +245,7 @@ handle_ioctl_cb (UMockdevIoctlBase *handler, UMockdevIoctlClient *client, UMockd
 	ioctl_arg = umockdev_ioctl_client_get_arg (client);
 
 	/* NOTE: We share the address space, dereferencing pointers *will* work.
-	 * However, to make tsan work, we still stick to the API that resolves
+	 * However, to make TSan work, we still stick to the API that resolves
 	 * the data into a local copy! */
 
 	switch (request) {
@@ -430,9 +430,9 @@ test_fixture_setup_libusb(UMockdevTestbedFixture * fixture, int devcount)
 {
 	libusb_device **devs = NULL;
 
-	libusb_init (&fixture->ctx);
+	libusb_init_context(/*ctx=*/&fixture->ctx, /*options=*/NULL, /*num_options=*/0);
 
-	/* Supress global log messages completely
+	/* Suppress global log messages completely
 	 * (though, in some tests it might be interesting to check there are no real ones).
 	 */
 	libusb_set_log_cb (NULL, log_handler_null, LIBUSB_LOG_CB_GLOBAL);
@@ -573,7 +573,7 @@ test_implicit_default(UMockdevTestbedFixture * fixture, UNUSED_DATA)
 	libusb_free_device_list(devs, TRUE);
 	clear_libusb_log(fixture, LIBUSB_LOG_LEVEL_INFO);
 
-	libusb_init(NULL);
+	libusb_init_context(/*ctx=*/NULL, /*options=*/NULL, /*num_options=*/0);
 	g_assert_cmpint(libusb_get_device_list(NULL, &devs), ==, 1);
 	libusb_exit(NULL);
 
@@ -876,7 +876,7 @@ transfer_submit_all_retry(TestThreadedSubmit *data)
 	return NULL;
 }
 
-static void
+static void LIBUSB_CALL
 test_threaded_submit_transfer_cb(struct libusb_transfer *transfer)
 {
 	TestThreadedSubmit *data = transfer->user_data;
@@ -955,7 +955,7 @@ test_threaded_submit(UMockdevTestbedFixture * fixture, UNUSED_DATA)
 	g_free (c);
 }
 
-static int
+static int LIBUSB_CALL
 hotplug_count_arrival_cb(libusb_context *ctx,
                          libusb_device  *device,
                          libusb_hotplug_event event,
@@ -972,7 +972,7 @@ hotplug_count_arrival_cb(libusb_context *ctx,
 }
 
 #ifdef UMOCKDEV_HOTPLUG
-static int
+static int LIBUSB_CALL
 hotplug_count_removal_cb(libusb_context *ctx,
                          libusb_device  *device,
                          libusb_hotplug_event event,

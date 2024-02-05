@@ -35,6 +35,8 @@ from ezusb import FX_KNOWN_DEVICES, FX_TYPE_MAX, FX_TYPE_NAMES, IMG_TYPE_NAMES, 
 from ezusb import ezusb_load_ram
 from ezusb import verbose
 
+usb_error_name = lambda status: usb.error_name(status).decode("utf-8")
+
 if not is_windows or defined("__CYGWIN__"):
     #include <syslog.h>
     dosyslog = False  # bool
@@ -157,9 +159,13 @@ def main(argv=sys.argv[1:]):
             return print_usage(-1)
 
     # open the device using libusb
-    status = usb.init(None)
+    status = (usb.init_context(None, None, 0)
+              if hasattr(usb, "init_context") else
+              usb.init(None))
     if status < 0:
-        logerror("usb.init() failed: {}\n", usb.error_name(status))
+        logerror("libusb.init_context() failed: {}\n"
+                 if hasattr(usb, "init_context") else
+                 "libusb.init() failed: {}\n", usb_error_name(status))
         return -1
 
     try:
@@ -169,7 +175,7 @@ def main(argv=sys.argv[1:]):
         if target_type is None or device_id is None or device_path is not None:
 
             if usb.get_device_list(None, ct.byref(devs)) < 0:
-                logerror("libusb.get_device_list() failed: {}\n", usb.error_name(status))
+                logerror("libusb.get_device_list() failed: {}\n", usb_error_name(status))
                 return -1
 
             i = 0
@@ -224,14 +230,14 @@ def main(argv=sys.argv[1:]):
             status = usb.open(dev, ct.byref(device))
             usb.free_device_list(devs, 1)
             if status < 0:
-                logerror("usb.open() failed: {}\n", usb.error_name(status))
+                logerror("libusb.open() failed: {}\n", usb_error_name(status))
                 return -1
 
         elif device_id is not None:
 
             device = usb.open_device_with_vid_pid(None, ct.c_uint16(vid), ct.c_uint16(pid))
             if not device:
-                logerror("usb.open() failed\n")
+                logerror("libusb.open() failed\n")
                 return -1
 
         # We need to claim the first interface
@@ -239,7 +245,7 @@ def main(argv=sys.argv[1:]):
         status = usb.claim_interface(device, 0)
         if status != usb.LIBUSB_SUCCESS:
             usb.close(device)
-            logerror("libusb.claim_interface failed: {}\n", usb.error_name(status))
+            logerror("libusb.claim_interface failed: {}\n", usb_error_name(status))
             return -1
 
         if verbose:

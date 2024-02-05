@@ -1,4 +1,6 @@
-# coding: utf-8
+# Copyright (c) 2016 Adam Karpierz
+# Licensed under the zlib/libpng License
+# https://opensource.org/license/zlib
 
 # libusb example program to measure Atmel SAM3U isochronous performance
 # Copyright (C) 2012 Harald Welte <laforge@gnumonks.org>
@@ -31,6 +33,8 @@ import ctypes as ct
 
 import libusb as usb
 from libusb._platform import is_posix
+
+usb_error_name = lambda status: usb.error_name(status).decode("utf-8")
 
 EP_DATA_IN = 0x82
 EP_ISO_IN  = 0x86
@@ -167,9 +171,12 @@ def main(argv=sys.argv[1:]):
     else:
         signal.signal(signal.SIGINT, sig_hdlr)
 
-    rc = usb.init(None)
+    rc = (usb.init_context(None, None, 0)
+          if hasattr(usb, "init_context") else
+          usb.init(None))
     if rc < 0:
-        print("Error initializing libusb: {}".format(usb.error_name(rc)), file=sys.stderr)
+        print("Error initializing libusb: {}".format(usb_error_name(rc)),
+              file=sys.stderr)
         sys.exit(1)
 
     try:
@@ -180,7 +187,8 @@ def main(argv=sys.argv[1:]):
 
         rc = usb.claim_interface(devh, 2)
         if rc < 0:
-            print("Error claiming interface: {}".format(usb.error_name(rc)), file=sys.stderr)
+            print("Error claiming interface: {}".format(usb_error_name(rc)),
+                  file=sys.stderr)
             return rc
 
         benchmark_in(EP_ISO_IN)

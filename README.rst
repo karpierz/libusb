@@ -141,3 +141,4 @@ Authors
 .. _Development page: https://github.com/karpierz/libusb
 .. _PyPI record: https://pypi.org/project/libusb/
 .. _Documentation: https://libusb.readthedocs.io/
+.. _USB Vendors: https://devicehunt.com/all-usb-vendors

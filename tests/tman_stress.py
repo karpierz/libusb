@@ -27,13 +27,15 @@ import testlib
 from testlib import test_result, test_spec
 
 
-def test_init_and_exit() -> int:
+def test_init_and_exit() -> test_result:
     """Test that creates and destroys a single concurrent context
     10000 times."""
 
     for i in range(10000):
         ctx = ct.POINTER(usb.context)()
-        r = usb.init(ct.byref(ctx))
+        r = (usb.init_context(ct.byref(ctx), None, 0)
+             if hasattr(usb, "init_context") else
+             usb.init(ct.byref(ctx)))
         if r != usb.LIBUSB_SUCCESS:
             testlib.logf("Failed to init libusb on iteration {:d}: {:d}", i, r)
             return test_result.TEST_STATUS_FAILURE
@@ -42,11 +44,13 @@ def test_init_and_exit() -> int:
     return test_result.TEST_STATUS_SUCCESS
 
 
-def test_get_device_list() -> int:
+def test_get_device_list() -> test_result:
     """Tests that devices can be listed 1000 times."""
 
     ctx = ct.POINTER(usb.context)()
-    r = usb.init(ct.byref(ctx))
+    r = (usb.init_context(ct.byref(ctx), None, 0)
+         if hasattr(usb, "init_context") else
+         usb.init(ct.byref(ctx)))
     if r != usb.LIBUSB_SUCCESS:
         testlib.logf("Failed to init libusb: {:d}", r)
         return test_result.TEST_STATUS_FAILURE
@@ -65,13 +69,15 @@ def test_get_device_list() -> int:
     return test_result.TEST_STATUS_SUCCESS
 
 
-def test_many_device_lists() -> int:
+def test_many_device_lists() -> test_result:
     """Tests that 100 concurrent device lists can be open at a time."""
 
     LIST_COUNT = 100
 
     ctx = ct.POINTER(usb.context)()
-    r = usb.init(ct.byref(ctx))
+    r = (usb.init_context(ct.byref(ctx), None, 0)
+         if hasattr(usb, "init_context") else
+         usb.init(ct.byref(ctx)))
     if r != usb.LIBUSB_SUCCESS:
         testlib.logf("Failed to init libusb: {:d}", r)
         return test_result.TEST_STATUS_FAILURE
@@ -97,28 +103,38 @@ def test_many_device_lists() -> int:
     return result
 
 
-def test_default_context_change() -> int:
+def test_default_context_change() -> test_result:
     """Tests that the default context (used for various things including
     logging) works correctly when the first context created in a
     process is destroyed."""
 
     for i in range(100):
+        # Enable debug output on new context, to be sure to use the context
+        options = (usb.init_option * 1)()
+        options[0].option = usb.LIBUSB_OPTION_LOG_LEVEL
+        options[0].value.ival = usb.LIBUSB_LOG_LEVEL_DEBUG
+        num_options = 1
+
         # First create a new context
         ctx = ct.POINTER(usb.context)()
-        r = usb.init(ct.byref(ctx))
+        r = (usb.init_context(ct.byref(ctx), options, num_options)
+             if hasattr(usb, "init_context") else
+             usb.init(ct.byref(ctx)))
         if r != usb.LIBUSB_SUCCESS:
             testlib.logf("Failed to init libusb: {:d}", r)
             return test_result.TEST_STATUS_FAILURE
 
-        # Enable debug output on new context, to be sure to use the context
-        usb.set_debug(ctx, usb.LIBUSB_LOG_LEVEL_DEBUG)
-
-        # Enable debug output on the default context. This should work even before
-        # the context has been created.
-        usb.set_debug(None, usb.LIBUSB_LOG_LEVEL_DEBUG)
+        if not hasattr(usb, "init_context"):
+            # Enable debug output on new context, to be sure to use the context
+            usb.set_debug(ctx, usb.LIBUSB_LOG_LEVEL_DEBUG)
+            # Enable debug output on the default context. This should work even before
+            # the context has been created.
+            usb.set_debug(None, usb.LIBUSB_LOG_LEVEL_DEBUG)
 
         # Now create a reference to the default context
-        r = usb.init(None)
+        r = (usb.init_context(None, options, num_options)
+             if hasattr(usb, "init_context") else
+             usb.init(None))
         if r != usb.LIBUSB_SUCCESS:
             testlib.logf("Failed to init libusb: {:d}", r)
             usb.exit(ctx)
@@ -135,9 +151,9 @@ def test_default_context_change() -> int:
 # Fill in the list of tests.
 
 tests = [
-    test_spec("init_and_exit", test_init_and_exit),
-    test_spec("get_device_list", test_get_device_list),
-    test_spec("many_device_lists", test_many_device_lists),
+    test_spec("init_and_exit",          test_init_and_exit),
+    test_spec("get_device_list",        test_get_device_list),
+    test_spec("many_device_lists",      test_many_device_lists),
     test_spec("default_context_change", test_default_context_change),
 ]
 

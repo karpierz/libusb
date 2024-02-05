@@ -25,6 +25,8 @@ import ctypes as ct
 import libusb as usb
 from libusb._platform import is_linux
 
+usb_strerror = lambda r: usb.strerror(r).decode("utf-8")
+
 verbose = False
 
 
@@ -217,7 +219,7 @@ def test_wrapped_device(device_name: str) -> int:
         handle = ct.POINTER(usb.device_handle)()
         r = usb.wrap_sys_device(None, fd, ct.byref(handle))
         if r:
-            print("Error wrapping device: {}: {}".format(device_name, usb.strerror(r)))
+            print("Error wrapping device: {}: {}".format(device_name, usb_strerror(r)))
             os.close(fd)
             return 1
 
@@ -248,7 +250,9 @@ def main(argv=sys.argv[1:]):
             return 1
         i += 1
 
-    r = usb.init(None)
+    r = (usb.init_context(None, None, 0)
+         if hasattr(usb, "init_context") else
+         usb.init(None))
     if r < 0:
         return r
 
