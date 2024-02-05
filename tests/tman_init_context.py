@@ -83,7 +83,8 @@ def test_init_context_log_cb() -> test_result:
         testlib.EXPECT_SUCCESS(test_ctx, usb.init_context(ct.byref(test_ctx), options, 1))
 
         if defined("ENABLE_LOGGING") and not defined("ENABLE_DEBUG_LOGGING"):
-            testlib.EXPECT_EQ(test_ctx, test_ctx.contents.log_handler, test_log_cb)
+            testlib.EXPECT_EQ(test_ctx, ct.cast(test_ctx.contents.log_handler, ct.c_void_p).value,
+                                        ct.cast(test_log_cb, ct.c_void_p).value)
 
         return testlib.TEST_CLEAN_EXIT(test_ctx, test_result.TEST_STATUS_SUCCESS)
     else:

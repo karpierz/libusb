@@ -1,11 +1,21 @@
 Changelog
 =========
 
+1.0.27 (2024-02-05)
+-------------------
+- | The API has been fully updated to version 1.0.27 (libusb v.1.0.27
+  | is fully backward compatible with v.1.0.26).
+- | For Windows the shared library binaries have been updated to version
+  | 1.0.27. For Linux and macOS, the shared library binaries remain at
+  | version 1.0.26.
+- Bugfixes for options -i and -w in examples/xusb.py
+
 1.0.26 (2024-02-05)
 -------------------
-- API partially updated from 1.0.27 but still supports only 1.0.26.
+- | The API has been partially updated to version 1.0.27, but still
+  | only supports version 1.0.26.
 - Improvements and some little bugfixes.
-- Examples and tests are upgraded from 1.0.27.
+- Examples and tests are upgraded to 1.0.27.
 
 1.0.26rc4 (2024-01-25)
 ----------------------

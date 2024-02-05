@@ -776,6 +776,8 @@ def read_ms_winsub_feature_descriptors(handle, bRequest, iface_number):
 
     # Read the MS WinUSB Feature Descriptors, that are used on Windows 8 for automated driver installation
 
+    global force_device_request
+
     MAX_OS_FD_LENGTH = 256
 
     #int r;
@@ -892,6 +894,7 @@ def print_device_cap(dev_cap):
 def test_device(vid, pid) -> int:
 
     global test_mode
+    global extra_info
 
     #int r;
 
@@ -1125,6 +1128,8 @@ def main(argv=sys.argv):
     global test_mode
     global binary_dump
     global binary_name
+    global extra_info
+    global force_device_request
 
     show_help  = False  # bool
     debug_mode = False  # bool

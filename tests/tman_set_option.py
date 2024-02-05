@@ -178,7 +178,8 @@ def test_set_log_cb() -> test_result:
                                                         test_log_cb))
 
         # check that debug level came from the default
-        testlib.EXPECT_EQ(test_ctx, test_ctx.contents.log_handler, test_log_cb)
+        testlib.EXPECT_EQ(test_ctx, ct.cast(test_ctx.contents.log_handler, ct.c_void_p).value,
+                                    ct.cast(test_log_cb, ct.c_void_p).value)
 
         usb.exit(test_ctx)
         test_ctx = ct.POINTER(usb.context)()
@@ -189,7 +190,8 @@ def test_set_log_cb() -> test_result:
                                                         test_log_cb))
         testlib.EXPECT_SUCCESS(test_ctx, usb.init_context(ct.byref(test_ctx), None, 0))
 
-        testlib.EXPECT_EQ(test_ctx, test_ctx.contents.log_handler, test_log_cb)
+        testlib.EXPECT_EQ(test_ctx, ct.cast(test_ctx.contents.log_handler, ct.c_void_p).value,
+                                    ct.cast(test_log_cb, ct.c_void_p).value)
 
         return testlib.TEST_CLEAN_EXIT(test_ctx, test_result.TEST_STATUS_SUCCESS)
     else:

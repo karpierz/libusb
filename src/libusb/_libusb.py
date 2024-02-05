@@ -121,7 +121,7 @@ def LIBUSB_DEPRECATED_FOR(f): pass
 # <li>libusb version 1.0.27: LIBUSB_API_VERSION = 0x0100010A
 # </ul>
 
-LIBUSB_API_VERSION = 0x01000109
+LIBUSB_API_VERSION = 0x0100010A
 
 # \def LIBUSBX_API_VERSION
 # \ingroup libusb_misc
@@ -1908,7 +1908,7 @@ try:
     free_interface_association_descriptors = CFUNC(None,
                                 ct.POINTER(interface_association_descriptor_array))(
                                 ("libusb_free_interface_association_descriptors", dll), (
-                                (1, "iad_array")))
+                                (1, "iad_array"),))
 except: pass  # noqa: E722
 
 
@@ -1944,17 +1944,20 @@ get_device = CFUNC(ct.POINTER(device),
 set_configuration = CFUNC(ct.c_int,
                           ct.POINTER(device_handle), ct.c_int)(
                           ("libusb_set_configuration", dll), (
-                          (1, "dev_handle"), (1, "configuration")))
+                          (1, "dev_handle"),
+                          (1, "configuration")))
 
 claim_interface   = CFUNC(ct.c_int,
                           ct.POINTER(device_handle), ct.c_int)(
                           ("libusb_claim_interface", dll), (
-                          (1, "dev_handle"), (1, "interface_number")))
+                          (1, "dev_handle"),
+                          (1, "interface_number")))
 
 release_interface = CFUNC(ct.c_int,
                           ct.POINTER(device_handle), ct.c_int)(
                           ("libusb_release_interface", dll), (
-                          (1, "dev_handle"), (1, "interface_number")))
+                          (1, "dev_handle"),
+                          (1, "interface_number")))
 
 
 open_device_with_vid_pid = CFUNC(ct.POINTER(device_handle),
@@ -2155,7 +2158,8 @@ transfer_get_stream_id = CFUNC(ct.c_uint32,
 transfer_set_stream_id = CFUNC(None,
                         ct.POINTER(transfer), ct.c_uint32)(
                         ("libusb_transfer_set_stream_id", dll), (
-                        (1, "transfer"), (1, "stream_id")))
+                        (1, "transfer"),
+                        (1, "stream_id")))
 
 # \ingroup libusb::asyncio
 # Helper function to populate the required \ref libusb.transfer fields
