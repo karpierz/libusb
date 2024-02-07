@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.0.27?? (2024-02-08)
+---------------------
+- Improvements and cleanup for win32.
+
 1.0.27 (2024-02-05)
 -------------------
 - | The API has been fully updated to version 1.0.27 (libusb v.1.0.27
