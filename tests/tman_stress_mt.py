@@ -1,6 +1,5 @@
 # Copyright (c) 2023 Adam Karpierz
-# Licensed under the zlib/libpng License
-# https://opensource.org/license/zlib
+# SPDX-License-Identifier: Zlib
 
 # libusb multi-thread test program
 # Copyright 2022-2023 Tormod Volden

@@ -1,6 +1,5 @@
 # Copyright (c) 2016 Adam Karpierz
-# Licensed under the zlib/libpng License
-# https://opensource.org/license/zlib
+# SPDX-License-Identifier: Zlib
 
 # xusb: Generic USB test program
 # Copyright © 2009-2012 Pete Batard <pete@akeo.ie>

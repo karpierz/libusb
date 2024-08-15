@@ -1,6 +1,5 @@
 # Copyright (c) 2016 Adam Karpierz
-# Licensed under the zlib/libpng License
-# https://opensource.org/license/zlib
+# SPDX-License-Identifier: Zlib
 
 # libusb example program to list devices on the bus
 # Copyright © 2007 Daniel Drake <dsd@gentoo.org>

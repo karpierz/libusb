@@ -1,6 +1,5 @@
 # Copyright (c) 2016 Adam Karpierz
-# Licensed under the zlib/libpng License
-# https://opensource.org/license/zlib
+# SPDX-License-Identifier: Zlib
 
 # libusb stress test program to perform simple stress tests
 # Copyright © 2012 Toby Gray <toby.gray@realvnc.com>

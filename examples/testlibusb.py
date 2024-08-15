@@ -1,6 +1,5 @@
 # Copyright (c) 2016 Adam Karpierz
-# Licensed under the zlib/libpng License
-# https://opensource.org/license/zlib
+# SPDX-License-Identifier: Zlib
 
 # Test suite program based of libusb-0.1-compat testlibusb
 # Copyright (c) 2013 Nathan Hjelm <hjelmn@mac.ccom>

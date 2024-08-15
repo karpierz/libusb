@@ -1,9 +1,12 @@
 Changelog
 =========
 
-1.0.27.post1 (2024-02-08)
+1.0.27.post1 (2024-08-13)
 -------------------------
+- Add support for Python 3.13
+- Setup (dependencies) update.
 - Improvements and cleanup for win32.
+- Source code refactoring and cleanup.
 
 1.0.27 (2024-02-05)
 -------------------

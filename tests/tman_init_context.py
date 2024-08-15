@@ -1,6 +1,5 @@
 # Copyright (c) 2023 Adam Karpierz
-# Licensed under the zlib/libpng License
-# https://opensource.org/license/zlib
+# SPDX-License-Identifier: Zlib
 
 # Unit tests for libusb.init_context
 # Copyright © 2023 Nathan Hjelm <hjelmn@cs.unm.edu>
