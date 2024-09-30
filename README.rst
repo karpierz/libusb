@@ -75,7 +75,7 @@ Installation
 
 Prerequisites:
 
-+ Python 3.8 or higher
++ Python 3.9 or higher
 
   * https://www.python.org/
   * with C libusb 1.0.27 is a primary test environment.
@@ -125,7 +125,7 @@ or on development mode:
 License
 =======
 
-  | Copyright (c) 2016-2024 Adam Karpierz
+  | |copyright|
   | Licensed under the zlib/libpng License
   | https://opensource.org/license/zlib
   | Please refer to the accompanying LICENSE file.
@@ -137,6 +137,7 @@ Authors
 
 .. |package| replace:: libusb
 .. |package_bold| replace:: **libusb**
+.. |copyright| replace:: Copyright (c) 2016-2024 Adam Karpierz
 .. |respository| replace:: https://github.com/karpierz/libusb.git
 .. _Development page: https://github.com/karpierz/libusb
 .. _PyPI record: https://pypi.org/project/libusb/

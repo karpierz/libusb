@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.0.27.post2 (2024-09-30)
+-------------------------
+- Drop support for Python 3.8
+- Setup (dependencies) update.
+
 1.0.27.post1 (2024-08-13)
 -------------------------
 - Add support for Python 3.13
