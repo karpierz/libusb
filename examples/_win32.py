@@ -164,11 +164,11 @@ class WSADATA(ctypes.Structure):
 
 LPWSADATA = ctypes.POINTER(WSADATA)
 
-WSAStartup = win32.windll.Ws2_32.WSAStartup
+WSAStartup = windll.Ws2_32.WSAStartup
 WSAStartup.restype  = ctypes.c_int
 WSAStartup.argtypes = [WORD, LPWSADATA]
 
-WSACleanup = win32.windll.Ws2_32.WSACleanup
+WSACleanup = windll.Ws2_32.WSACleanup
 WSACleanup.restype  = ctypes.c_int
 WSACleanup.argtypes = []
 
