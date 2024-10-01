@@ -146,4 +146,32 @@ SetSystemTime = windll.kernel32.SetSystemTime
 SetSystemTime.restype  = BOOL
 SetSystemTime.argtypes = [LPSYSTEMTIME]
 
+# http://posted-stuff.blogspot.com/2009/07/iocp-based-sockets-with-ctypes-in_22.html
+
+WSADESCRIPTION_LEN = 256
+WSASYS_STATUS_LEN  = 128
+
+class WSADATA(ctypes.Structure):
+    _fields_ = [
+    ("wVersion",       WORD),
+    ("wHighVersion",   WORD),
+    ("szDescription",  ctypes.c_char * (WSADESCRIPTION_LEN + 1)),
+    ("szSystemStatus", ctypes.c_char * (WSASYS_STATUS_LEN  + 1)),
+    ("iMaxSockets",    ctypes.c_ushort),
+    ("iMaxUdpDg",      ctypes.c_ushort),
+    ("lpVendorInfo",   ctypes.c_char_p),
+]
+
+LPWSADATA = ctypes.POINTER(WSADATA)
+
+WSAStartup = win32.windll.Ws2_32.WSAStartup
+WSAStartup.restype  = ctypes.c_int
+WSAStartup.argtypes = [WORD, LPWSADATA]
+
+WSACleanup = win32.windll.Ws2_32.WSACleanup
+WSACleanup.restype  = ctypes.c_int
+WSACleanup.argtypes = []
+
+def MAKEWORD(blow, bhigh): return (bhigh << 8) + blow
+
 del ctypes
