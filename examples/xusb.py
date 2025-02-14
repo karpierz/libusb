@@ -26,7 +26,7 @@ import ctypes as ct
 
 import libusb as usb
 from libusb._platform import is_windows
-if is_windows: import _win32 as win32
+if is_windows: from libusb._platform._windows import _win32 as win32
 
 usb_strerror   = lambda r: usb.strerror(r).decode("utf-8")
 usb_error_name = lambda status: usb.error_name(status).decode("utf-8")

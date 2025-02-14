@@ -1,6 +1,15 @@
 Changelog
 =========
 
+1.0.27.post4 (2025-01-01)
+-------------------------
+- Windows shared libraries built with Visual Studio 2022.
+- Source distribution (\*.tar.gz now) is compliant with PEP-0625.
+- 100% code linting.
+- Tox configuration is now in native (toml) format.
+- Copyright year update.
+- Setup (dependencies) update.
+
 1.0.27.post3 (2024-10-09)
 -------------------------
 - Setup (dependencies) update.

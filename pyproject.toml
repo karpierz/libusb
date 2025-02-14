@@ -3,11 +3,11 @@
 
 [build-system]
 build-backend = 'setuptools.build_meta'
-requires = ['setuptools>=75.1.0', 'wheel>=0.44.0', 'packaging>=24.1.0', 'tox>=4.21.2']
+requires = ['setuptools>=75.8.0', 'packaging>=24.2.0', 'tox>=4.24.1']
 
 [project]
 name        = 'libusb'
-version     = '1.0.27.post3'
+version     = '1.0.27.post4'
 description = 'Python binding for the libusb C library.'
 urls.Homepage      = 'https://pypi.org/project/libusb/'
 urls.Documentation = 'https://libusb.readthedocs.io/'
@@ -45,25 +45,25 @@ classifiers = [
 requires-python = '>=3.9.0,<4.0.0'
 dependencies = [
     # mandatory
-    'setuptools>=75.1.0',
-    'pkg-about>=1.2.1',
+    'setuptools>=75.8.0',
+    'pkg-about>=1.2.9',
     # others
 ]
 dynamic = ['readme']
-[project.optional-dependencies]
-doc = [
+optional-dependencies.'doc' = [
     'Sphinx>=7.4.7',
-    'sphinx-toolbox>=3.8.0',
-    'sphinx-tabs>=3.4.7',
+    'sphinx-autodoc-typehints>=2.3.0',
+    'sphinx-toolbox>=3.8.2',
+    'sphinx-tabs>=3.4.5', # don't touch! sphinx-toolbox requires <3.4.7
     'sphinx-copybutton>=0.5.2',
     'sphinxcontrib-spelling>=8.0.0',
     'sphinx-lint>=1.0.0',
     'restructuredtext-lint>=1.4.0',
-    'nbsphinx>=0.9.5',
+    'nbsphinx>=0.9.6',
 ]
-test = [
-    'deepdiff>=8.0.1',
-    'rich>=13.9.2',
+optional-dependencies.'test' = [
+    'deepdiff>=8.2.0',
+    'rich>=13.9.4',
 ]
 
 [project.scripts]
@@ -109,18 +109,19 @@ libusb = [
 libusb = [
 ]
 
-[tool.coverage.run]
-source = [
+[tool.coverage]
+# run
+run.source = [
     'libusb',
     'tests',
 ]
-omit = [
+run.omit = [
 ]
-data_file = '.tox/coverage/.coverage'
-plugins = ['covdefaults']
-
-[tool.coverage.report]
-exclude_lines = [
+run.branch = true
+run.data_file = '.tox/coverage/.coverage'
+run.plugins = ['covdefaults']
+# report
+report.exclude_lines = [
     # Regexes
     # Have to re-enable the standard pragma
     '^\s*if\s+self\.debug\s*:',
@@ -130,13 +131,12 @@ exclude_lines = [
     '^\s*@unittest\.skip\(',
     '^\s*@unittest\.skipIf\(sys\.platform\.startswith\("win"\)',
 ]
-omit = [
+report.omit = [
     'tests/run.py',
 ]
-skip_covered = false
-
-[tool.coverage.html]
-directory = '.tox/coverage/.coverage.html'
+report.skip_covered = false
+# html report
+html.directory = '.tox/coverage/.coverage.html'
 
 [tool.flake8]
 filename = ['*.py','*.pyx']
@@ -152,12 +152,11 @@ ignore = ['E126','E203','E221','E251','E302','E701','E702','E731',
 #select =
 #select = ['E','W','F','N','I']
 per-file-ignores = [
-    '_libusb.py: E305',
-    '__init__.py: E305',
-    #'_platform/__init__.py: E305',
-    #'_platform/_windows/__init__.py: E305',
-    #'_platform/_macos/__init__.py: E305',
-    #'_platform/_linux/__init__.py: E305',
+    '*/libusb/_libusb.py: E305',
+    '*/libusb/_platform/__init__.py: E305',
+    '*/libusb/_platform/_windows/__init__.py: E305',
+    '*/libusb/_platform/_macos/__init__.py: E305',
+    '*/libusb/_platform/_linux/__init__.py: E305',
 ]
 output-file = '.tox/lint/flake8out.txt'
 count = true
@@ -170,117 +169,128 @@ count = true
 # Configuration(s) for tox
 #
 
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-envlist = py{39,310,311,312,313}, pypy{39,310}, docs
-labels =
-    py = py{39,310,311,312,313}, pypy{39,310}
-    prepare = prepare
-    coverage = coverage
-    lint = lint
-    docs = docs
-    build  = py{39,310,311,312,313}, pypy{39,310}, docs, build
-    deploy = py{39,310,311,312,313}, pypy{39,310}, docs, build, publish
-minversion = 4.21.2
+[tool.tox]  # 
+env_list = [{replace='ref',of=['tool','tox','labels','py'],extend=true}, 'lint', 'docs']
+min_version = '4.24.1'
 skip_missing_interpreters = true
-requires =
-    {[base]deps}
-    virtualenv>=20.26.6
-    tox-backtick>=0.5.1
-    tox-tags>=0.2.0
+requires = [
+    {replace='ref',of=['tool','tox','_','base','deps'],extend=true},
+    'virtualenv>=20.29.2',
+    'tox-backtick>=0.5.8',
+]
+[tool.tox.labels]
+py = ['py39','py310','py311','py312','py313', 'pypy39','pypy310']
+prepare  = ['prepare']
+coverage = ['coverage']
+lint = ['lint']
+docs = ['docs']
+build  = [{replace='ref',of=['tool','tox','labels','py'],extend=true}, 'docs', 'build']
+deploy = [{replace='ref',of=['tool','tox','labels','build'],extend=true}, 'publish']
 
-[base]
-basepython = python3.12
-deps =
-    pip>=24.2.0
-    setuptools>=75.1.0
-    wheel>=0.44.0
-packagesubdir = libusb
+[tool.tox._.base]
+base_python = ['python3.12']
+deps = [
+    'pip>=25.0.1',
+    'setuptools>=75.8.0',
+]
+package_subdir = 'libusb'
 
-[testenv]
-passenv = WINDIR
-setenv =
-    PYTHONDONTWRITEBYTECODE = 1
-commands =
-    {envpython} --version
-    {envpython} -m tests {posargs}
-extras = test
-deps =
-    {[base]deps}
+[tool.tox.env_run_base]
+description = "Run tests under {base_python}"
+set_env.PYTHONDONTWRITEBYTECODE = '1'
+set_env.PKG_PVER = "`python -W ignore -c \"import platform ; print(''.join(platform.python_version_tuple()[:2]), end='')\" 2> nul`"
+set_env.PKG_NAME = "`python -W ignore -c \"import setuptools ; setuptools._distutils.core._setup_stop_after='config' ; print(setuptools.setup().metadata.get_name(),     end='')\" 2> nul`"
+set_env.PKG_DIST = "`python -W ignore -c \"import setuptools ; setuptools._distutils.core._setup_stop_after='config' ; print(setuptools.setup().metadata.get_fullname(), end='')\" 2> nul`"
+commands = [
+    ['{env_python}','--version'],
+    ['{env_python}','-m','tests',{replace='posargs',extend=true}],
+]
+extras = ['test']
+deps = [
+    {replace='ref',of=['tool','tox','_','base','deps'],extend=true},
+]
 
-[testenv:prepare]
-basepython = {[base]basepython}
+[tool.tox.env.'prepare']
+base_python = {replace='ref',of=['tool','tox','_','base','base_python']}
 skip_install = true
-allowlist_externals =
-    cmd
-    .build
-commands =
-    cmd /C if exist .build.cmd .build.cmd
+allowlist_externals = [
+    'cmd',
+    '.build',
+]
+commands = [
+    ['cmd','/C','if','exist','.build.cmd','.build.cmd'],
+]
+extras = []
+deps = []
 
-[testenv:coverage]
-basepython = {[base]basepython}
-commands =
-    {envpython} -m coverage erase
-    -{envpython} -m coverage run -m tests {posargs}
-    {envpython} -m coverage report
-    {envpython} -m coverage html
-deps =
-    {[testenv]deps}
-    coverage>=7.6.2
-    covdefaults>=2.3.0
-    diff-cover>=9.2.0
+[tool.tox.env.'coverage']
+base_python = {replace='ref',of=['tool','tox','_','base','base_python']}
+commands = [
+    ['{env_python}','-m','coverage','erase'],
+    ['-','{env_python}','-m','coverage','run','-m','tests',{replace="posargs",extend=true}],
+    ['-','{env_python}','-m','coverage','html'],
+    ['{env_python}','-m','coverage','report'],
+]
+deps = [
+    {replace='ref',of=['tool','tox','env_run_base','deps'],extend=true},
+    'coverage>=7.6.12',
+    'covdefaults>=2.3.0',
+    'diff-cover>=9.2.0',
+]
 
-[testenv:docs]
-basepython = {[base]basepython}
-commands =
-    {envpython} -m sphinxlint --ignore .tox --ignore build --ignore dist
-   #{envpython} -m sphinx.apidoc -f {envsitepackagesdir}/{[base]packagesubdir}
-    {envpython} -m sphinx.cmd.build -W -a -b html -E   ./docs ./build/docs/html
-    {envpython} -m sphinx.cmd.build -W -a -b linkcheck ./docs ./build/docs/html
-    {envpython} -m sphinx.cmd.build -W -a -b doctest   ./docs ./build/docs/html
-extras = doc
-deps =
+[tool.tox.env.'docs']
+base_python = {replace='ref',of=['tool','tox','_','base','base_python']}
+commands = [
+    ['{env_python}','-m','sphinxlint','--ignore','.tox','--ignore','build','--ignore','dist'],
+   #['{env_python}','-m','sphinx.apidoc','-f','{envsitepackagesdir}/{[tool.tox._.base]package_subdir}'],
+    ['{env_python}','-m','sphinx.cmd.build','-W','-a','-b','html','-E','./docs','./build/docs/html'],
+    ['{env_python}','-m','sphinx.cmd.build','-W','-a','-b','linkcheck','./docs','./build/docs/html'],
+    ['{env_python}','-m','sphinx.cmd.build','-W','-a','-b','doctest',  './docs','./build/docs/html'],
+]
+extras = ['doc']
+deps = [
+    {replace='ref',of=['tool','tox','_','base','deps'],extend=true},
+]
 
-[testenv:build]
-depends = py{39,310,311,312,313}, pypy{39,310}, docs
-basepython = {[base]basepython}
-setenv =
-    {[testenv]setenv}
-    PKG_PVER=`{envpython} -W ignore -c "import platform ; print(''.join(platform.python_version_tuple()[:2]), end='')" 2> nul`
-    PKG_NAME=`{envpython} -W ignore -c "import setuptools ; setuptools._distutils.core._setup_stop_after='config' ; print(setuptools.setup().metadata.get_name(),     end='')" 2> nul`
-    PKG_DIST=`{envpython} -W ignore -c "import setuptools ; setuptools._distutils.core._setup_stop_after='config' ; print(setuptools.setup().metadata.get_fullname(), end='')" 2> nul`
-commands =
-    {envpython} -W ignore -c "from setuptools import setup ; setup()" --quiet sdist --formats=zip
-    {envpython} -W ignore -c "from setuptools import setup ; setup()" --quiet bdist_wheel
+[tool.tox.env.'build']
+depends = [{replace='ref',of=['tool','tox','labels','py'],extend=true}, 'docs']
+base_python = {replace='ref',of=['tool','tox','_','base','base_python']}
+commands = [
+    ['{env_python}','-W','ignore','-c','from setuptools import setup ; setup()','--quiet','sdist','--formats=gztar'],
+    ['{env_python}','-W','ignore','-c','from setuptools import setup ; setup()','--quiet','bdist_wheel'],
     # check out for PyPi
-    {envpython} -m twine check dist/*
-deps =
-    {[testenv]deps}
-    twine>=5.1.1
+    ['{env_python}','-m','twine','check','dist/*'],
+]
+deps = [
+    {replace='ref',of=['tool','tox','env_run_base','deps'],extend=true},
+    'twine>=6.1.0',
+]
 
-[testenv:publish]
-depends = build
-basepython = {[base]basepython}
+[tool.tox.env.'publish']
+depends = ['build']
+base_python = {replace='ref',of=['tool','tox','_','base','base_python']}
 skip_install = true
-commands =
+commands = [
     # publish on PyPi
-    {envpython} -m twine upload dist/*
-extras =
-deps =
-    twine>=5.1.1
+    ['{env_python}','-m','twine','upload','dist/*'],
+]
+extras = []
+deps = [
+    'twine>=6.1.0',
+]
 
-[testenv:lint]
-basepython = {[base]basepython}
-commands =
-    {envpython} -m flake8 {envsitepackagesdir}/{[base]packagesubdir}/
-extras =
-deps =
-    {[testenv]deps}
-    flake8>=7.1.1
-    flake8-pyproject>=1.2.3
-    flake8-docstrings>=1.7.0
-    pep8-naming>=0.14.1
-    flake8-builtins>=2.5.0
-    flake8-deprecated>=2.2.1
-"""
+[tool.tox.env.'lint']
+base_python = {replace='ref',of=['tool','tox','_','base','base_python']}
+commands = [
+    ['{env_python}','-m','flake8','{envsitepackagesdir}/{[tool.tox._.base]package_subdir}/'],
+]
+extras = []
+deps = [
+    {replace='ref',of=['tool','tox','env_run_base','deps'],extend=true},
+    'flake8>=7.1.1',
+    'flake8-pyproject>=1.2.3',
+    'flake8-docstrings>=1.7.0',
+    'pep8-naming>=0.14.1',
+    'flake8-builtins>=2.5.0',
+    'flake8-deprecated>=2.2.1',
+]

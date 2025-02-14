@@ -27,7 +27,7 @@ ENABLE_LOGGING = 1
 import libusb as usb
 import testlib
 from testlib import test_result, test_spec
-from libusb._platform import defined, is_posix, is_windows
+from libusb._platform import defined, is_windows, is_posix
 
 
 def test_init_context_basic() -> test_result:

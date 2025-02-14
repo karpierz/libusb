@@ -28,13 +28,10 @@ import ctypes as ct
 from ._platform import CFUNC
 from ._platform import timeval
 from ._platform import defined
+from ._platform._limits import INT_MAX
 from ._dll      import dll
 
 intptr_t = (ct.c_int32 if ct.sizeof(ct.c_void_p) == ct.sizeof(ct.c_int32) else ct.c_int64)
-
-# include <limits.h>
-UINT_MAX = ct.c_uint(-1).value
-INT_MAX  = UINT_MAX >> 1
 
 def LIBUSB_DEPRECATED_FOR(f): pass
 
@@ -2866,13 +2863,13 @@ def set_option(ctx, option, *values):  # LIBUSB_CALLV
     else:
         return _set_option_int(ctx, option, 0)
 
-#if defined("ENABLE_LOGGING") and not defined("ENABLE_DEBUG_LOGGING"):
+# if defined("ENABLE_LOGGING") and not defined("ENABLE_DEBUG_LOGGING"):
 context._fields_ = [
     ("debug",       log_level),
     ("debug_fixed", ct.c_int),
     ("log_handler", log_cb),
 ]
-#endif
+# endif
 
 del defined
 

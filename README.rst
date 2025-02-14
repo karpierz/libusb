@@ -137,7 +137,7 @@ Authors
 
 .. |package| replace:: libusb
 .. |package_bold| replace:: **libusb**
-.. |copyright| replace:: Copyright (c) 2016-2024 Adam Karpierz
+.. |copyright| replace:: Copyright (c) 2016-2025 Adam Karpierz
 .. |respository| replace:: https://github.com/karpierz/libusb.git
 .. _Development page: https://github.com/karpierz/libusb
 .. _PyPI record: https://pypi.org/project/libusb/
