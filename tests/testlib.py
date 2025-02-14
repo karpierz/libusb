@@ -86,9 +86,9 @@ def run_tests(argv: list, tests: list) -> int:
     Before running any tests argv will be processed
     to determine the mode of operation.
 
-    \param argv The argv from main
-    \param tests A NULL_TEST terminated array of tests
-    \return 0 on success, non-zero on failure"""
+    param argv The argv from main
+    param tests A NULL_TEST terminated array of tests
+    return 0 on success, non-zero on failure"""
 
     # Setup default mode of operation
     test_names = None
