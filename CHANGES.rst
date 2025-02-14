@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0.27.post4 (2025-01-01)
+1.0.27.post4 (2025-02-14)
 -------------------------
 - Windows shared libraries built with Visual Studio 2022.
 - Source distribution (\*.tar.gz now) is compliant with PEP-0625.
