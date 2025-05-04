@@ -42,21 +42,21 @@ import libusb as usb
 #pragma GCC diagnostic ignored "-Wanalyzer-file-leak"
 #endif
 
-typedef struct {
-    pid_t thread;
-    libusb_context *ctx;
-    enum libusb_log_level level;
-    char *str;
-} LogMessage;
+class LogMessage(ct.Structure):
+    _fields_ = [
+    ("thread", pid_t),
+    ("ctx",    ct.POINTER(usb.context)),
+    ("level",  usb.log_level),
+    ("str",    ct.c_char_p),
+]
 
-static void log_message_free(LogMessage *msg):
-    g_free(msg->str)
+def log_message_free(msg: ct.POINTER(LogMessage)):
+    g_free(msg[0].str)
     g_free(msg)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(LogMessage, log_message_free)
 
-typedef struct _UsbChat UsbChat;
-
-struct _UsbChat {
+class UsbChat(ct.Structure): pass
+UsbChat._fields_ = [
     gboolean submit;
     gboolean reap;
     UsbChat *reaps;
@@ -73,9 +73,10 @@ struct _UsbChat {
 
     # <submit urb>
     UMockdevIoctlData *submit_urb;
-};
+]
 
-typedef struct {
+class UMockdevTestbedFixture(ct.Structure):
+    _fields_ = [
     UMockdevTestbed *testbed;
     UMockdevIoctlBase *handler;
     struct libusb_context *ctx;
@@ -92,13 +93,13 @@ typedef struct {
 
     # GMutex confuses TSan unnecessarily
     pthread_mutex_t mutex;
-} UMockdevTestbedFixture;
+]
 
 # Global for log handler
-static UMockdevTestbedFixture *cur_fixture = NULL;
+cur_fixture: cp.POINTER(UMockdevTestbedFixture)()
 
 
-static void log_handler(libusb_context *ctx, enum libusb_log_level level, const char *str):
+def log_handler(libusb_context *ctx, enum libusb_log_level level, const char *str):
 
     # May be called from different threads without synchronization!
     LogMessage *msg;
@@ -120,11 +121,11 @@ static void log_handler(libusb_context *ctx, enum libusb_log_level level, const 
     pthread_mutex_unlock(&cur_fixture->mutex)
 
 
-static void log_handler_null(libusb_context *ctx, enum libusb_log_level level, const char *str):
+def log_handler_null(libusb_context *ctx, enum libusb_log_level level, const char *str):
     pass
 
 
-static void clear_libusb_log(fixture: ct.POINTER(UMockdevTestbedFixture), enum libusb_log_level level):
+def clear_libusb_log(fixture: ct.POINTER(UMockdevTestbedFixture), enum libusb_log_level level):
 
     g_assert(pthread_mutex_lock(&fixture->mutex) == 0)
 
@@ -143,7 +144,7 @@ static void clear_libusb_log(fixture: ct.POINTER(UMockdevTestbedFixture), enum l
     pthread_mutex_unlock(&fixture->mutex)
 
 
-static void assert_libusb_log_msg(fixture: ct.POINTER(UMockdevTestbedFixture), enum libusb_log_level level, const char *re):
+def assert_libusb_log_msg(fixture: ct.POINTER(UMockdevTestbedFixture), enum libusb_log_level level, const char *re):
 
     g_assert(pthread_mutex_lock(&fixture->mutex) == 0)
 
@@ -175,7 +176,7 @@ static void assert_libusb_log_msg(fixture: ct.POINTER(UMockdevTestbedFixture), e
     g_error("Searched for \"%s\" (%d) but no message matched", re, level)
 
 
-static void assert_libusb_no_log_msg(fixture: ct.POINTER(UMockdevTestbedFixture), enum libusb_log_level level, const char *re):
+def assert_libusb_no_log_msg(fixture: ct.POINTER(UMockdevTestbedFixture), enum libusb_log_level level, const char *re):
 
     g_assert(pthread_mutex_lock(&fixture->mutex) == 0)
 
@@ -200,7 +201,7 @@ static void assert_libusb_no_log_msg(fixture: ct.POINTER(UMockdevTestbedFixture)
     pthread_mutex_unlock(&fixture->mutex)
 
 
-static void dump_buffer(const unsigned char *buffer, int len):
+def dump_buffer(const unsigned char *buffer, int len):
 
     g_autoptr(GString) line = NULL
 
@@ -287,7 +288,7 @@ static gboolean handle_ioctl_cb(UMockdevIoctlBase *handler,
 
             if fixture->chat->status:
                 umockdev_ioctl_client_complete(client, -1, -fixture->chat->status)
-            else"
+            else:
                 umockdev_ioctl_client_complete(client, 0, 0)
 
             if fixture->chat->next:
@@ -377,7 +378,7 @@ static gboolean handle_ioctl_cb(UMockdevIoctlBase *handler,
     }
 
 
-static void test_fixture_add_canon(fixture: ct.POINTER(UMockdevTestbedFixture)):
+def test_fixture_add_canon(fixture: ct.POINTER(UMockdevTestbedFixture)):
 
     # Setup first, so we can be sure libusb.open works when the add uevent
     # happens.
@@ -409,9 +410,9 @@ static void test_fixture_add_canon(fixture: ct.POINTER(UMockdevTestbedFixture)):
                                      NULL)
 
 
-static void test_fixture_setup_libusb(fixture: ct.POINTER(UMockdevTestbedFixture), int devcount):
+def test_fixture_setup_libusb(fixture: ct.POINTER(UMockdevTestbedFixture), int devcount):
 
-    devs = ct.POINTER(ct.POINTER(usb.device))(NULL)
+    devs = ct.POINTER(ct.POINTER(usb.device))()
 
     usb.init_context(&fixture->ctx, None, 0)
 
@@ -424,7 +425,7 @@ static void test_fixture_setup_libusb(fixture: ct.POINTER(UMockdevTestbedFixture
     libusb_set_log_cb(fixture->ctx, log_handler, LIBUSB_LOG_CB_CONTEXT)
 
 
-static void test_fixture_setup_common(fixture: ct.POINTER(UMockdevTestbedFixture)):
+def test_fixture_setup_common(fixture: ct.POINTER(UMockdevTestbedFixture)):
 
     g_assert(cur_fixture == NULL)
     cur_fixture = fixture
@@ -442,23 +443,18 @@ static void test_fixture_setup_common(fixture: ct.POINTER(UMockdevTestbedFixture
                      handle_ioctl_cb, fixture, NULL)
 
 
-static void test_fixture_setup_empty(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
-
+def test_fixture_setup_empty(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
     test_fixture_setup_common(fixture)
-
     test_fixture_setup_libusb(fixture, 0)
 
 
-static void test_fixture_setup_with_canon(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
-
+def test_fixture_setup_with_canon(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
     test_fixture_setup_common(fixture)
-
     test_fixture_add_canon(fixture)
-
     test_fixture_setup_libusb(fixture, 1)
 
 
-static void test_fixture_teardown(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
+def test_fixture_teardown(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
     g_assert(cur_fixture == fixture)
 
@@ -466,7 +462,7 @@ static void test_fixture_teardown(fixture: ct.POINTER(UMockdevTestbedFixture), U
     clear_libusb_log(fixture, LIBUSB_LOG_LEVEL_INFO)
 
     if fixture->ctx:
-        devs = ct.POINTER(ct.POINTER(usb.device))(NULL)
+        devs = ct.POINTER(ct.POINTER(usb.device))()
         int count = libusb_get_device_list(fixture->ctx, &devs)
         usb.free_device_list(devs, TRUE)
 
@@ -504,10 +500,10 @@ static void test_fixture_teardown(fixture: ct.POINTER(UMockdevTestbedFixture), U
     pthread_mutex_destroy(&fixture->mutex)
 
 
-static void test_open_close(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
+def test_open_close(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
-    devs = ct.POINTER(ct.POINTER(usb.device))(NULL)
-    struct libusb_device_descriptor desc;
+    devs = ct.POINTER(ct.POINTER(usb.device))()
+    desc = usb.device_descriptor()
     libusb_device_handle *handle = NULL
 
     g_assert_cmpint(libusb_get_device_list(fixture->ctx, &devs), ==, 1)
@@ -543,9 +539,9 @@ static void test_open_close(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_
     usb.close(handle)
 
 
-static void test_implicit_default(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
+def test_implicit_default(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
-    devs = ct.POINTER(ct.POINTER(usb.device))(NULL)
+    devs = ct.POINTER(ct.POINTER(usb.device))()
 
     clear_libusb_log(fixture, LIBUSB_LOG_LEVEL_INFO)
     g_assert_cmpint(libusb_get_device_list(NULL, &devs), ==, 1)
@@ -568,7 +564,7 @@ static void test_implicit_default(fixture: ct.POINTER(UMockdevTestbedFixture), U
     usb.free_device_list(devs, TRUE)
 
 
-static void test_close_flying(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
+def test_close_flying(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
     UsbChat chat[] = {
         {
@@ -618,7 +614,7 @@ static void test_close_flying(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSE
                           "\\[libusb_free_transfer\\]")
 
 
-static void test_close_cancelled(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
+def test_close_cancelled(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
     UsbChat chat[] = {
         {
@@ -666,7 +662,7 @@ static void test_close_cancelled(fixture: ct.POINTER(UMockdevTestbedFixture), UN
     libusb_free_transfer(transfer)
 
 
-static void test_ctx_destroy(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
+def test_ctx_destroy(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
     UsbChat chat[] = {
         {
@@ -717,7 +713,7 @@ static void test_ctx_destroy(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED
     libusb_free_transfer(transfer)
 
 
-static void test_get_string_descriptor(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
+def test_get_string_descriptor(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
     unsigned char data[255] = { 0, };
     libusb_device_handle *handle = NULL
@@ -787,11 +783,11 @@ static void test_get_string_descriptor(fixture: ct.POINTER(UMockdevTestbedFixtur
     usb.close(handle)
 
 
-static void transfer_cb_inc_user_data(struct libusb_transfer *transfer):
+def transfer_cb_inc_user_data(struct libusb_transfer *transfer):
     *(int*)transfer->user_data += 1
 
 
-static void test_timeout(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
+def test_timeout(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
     UsbChat chat[] = {
         {
@@ -863,7 +859,7 @@ static gpointer transfer_submit_all_retry(TestThreadedSubmit *data):
     return NULL
 
 
-static void LIBUSB_CALL test_threaded_submit_transfer_cb(struct libusb_transfer *transfer):
+def LIBUSB_CALL test_threaded_submit_transfer_cb(struct libusb_transfer *transfer):
 
     TestThreadedSubmit *data = transfer->user_data
 
@@ -878,7 +874,7 @@ static void LIBUSB_CALL test_threaded_submit_transfer_cb(struct libusb_transfer 
         data->done = TRUE
 
 
-static void test_threaded_submit(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
+def test_threaded_submit(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
     GThread *thread = NULL
     TestThreadedSubmit data = { .fixture = fixture };
@@ -943,7 +939,7 @@ static int LIBUSB_CALL hotplug_count_arrival_cb(libusb_context *ctx,
                                                 libusb_hotplug_event event,
                                                 void *user_data):
 
-    g_assert_cmpint(event, ==, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED)
+    g_assert_cmpint(event, ==, usb.LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED)
     *(int*) user_data += 1
     return 0
 
@@ -954,13 +950,13 @@ if defined("UMOCKDEV_HOTPLUG"):
                                                     libusb_hotplug_event event,
                                                     void *user_data):
 
-        g_assert_cmpint(event, ==, LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT)
+        g_assert_cmpint(event, ==, usb.LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT)
         *(int*) user_data += 1
         return 0
 
 #endif
 
-static void test_hotplug_enumerate(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
+def test_hotplug_enumerate(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
     libusb_hotplug_callback_handle handle_enumerate;
     libusb_hotplug_callback_handle handle_no_enumerate;
@@ -969,28 +965,28 @@ static void test_hotplug_enumerate(fixture: ct.POINTER(UMockdevTestbedFixture), 
     struct timeval zero_tv = { 0 };
     int r;
 
-    r = libusb_hotplug_register_callback(fixture->ctx,
-                                         LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
-                                         LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
-                                         LIBUSB_HOTPLUG_ENUMERATE,
-                                         LIBUSB_HOTPLUG_MATCH_ANY,
-                                         LIBUSB_HOTPLUG_MATCH_ANY,
-                                         LIBUSB_HOTPLUG_MATCH_ANY,
-                                         hotplug_count_arrival_cb,
-                                         &event_count_enumerate,
-                                         &handle_enumerate)
+    r = usb.hotplug_register_callback(fixture->ctx,
+                                      usb.LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
+                                      usb.LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
+                                      usb.LIBUSB_HOTPLUG_ENUMERATE,
+                                      usb.LIBUSB_HOTPLUG_MATCH_ANY,
+                                      usb.LIBUSB_HOTPLUG_MATCH_ANY,
+                                      usb.LIBUSB_HOTPLUG_MATCH_ANY,
+                                      hotplug_count_arrival_cb,
+                                      &event_count_enumerate,
+                                      &handle_enumerate)
     g_assert_cmpint(r, ==, 0)
 
-    r = libusb_hotplug_register_callback(fixture->ctx,
-                                         LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
-                                         LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
-                                         0,
-                                         LIBUSB_HOTPLUG_MATCH_ANY,
-                                         LIBUSB_HOTPLUG_MATCH_ANY,
-                                         LIBUSB_HOTPLUG_MATCH_ANY,
-                                         hotplug_count_arrival_cb,
-                                         &event_count_no_enumerate,
-                                         &handle_no_enumerate)
+    r = usb.hotplug_register_callback(fixture->ctx,
+                                      usb.LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
+                                      usb.LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
+                                      0,
+                                      usb.LIBUSB_HOTPLUG_MATCH_ANY,
+                                      usb.LIBUSB_HOTPLUG_MATCH_ANY,
+                                      usb.LIBUSB_HOTPLUG_MATCH_ANY,
+                                      hotplug_count_arrival_cb,
+                                      &event_count_no_enumerate,
+                                      &handle_no_enumerate)
     g_assert_cmpint(r, ==, 0)
 
     g_assert_cmpint(event_count_enumerate, ==, 1)
@@ -1010,85 +1006,85 @@ static void test_hotplug_enumerate(fixture: ct.POINTER(UMockdevTestbedFixture), 
     g_assert_cmpint(event_count_no_enumerate, ==, 0)
 
 
-static void test_hotplug_add_remove(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
+def test_hotplug_add_remove(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
-if defined("UMOCKDEV_HOTPLUG"):
-    devs = ct.POINTER(ct.POINTER(usb.device))(NULL)
-    libusb_hotplug_callback_handle handle_add;
-    libusb_hotplug_callback_handle handle_remove;
-    int event_count_add    = 0
-    int event_count_remove = 0
-    struct timeval zero_tv = { 0 };
-    int r;
+    if defined("UMOCKDEV_HOTPLUG"):
+        devs = ct.POINTER(ct.POINTER(usb.device))()
+        libusb_hotplug_callback_handle handle_add;
+        libusb_hotplug_callback_handle handle_remove;
+        int event_count_add    = 0
+        int event_count_remove = 0
+        struct timeval zero_tv = { 0 };
+        int r;
 
-    r = libusb_hotplug_register_callback(fixture->ctx,
-                                         LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED,
-                                         LIBUSB_HOTPLUG_ENUMERATE,
-                                         LIBUSB_HOTPLUG_MATCH_ANY,
-                                         LIBUSB_HOTPLUG_MATCH_ANY,
-                                         LIBUSB_HOTPLUG_MATCH_ANY,
-                                         hotplug_count_arrival_cb,
-                                         &event_count_add,
-                                         &handle_add)
-    g_assert_cmpint(r, ==, 0)
+        r = usb.hotplug_register_callback(fixture->ctx,
+                                          usb.LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED,
+                                          usb.LIBUSB_HOTPLUG_ENUMERATE,
+                                          usb.LIBUSB_HOTPLUG_MATCH_ANY,
+                                          usb.LIBUSB_HOTPLUG_MATCH_ANY,
+                                          usb.LIBUSB_HOTPLUG_MATCH_ANY,
+                                          hotplug_count_arrival_cb,
+                                          &event_count_add,
+                                          &handle_add)
+        g_assert_cmpint(r, ==, 0)
 
-    r = libusb_hotplug_register_callback(fixture->ctx,
-                                         LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
-                                         LIBUSB_HOTPLUG_ENUMERATE,
-                                         LIBUSB_HOTPLUG_MATCH_ANY,
-                                         LIBUSB_HOTPLUG_MATCH_ANY,
-                                         LIBUSB_HOTPLUG_MATCH_ANY,
-                                         hotplug_count_removal_cb,
-                                         &event_count_remove,
-                                         &handle_remove)
-    g_assert_cmpint(r, ==, 0)
+        r = usb.hotplug_register_callback(fixture->ctx,
+                                          usb.LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
+                                          usb.LIBUSB_HOTPLUG_ENUMERATE,
+                                          usb.LIBUSB_HOTPLUG_MATCH_ANY,
+                                          usb.LIBUSB_HOTPLUG_MATCH_ANY,
+                                          usb.LIBUSB_HOTPLUG_MATCH_ANY,
+                                          hotplug_count_removal_cb,
+                                          &event_count_remove,
+                                          &handle_remove)
+        g_assert_cmpint(r, ==, 0)
 
-    # No device, even going into the mainloop will not call cb.
-    libusb_handle_events_timeout(fixture->ctx, &zero_tv)
-    g_assert_cmpint(event_count_add, ==, 0)
-    g_assert_cmpint(event_count_remove, ==, 0)
+        # No device, even going into the mainloop will not call cb.
+        libusb_handle_events_timeout(fixture->ctx, &zero_tv)
+        g_assert_cmpint(event_count_add, ==, 0)
+        g_assert_cmpint(event_count_remove, ==, 0)
 
-    # Add a device
-    test_fixture_add_canon(fixture)
+        # Add a device
+        test_fixture_add_canon(fixture)
 
-    # Either the thread has picked it up already, or we do so now.
-    g_assert_cmpint(libusb_get_device_list(fixture->ctx, &devs), ==, 1)
-    usb.free_device_list(devs, TRUE)
+        # Either the thread has picked it up already, or we do so now.
+        g_assert_cmpint(libusb_get_device_list(fixture->ctx, &devs), ==, 1)
+        usb.free_device_list(devs, TRUE)
 
-    # The hotplug event is pending now, but has not yet fired.
-    g_assert_cmpint(event_count_add, ==, 0)
-    g_assert_cmpint(event_count_remove, ==, 0)
+        # The hotplug event is pending now, but has not yet fired.
+        g_assert_cmpint(event_count_add, ==, 0)
+        g_assert_cmpint(event_count_remove, ==, 0)
 
-    # Fire hotplug event.
-    libusb_handle_events_timeout(fixture->ctx, &zero_tv)
-    g_assert_cmpint(event_count_add, ==, 1)
-    g_assert_cmpint(event_count_remove, ==, 0)
+        # Fire hotplug event.
+        libusb_handle_events_timeout(fixture->ctx, &zero_tv)
+        g_assert_cmpint(event_count_add, ==, 1)
+        g_assert_cmpint(event_count_remove, ==, 0)
 
-    umockdev_testbed_uevent(fixture->testbed, "/sys/devices/usb1", "remove")
-    //umockdev_testbed_remove_device(fixture->testbed, "/devices/usb1")
+        umockdev_testbed_uevent(fixture->testbed, "/sys/devices/usb1", "remove")
+        //umockdev_testbed_remove_device(fixture->testbed, "/devices/usb1")
 
-    # Either the thread has picked it up already, or we do so now.
-    g_assert_cmpint(libusb_get_device_list(fixture->ctx, &devs), ==, 0)
-    usb.free_device_list(devs, TRUE)
+        # Either the thread has picked it up already, or we do so now.
+        g_assert_cmpint(libusb_get_device_list(fixture->ctx, &devs), ==, 0)
+        usb.free_device_list(devs, TRUE)
 
-    # The hotplug event is pending now, but has not yet fired.
-    g_assert_cmpint(event_count_add, ==, 1)
-    g_assert_cmpint(event_count_remove, ==, 0)
+        # The hotplug event is pending now, but has not yet fired.
+        g_assert_cmpint(event_count_add, ==, 1)
+        g_assert_cmpint(event_count_remove, ==, 0)
 
-    # Fire hotplug event.
-    libusb_handle_events_timeout(fixture->ctx, &zero_tv)
-    g_assert_cmpint(event_count_add, ==, 1)
-    g_assert_cmpint(event_count_remove, ==, 1)
+        # Fire hotplug event.
+        libusb_handle_events_timeout(fixture->ctx, &zero_tv)
+        g_assert_cmpint(event_count_add, ==, 1)
+        g_assert_cmpint(event_count_remove, ==, 1)
 
-    libusb_hotplug_deregister_callback(fixture->ctx, handle_add)
-    libusb_hotplug_deregister_callback(fixture->ctx, handle_remove)
-else:
-    g_test_skip("UMockdev is too old to test hotplug")
-#endif
+        libusb_hotplug_deregister_callback(fixture->ctx, handle_add)
+        libusb_hotplug_deregister_callback(fixture->ctx, handle_remove)
+    else:
+        g_test_skip("UMockdev is too old to test hotplug")
+    #endif
 
 
-int main(int argc, char **argv)
-{
+def main(int argc, char **argv) -> int:
+
     g_test_init(&argc, &argv, NULL)
 
     g_test_add("/libusb/open-close", UMockdevTestbedFixture, NULL,

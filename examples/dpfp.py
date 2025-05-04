@@ -147,7 +147,6 @@ if defined("DPFP_THREADED"):
     poll_thread    = thread_t()
 
 
-#static
 def request_exit(code: sig_atomic_t):
 
     global do_exit
@@ -268,7 +267,6 @@ def set_mode(data) -> int:
     return 0
 
 
-#static
 @usb.transfer_cb_fn
 def cb_mode_changed(transfer):
 
@@ -282,7 +280,6 @@ def cb_mode_changed(transfer):
         request_exit(2)
 
 
-#static
 #@annotate(data=ct.c_ubyte)
 def set_mode_async(data) -> int:
 
@@ -329,7 +326,6 @@ def do_sync_intr(data) -> int:
     return 0
 
 
-#static
 #@annotate(type=ct.c_ubyte)
 def sync_intr(type) -> int:
 
@@ -361,7 +357,6 @@ def save_to_file(data) -> int:
     return 0
 
 
-#static
 def next_state() -> int:
 
     global state
@@ -394,7 +389,6 @@ def next_state() -> int:
     return 0
 
 
-#static
 @usb.transfer_cb_fn
 def cb_irq(transfer):
 
@@ -432,7 +426,6 @@ def err_free_irq_transfer(transfer):
     request_exit(2)
 
 
-#static
 @usb.transfer_cb_fn
 def cb_img(transfer):
 
@@ -458,7 +451,6 @@ def err_free_img_transfer(transfer):
     request_exit(2)
 
 
-#static
 def init_capture() -> int:
 
     global state
@@ -482,7 +474,6 @@ def init_capture() -> int:
     return next_state()
 
 
-#static
 def do_init() -> int:
 
     status = ct.c_ubyte()
@@ -514,7 +505,6 @@ def do_init() -> int:
     return 0
 
 
-#static
 def alloc_transfers() -> int:
 
     global devh
@@ -542,12 +532,10 @@ def alloc_transfers() -> int:
     return 0
 
 
-#static
 def sighandler(signum, frame):
     request_exit(1)
 
 
-#static
 def setup_signals():
     if is_posix:
         sigact = struct_sigaction()

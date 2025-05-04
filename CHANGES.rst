@@ -1,6 +1,18 @@
 Changelog
 =========
 
+1.0.28 (2025-04-28)
+-------------------
+- Add support for Python 3.14
+- Drop support for Python 3.9 (due to compatibility issues).
+- Update readthedocs's python to version 3.13
+- Update tox's base_python to version 3.13
+- Libusb API update: v.1.0.27 -> v.1.0.28
+- Upgrade of dll-s for Windows: libusb v.1.0.27 -> v.1.0.28
+- Add support for PyPy 3.11
+- Drop support for PyPy 3.9
+- Setup (dependencies) update.
+
 1.0.27.post4 (2025-02-14)
 -------------------------
 - Windows shared libraries built with Visual Studio 2022.

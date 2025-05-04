@@ -289,12 +289,14 @@ LIBUSB_DT_HUB_NONVAR_SIZE            = 7
 LIBUSB_DT_SS_ENDPOINT_COMPANION_SIZE = 6
 LIBUSB_DT_BOS_SIZE                   = 5
 LIBUSB_DT_DEVICE_CAPABILITY_SIZE     = 3
+LIBUSB_DT_INTERFACE_ASSOCIATION_SIZE = 8
 
 # BOS descriptor sizes
-LIBUSB_BT_USB_2_0_EXTENSION_SIZE        = 7
-LIBUSB_BT_SS_USB_DEVICE_CAPABILITY_SIZE = 10
-LIBUSB_BT_CONTAINER_ID_SIZE             = 20
-LIBUSB_BT_PLATFORM_DESCRIPTOR_MIN_SIZE  = 20
+LIBUSB_BT_USB_2_0_EXTENSION_SIZE            = 7
+LIBUSB_BT_SS_USB_DEVICE_CAPABILITY_SIZE     = 10
+LIBUSB_BT_SSPLUS_USB_DEVICE_CAPABILITY_SIZE = 12
+LIBUSB_BT_CONTAINER_ID_SIZE                 = 20
+LIBUSB_BT_PLATFORM_DESCRIPTOR_MIN_SIZE      = 20
 
 # We unwrap the BOS => define its max size
 LIBUSB_DT_BOS_MAX_SIZE = (LIBUSB_DT_BOS_SIZE
@@ -539,7 +541,10 @@ bos_type = ct.c_int
     # Platform descriptor
     LIBUSB_BT_PLATFORM_DESCRIPTOR,
 
-) = (0x01, 0x02, 0x03, 0x04, 0x05)
+    # SuperSpeedPlus device capability
+    LIBUSB_BT_SUPERSPEED_PLUS_CAPABILITY,
+
+) = (0x01, 0x02, 0x03, 0x04, 0x05, 0x0A)
 
 # \ingroup libusb::desc
 # A structure representing the standard USB device descriptor. This
@@ -976,6 +981,113 @@ class ss_usb_device_capability_descriptor(ct.Structure):
     ("bU2DevExitLat", ct.c_uint16),
 ]
 
+# \ingroup libusb_desc
+# enum used in \ref libusb_ssplus_sublink_attribute
+
+superspeedplus_sublink_attribute_sublink_type = ct.c_int
+(
+    LIBUSB_SSPLUS_ATTR_TYPE_SYM,
+    LIBUSB_SSPLUS_ATTR_TYPE_ASYM,
+
+) = (0, 1)
+
+# \ingroup libusb_desc
+# enum used in \ref libusb_ssplus_sublink_attribute
+
+superspeedplus_sublink_attribute_sublink_direction = ct.c_int
+(
+    LIBUSB_SSPLUS_ATTR_DIR_RX,
+    LIBUSB_SSPLUS_ATTR_DIR_TX,
+
+) = (0, 1)
+
+# \ingroup libusb_desc
+# enum used in \ref libusb_ssplus_sublink_attribute
+#  Bit   = Bits per second
+#  Kb = Kbps
+#  Mb = Mbps
+#  Gb = Gbps
+
+superspeedplus_sublink_attribute_exponent = ct.c_int
+(
+    LIBUSB_SSPLUS_ATTR_EXP_BPS,
+    LIBUSB_SSPLUS_ATTR_EXP_KBS,
+    LIBUSB_SSPLUS_ATTR_EXP_MBS,
+    LIBUSB_SSPLUS_ATTR_EXP_GBS,
+
+) = (0, 1, 2, 3)
+
+# \ingroup libusb_desc
+# enum used in \ref libusb_ssplus_sublink_attribute
+
+superspeedplus_sublink_attribute_link_protocol = ct.c_int
+(
+    LIBUSB_SSPLUS_ATTR_PROT_SS,
+    LIBUSB_SSPLUS_ATTR_PROT_SSPLUS,
+
+) = (0, 1)
+
+# \ingroup libusb_desc
+# Expose \ref libusb_ssplus_usb_device_capability_descriptor.sublinkSpeedAttributes
+
+class ssplus_sublink_attribute(ct.Structure):
+    _fields_ = [
+
+    # Sublink Speed Attribute ID (SSID).
+    # This field is an ID that uniquely identifies the speed of this sublink
+    ("ssid", ct.c_uint8),
+
+    # This field defines the
+    # base 10 exponent times 3, that shall be applied to the
+    # mantissa.
+    ("exponent", superspeedplus_sublink_attribute_exponent),
+
+    # This field identifies whether the
+    # Sublink Speed Attribute defines a symmetric or
+    # asymmetric bit rate.
+    ("type", superspeedplus_sublink_attribute_sublink_type),
+
+    # This field  indicates if this
+    # Sublink Speed Attribute defines the receive or
+    # transmit bit rate.
+    ("direction", superspeedplus_sublink_attribute_sublink_direction),
+
+    # This field identifies the protocol
+    # supported by the link.
+    ("protocol", superspeedplus_sublink_attribute_link_protocol),
+
+    # This field defines the mantissa that shall be applied to the exponent when
+    # calculating the maximum bit rate.
+    ("mantissa", ct.c_uint16),
+]
+
+# \ingroup libusb_desc
+# A structure representing the SuperSpeedPlus descriptor
+# This descriptor is documented in section 9.6.2.5 of the USB 3.1 specification.
+
+class ssplus_usb_device_capability_descriptor(ct.Structure):
+    _fields_ = [
+
+    # Sublink Speed Attribute Count
+    ("numSublinkSpeedAttributes", ct.c_uint8),
+
+    # Sublink Speed ID Count
+    ("numSublinkSpeedIDs", ct.c_uint8),
+
+    # Unique ID to indicates the minimum lane speed
+    ("ssid", ct.c_uint8),
+
+    # This field indicates the minimum receive lane count.
+    ("minRxLaneCount", ct.c_uint8),
+
+    # This field indicates the minimum transmit lane count
+    ("minTxLaneCount", ct.c_uint8),
+
+    # Array size is
+    # \ref libusb_ssplus_usb_device_capability_descriptor.numSublinkSpeedAttributes
+    ("sublinkSpeedAttributes", ct.POINTER(ssplus_sublink_attribute)),  # [];
+]
+
 # \ingroup libusb::desc
 # A structure representing the Container ID descriptor.
 # This descriptor is documented in section 9.6.2.3 of the USB 3.0 specification.
@@ -1020,7 +1132,7 @@ class platform_descriptor(ct.Structure):
     ("bDescriptorType", ct.c_uint8),
 
     # Capability type. Will have value
-    # \ref libusb.capability_type::LIBUSB_BT_PLATFORM_DESCRIPTOR
+    # \ref libusb.bos_type::LIBUSB_BT_PLATFORM_DESCRIPTOR
     # LIBUSB_BT_CONTAINER_ID in this context.
     ("bDevCapabilityType", ct.c_uint8),
 
@@ -1168,7 +1280,10 @@ speed = ct.c_int
     # The device is operating at super speed plus (10000MBit/s).
     LIBUSB_SPEED_SUPER_PLUS,
 
-) = (0, 1, 2, 3, 4, 5)
+    # The device is operating at super speed plus x2 (20000MBit/s).
+    LIBUSB_SPEED_SUPER_PLUS_X2,
+
+) = (0, 1, 2, 3, 4, 5, 6)
 
 # \ingroup libusb::misc
 # Error codes. Most libusb functions return 0 on success or one of these
@@ -1645,12 +1760,12 @@ has_capability = CFUNC(ct.c_int,
 error_name = CFUNC(ct.c_char_p,
     ct.c_int)(
     ("libusb_error_name", dll), (
-    (1, "errcode"),))
+    (1, "error_code"),))
 
 strerror = CFUNC(ct.c_char_p,
     ct.c_int)(
     ("libusb_strerror", dll), (
-    (1, "errcode"),))
+    (1, "error_code"),))
 
 setlocale = CFUNC(ct.c_int,
     ct.c_char_p)(
@@ -1778,6 +1893,22 @@ free_ss_usb_device_capability_descriptor = CFUNC(None,
     ct.POINTER(ss_usb_device_capability_descriptor))(
     ("libusb_free_ss_usb_device_capability_descriptor", dll), (
     (1, "ss_usb_device_cap"),))
+
+try:
+    get_ssplus_usb_device_capability_descriptor = CFUNC(ct.c_int,
+        ct.POINTER(context),
+        ct.POINTER(bos_dev_capability_descriptor),
+        ct.POINTER(ct.POINTER(ssplus_usb_device_capability_descriptor)))(
+        ("libusb_get_ssplus_usb_device_capability_descriptor", dll), (
+        (1, "ctx"),
+        (1, "dev_cap"),
+        (1, "ssplus_usb_device_cap"),))
+
+    free_ssplus_usb_device_capability_descriptor = CFUNC(None,
+        ct.POINTER(ssplus_usb_device_capability_descriptor))(
+        ("libusb_free_ssplus_usb_device_capability_descriptor", dll), (
+        (1, "ssplus_usb_device_cap"),))
+except: pass  # noqa: E722
 
 get_container_id_descriptor = CFUNC(ct.c_int,
     ct.POINTER(context),
@@ -2414,7 +2545,7 @@ control_transfer = CFUNC(ct.c_int,
     ct.c_uint)(
     ("libusb_control_transfer", dll), (
     (1, "dev_handle"),
-    (1, "request_type"),
+    (1, "bmRequestType"),
     (1, "bRequest"),
     (1, "wValue"),
     (1, "wIndex"),
@@ -2434,7 +2565,7 @@ bulk_transfer = CFUNC(ct.c_int,
     (1, "endpoint"),
     (1, "data"),
     (1, "length"),
-    (1, "actual_length"),
+    (1, "transferred"),
     (1, "timeout"),))
 
 interrupt_transfer = CFUNC(ct.c_int,
@@ -2449,7 +2580,7 @@ interrupt_transfer = CFUNC(ct.c_int,
     (1, "endpoint"),
     (1, "data"),
     (1, "length"),
-    (1, "actual_length"),
+    (1, "transferred"),
     (1, "timeout"),))
 
 # \ingroup libusb::desc

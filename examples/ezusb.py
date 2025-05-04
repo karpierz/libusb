@@ -94,7 +94,6 @@ verbose = 1  # int
 # return True if [addr,addr+size] includes external RAM
 # for Anchorchips EZ-USB or Cypress EZ-USB FX
 
-#static
 #@annotate(addr=ct.c_uint32, size=ct.c_size_t)
 def fx_is_external(addr, size) -> bool:
 
@@ -114,7 +113,6 @@ def fx_is_external(addr, size) -> bool:
 # return True if [addr,addr+size] includes external RAM
 # for Cypress EZ-USB FX2
 
-#static
 #@annotate(addr=ct.c_uint32, size=ct.c_size_t)
 def fx2_is_external(addr, size) -> bool:
 
@@ -132,7 +130,6 @@ def fx2_is_external(addr, size) -> bool:
 # return True if [addr,addr+size] includes external RAM
 # for Cypress EZ-USB FX2LP
 
-#static
 #@annotate(addr=ct.c_uint32, size=ct.c_size_t)
 def fx2lp_is_external(addr, size) -> bool:
 
@@ -161,7 +158,6 @@ RW_MEMORY   = 0xA3
 
 # Issues the specified vendor-specific write request.
 
-#static
 #@annotate(device=ct.POINTER(usb.device_handle), label=const char*)
 #          ct.c_uint8 opcode, ct.c_uint32 addr,
 #          const ct.POINTER(ct.c_ubyte) data, ct.c_size_t size)
@@ -196,7 +192,6 @@ def ezusb_write(device, label, opcode, addr, data, size) -> int:
 
 # Issues the specified vendor-specific read request.
 
-#static
 #@annotate(device=ct.POINTER(usb.device_handle), label=const char*)
 #          ct.c_uint8 opcode, ct.c_uint32 addr,
 #          const ct.POINTER(ct.c_ubyte) data, ct.c_size_t size)
@@ -232,7 +227,6 @@ def ezusb_read(device, label, opcode, addr, data, size) -> int:
 # Modifies the CPUCS register to stop or reset the CPU.
 # Returns False on error.
 
-#static
 #@annotate(device=ct.POINTER(usb.device_handle), addr=ct.c_uint32)
 def ezusb_cpucs(device, addr, do_run: bool) -> bool:
 
@@ -267,7 +261,6 @@ def ezusb_cpucs(device, addr, do_run: bool) -> bool:
 # Send an FX3 jump to address command
 # Returns False on error.
 
-#static
 #@annotate(device=ct.POINTER(usb.device_handle), addr=ct.c_uint32)
 def ezusb_fx3_jump(device, addr) -> bool:
 
@@ -314,7 +307,6 @@ def ezusb_fx3_jump(device, addr) -> bool:
 # Caller is responsible for halting CPU as needed, such as when
 # overwriting a second stage loader.
 
-#static
 #@annotate(image=FILE*, context=void*,
 #          is_external=bool (*)(ct.c_uint32 addr, ct.c_size_t len),
 #          poke=int (*)(void* context, ct.c_uint32 addr, bool external,
@@ -455,7 +447,6 @@ def parse_ihex(image, context, is_external, poke) -> int:
 # Caller is responsible for halting CPU as needed, such as when
 # overwriting a second stage loader.
 
-#static
 #@annotate(image=FILE*, context=void*,
 #          is_external=bool (*)(ct.c_uint32 addr, ct.c_size_t len),
 #          poke=int (*)(void* context, ct.c_uint32 addr, bool external,
@@ -496,7 +487,6 @@ def parse_bin(image, context, is_external, poke) -> int:
 # Caller is responsible for halting CPU as needed, such as when
 # overwriting a second stage loader.
 
-#static
 #@annotate(image=FILE*, context=void*,
 #          is_external=bool (*)(ct.c_uint32 addr, ct.c_size_t len),
 #          poke=int (*)(void* context, ct.c_uint32 addr, bool external,
@@ -553,7 +543,6 @@ def parse_iic(image, context, is_external, poke) -> int:
 
 
 # the parse call will be selected according to the image type
-#static
 _parse = [
    parse_ihex,
    parse_iic,
@@ -586,7 +575,7 @@ class ram_poke_context(ct.Structure):
 
 RETRY_LIMIT = 5
 
-#static
+
 #@annotate(context=void*, addr=ct.c_uint32, external=bool,
 #          data=const ct.POINTER(ct.c_ubyte), size=ct.c_size_t)
 def ram_poke(context, addr, external, data, size) -> int:
@@ -644,7 +633,6 @@ def ram_poke(context, addr, external, data, size) -> int:
 # Load a Cypress Image file into target RAM.
 # See http://www.cypress.com/?docID=41351 (AN76405 PDF) for more info.
 
-#static
 #@annotate(device=ct.POINTER(usb.device_handle), path=str)
 def fx3_load_ram(device, path) -> int:
 
@@ -858,7 +846,10 @@ def ezusb_load_ram(device, path, fx_type, img_type, stage) -> int:
             if cpucs_addr is not None and not ezusb_cpucs(device, cpucs_addr, False):
                 return -1
             # at least write the interrupt vectors (at 0x0000) for reset!
-            rewind(image)
+            status = fseek(image, 0, SEEK_SET)
+            if status < 0:
+                logerror("unable to rewind file %s\n", path)
+                return status
             if verbose:
                 logerror("2nd stage: write on-chip memory\n")
             status = parse_ihex(image, ct.byref(ctx), is_external, ram_poke)

@@ -23,8 +23,8 @@ def setup(app):
 # -- Project information -----------------------------------------------------
 
 project   = about.__title__
-copyright = about.__copyright__
 author    = about.__author__
+copyright = about.__copyright__
 
 # The full version, including alpha/beta/rc tags
 release = about.__version__
@@ -34,7 +34,7 @@ release = about.__version__
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = '7.4.7'
+needs_sphinx = '8.1.3'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom

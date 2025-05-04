@@ -150,12 +150,13 @@ def print_device(dev: ct.POINTER(usb.device), handle: ct.POINTER(usb.device_hand
     string_descr = ct.create_string_buffer(256)
 
     device_speed = usb.get_device_speed(dev)
-    if   device_speed == usb.LIBUSB_SPEED_LOW:        speed = "1.5M"
-    elif device_speed == usb.LIBUSB_SPEED_FULL:       speed = "12M"
-    elif device_speed == usb.LIBUSB_SPEED_HIGH:       speed = "480M"
-    elif device_speed == usb.LIBUSB_SPEED_SUPER:      speed = "5G"
-    elif device_speed == usb.LIBUSB_SPEED_SUPER_PLUS: speed = "10G"
-    else:                                             speed = "Unknown"
+    if   device_speed == usb.LIBUSB_SPEED_LOW:           speed = "1.5M"
+    elif device_speed == usb.LIBUSB_SPEED_FULL:          speed = "12M"
+    elif device_speed == usb.LIBUSB_SPEED_HIGH:          speed = "480M"
+    elif device_speed == usb.LIBUSB_SPEED_SUPER:         speed = "5G"
+    elif device_speed == usb.LIBUSB_SPEED_SUPER_PLUS:    speed = "10G"
+    elif device_speed == usb.LIBUSB_SPEED_SUPER_PLUS_X2: speed = "20G"
+    else:                                                speed = "Unknown"
 
     desc = usb.device_descriptor()
     ret = usb.get_device_descriptor(dev, ct.byref(desc))
@@ -233,6 +234,8 @@ def test_wrapped_device(device_name: str) -> int:
 
 def main(argv=sys.argv[1:]):
 
+    progname = sys.argv[0]
+
     global verbose
 
     device_name = None
@@ -244,7 +247,7 @@ def main(argv=sys.argv[1:]):
             i += 1
             device_name = argv[i]
         else:
-            print("Usage {} [-v] [-d </dev/bus/usb/...>]".format(sys.argv[0]))
+            print("Usage python {} [-v] [-d </dev/bus/usb/...>]".format(progname))
             print("Note use -d to test libusb.wrap_sys_device()")
             return 1
         i += 1

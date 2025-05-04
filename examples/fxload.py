@@ -45,7 +45,6 @@ if not defined("FXLOAD_VERSION"):
 
 
 def logerror(fmt, *args):
-
     global dosyslog
     if (not is_windows or defined("__CYGWIN__")) and dosyslog:
         ap = va_list();
@@ -56,10 +55,10 @@ def logerror(fmt, *args):
         print(fmt.format(*args), file=sys.stderr, end="")
 
 
-def print_usage(error_code):
-
-    print("\nUsage: fxload [-v] [-V] [-t type] [-d vid:pid] [-p bus,addr] [-s loader] -i firmware\n"
-          "  -i <path>       -- Firmware to upload\n"
+def print_usage(progname: str, error_code: int = -1):
+    print("\nUsage: python {} [-v] [-V] [-t type] [-d vid:pid] [-p bus,addr] [-s loader] "
+          "-i firmware".format(progname), file=sys.stderr)
+    print("  -i <path>       -- Firmware to upload\n"
           "  -s <path>       -- Second stage loader\n"
           "  -t <type>       -- Target type: an21, fx, fx2, fx2lp, fx3\n"
           "  -d <vid:pid>    -- Target device, as an USB VID:PID\n"
@@ -71,6 +70,8 @@ def print_usage(error_code):
 
 
 def main(argv=sys.argv[1:]):
+
+    progname = sys.argv[0]
 
     global verbose
 
@@ -104,7 +105,7 @@ def main(argv=sys.argv[1:]):
     try:
         opts, args = getopt.getopt(argv, "qvV?hd:p:i:I:s:S:t:")
     except getopt.GetoptError:
-        return print_usage(-1)
+        return print_usage(progname)
 
     for opt, optarg in opts:
         if opt == "-d":
@@ -135,17 +136,17 @@ def main(argv=sys.argv[1:]):
         elif opt == "-q":
             verbose -= 1
         elif opt in ("-?", "-h"):
-            return print_usage(-1)
+            return print_usage(progname)
         else:
-            return print_usage(-1)
+            return print_usage(progname)
 
     if paths[FIRMWARE] is None:
         logerror("no firmware specified!\n")
-        return print_usage(-1)
+        return print_usage(progname)
 
     if device_id is not None and device_path is not None:
         logerror("only one of -d or -p can be specified\n")
-        return print_usage(-1)
+        return print_usage(progname)
 
     # determine the target type
     if target_type is not None:
@@ -155,7 +156,7 @@ def main(argv=sys.argv[1:]):
                 break
         else:
             logerror("illegal microcontroller type: {}\n", target_type)
-            return print_usage(-1)
+            return print_usage(progname)
 
     # open the device using libusb
     status = (usb.init_context(None, None, 0)
@@ -183,7 +184,7 @@ def main(argv=sys.argv[1:]):
                 if not dev:
                     usb.free_device_list(devs, 1)
                     logerror("could not find a known device - please specify type and/or vid:pid and/or bus,dev\n")
-                    return print_usage(-1)
+                    return print_usage(progname)
 
                 _busnum  = usb.get_bus_number(dev)
                 _devaddr = usb.get_device_address(dev)
@@ -253,7 +254,7 @@ def main(argv=sys.argv[1:]):
         for i, path in enumerate(paths):
             if path is not None:
                 ext = path[-4:]
-                if ext.lower() == ".hex" or ext == ".ihx":
+                if ext.lower() in (".hex", ".ihx"):
                     img_types[i] = IMG_TYPE_HEX
                 elif ext.lower() == ".iic":
                     img_types[i] = IMG_TYPE_IIC
