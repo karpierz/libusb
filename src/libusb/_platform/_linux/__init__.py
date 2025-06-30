@@ -1,3 +1,5 @@
+# flake8-in-file-ignores: noqa: E402
+
 # Copyright (c) 2016 Adam Karpierz
 # SPDX-License-Identifier: Zlib
 
@@ -21,9 +23,9 @@ try:
 except ImportError:
     DLL_PATH = os.path.join(arch_dir, "libusb-1.0.so")
 
-from ctypes  import CDLL as DLL         # noqa: E402
-from _ctypes import dlclose             # noqa: E402
-from ctypes  import CFUNCTYPE as CFUNC  # noqa: E402
+from ctypes  import CDLL as DLL
+from _ctypes import dlclose
+from ctypes  import CFUNCTYPE as CFUNC
 
 # X32 kernel interface is 64-bit.
 if False:  # if defined __x86_64__ && defined __ILP32__

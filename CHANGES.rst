@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.0.29 (2025-06-30)
+-------------------
+- Libusb API update: v.1.0.28 -> v.1.0.29
+- Upgrade of dll-s for Windows: libusb v.1.0.28 -> v.1.0.29
+- Setup (dependencies) update.
+
 1.0.28.post2 (2025-05-15)
 -------------------------
 - The distribution is now created using 'build' instead of 'setuptools'.

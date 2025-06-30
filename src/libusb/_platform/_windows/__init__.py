@@ -1,3 +1,5 @@
+# flake8-in-file-ignores: noqa: E402,N813,N814
+
 # Copyright (c) 2016 Adam Karpierz
 # SPDX-License-Identifier: Zlib
 
@@ -19,12 +21,12 @@ try:
 except ImportError:
     DLL_PATH = os.path.join(arch_dir, "libusb-1.0.dll")
 
-from ctypes import WinDLL as DLL  # noqa: E402,N814
+from ctypes import WinDLL as DLL
 try:
-    from _ctypes import FreeLibrary as dlclose  # noqa: E402,N813
+    from _ctypes import FreeLibrary as dlclose
 except ImportError:
     dlclose = lambda handle: 0
-from ctypes import WINFUNCTYPE as CFUNC  # noqa: E402
+from ctypes import WINFUNCTYPE as CFUNC
 
 time_t = ct.c_uint64
 

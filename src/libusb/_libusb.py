@@ -1,3 +1,5 @@
+# flake8-in-file-ignores: noqa: E305,E722
+
 # Copyright (c) 2016 Adam Karpierz
 # SPDX-License-Identifier: Zlib
 
@@ -115,9 +117,11 @@ def LIBUSB_DEPRECATED_FOR(f): pass
 # <li>libusb version 1.0.25: LIBUSB_API_VERSION = 0x01000109
 # <li>libusb version 1.0.26: LIBUSB_API_VERSION = 0x01000109
 # <li>libusb version 1.0.27: LIBUSB_API_VERSION = 0x0100010A
+# <li>libusb version 1.0.28: LIBUSB_API_VERSION = 0x0100010A
+# <li>libusb version 1.0.29: LIBUSB_API_VERSION = 0x0100010B
 # </ul>
 
-LIBUSB_API_VERSION = 0x0100010A
+LIBUSB_API_VERSION = 0x0100010B
 
 # \def LIBUSBX_API_VERSION
 # \ingroup libusb_misc
@@ -1726,7 +1730,7 @@ try:
         (1, "ctx"),
         (1, "options"),
         (1, "num_options"),))
-except: pass  # noqa: E722
+except: pass
 
 exit = CFUNC(None,  # noqa: A001
     ct.POINTER(context))(
@@ -1750,7 +1754,7 @@ try:
         (1, "ctx"),
         (1, "cb"),
         (1, "mode"),))
-except: pass  # noqa: E722
+except: pass
 
 has_capability = CFUNC(ct.c_int,
     ct.c_uint32)(
@@ -1908,7 +1912,7 @@ try:
         ct.POINTER(ssplus_usb_device_capability_descriptor))(
         ("libusb_free_ssplus_usb_device_capability_descriptor", dll), (
         (1, "ssplus_usb_device_cap"),))
-except: pass  # noqa: E722
+except: pass
 
 get_container_id_descriptor = CFUNC(ct.c_int,
     ct.POINTER(context),
@@ -1938,7 +1942,7 @@ try:
         ct.POINTER(platform_descriptor))(
         ("libusb_free_platform_descriptor", dll), (
         (1, "platform_descriptor"),))
-except: pass  # noqa: E722
+except: pass
 
 get_bus_number = CFUNC(ct.c_uint8,
     ct.POINTER(device))(
@@ -2011,7 +2015,7 @@ try:
         (1, "interface_number"),
         (1, "alternate_setting"),
         (1, "endpoint"),))
-except: pass  # noqa: E722
+except: pass
 
 try:
     get_interface_association_descriptors = CFUNC(ct.c_int,
@@ -2034,7 +2038,7 @@ try:
         ct.POINTER(interface_association_descriptor_array))(
         ("libusb_free_interface_association_descriptors", dll), (
         (1, "iad_array"),))
-except: pass  # noqa: E722
+except: pass
 
 try:
     wrap_sys_device = CFUNC(ct.c_int,
@@ -2045,7 +2049,7 @@ try:
         (1, "ctx"),
         (1, "sys_dev"),
         (1, "dev_handle"),))
-except: pass  # noqa: E722
+except: pass
 
 open = CFUNC(ct.c_int,  # noqa: A001
     ct.POINTER(device),
@@ -2963,7 +2967,7 @@ try:
         ("libusb_hotplug_get_user_data", dll), (
         (1, "ctx"),
         (1, "callback_handle"),))
-except: pass  # noqa: E722
+except: pass
 
 _set_option_int = CFUNC(ct.c_int,
     ct.POINTER(context),
