@@ -1,4 +1,4 @@
-# flake8-in-file-ignores: noqa: F403,F405,E305
+# flake8-in-file-ignores: noqa: E305,F401,F403,F405
 
 # Copyright (c) 2016 Adam Karpierz
 # SPDX-License-Identifier: Zlib
