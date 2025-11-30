@@ -23,7 +23,7 @@ import ctypes as ct
 
 import libusb as usb
 from libusb._platform import defined, is_windows, is_posix
-if is_windows: from libusb._platform._windows import _win32 as win32
+if is_windows: from libusb._platform.windows import winapi
 
 usb_error_name = lambda status: usb.error_name(status).decode("utf-8")
 
@@ -48,35 +48,35 @@ if is_posix:
 
 elif is_windows:
 
-    thread_t = win32.HANDLE
+    thread_t = winapi.HANDLE
     if defined("__CYGWIN__"):
-        thread_return_t = win32.DWORD
+        thread_return_t = winapi.DWORD
     else:
        #thread_return_t = ct.c_uint
-        thread_return_t = win32.DWORD
+        thread_return_t = winapi.DWORD
     THREAD_RETURN_VALUE = 0
 
     def thread_create(thread: ct.POINTER(thread_t),
-                      thread_entry: win32.LPTHREAD_START_ROUTINE,
+                      thread_entry: winapi.LPTHREAD_START_ROUTINE,
                       arg: ct.c_void_p) -> int:
         if defined("__CYGWIN__"):
-            thread[0] = win32.CreateThread(None, 0, thread_entry, arg, 0, None)
+            thread[0] = winapi.CreateThread(None, 0, thread_entry, arg, 0, None)
         else:
-           #thread[0] = ct.cast(_beginthreadex(None, 0, thread_entry, arg, 0, None), win32.HANDLE)
-            thread[0] = win32.CreateThread(None, 0, thread_entry, arg, 0, None)
+           #thread[0] = ct.cast(_beginthreadex(None, 0, thread_entry, arg, 0, None), winapi.HANDLE)
+            thread[0] = winapi.CreateThread(None, 0, thread_entry, arg, 0, None)
         return 0 if thread[0] else -1
 
     def thread_join(thread: thread_t):
-        win32.WaitForSingleObject(thread, win32.INFINITE)
-        win32.CloseHandle(thread)
+        winapi.WaitForSingleObject(thread, winapi.INFINITE)
+        winapi.CloseHandle(thread)
 
     atomic_bool = ct.c_long # volatile
-    #atomic_exchange = win32.InterlockedExchange
-    def atomic_exchange(Target: ct.POINTER(win32.LONG), Value: win32.LONG) -> win32.LONG:
-        Target.contents = win32.LONG(Value)
+    #atomic_exchange = winapi.InterlockedExchange
+    def atomic_exchange(Target: ct.POINTER(winapi.LONG), Value: winapi.LONG) -> winapi.LONG:
+        Target.contents = winapi.LONG(Value)
         return int(True)
 
-#endif # PLATFORM_POSIX #
+# endif # PLATFORM_POSIX #
 
 # Test that creates and destroys contexts repeatedly
 
@@ -117,8 +117,8 @@ if is_posix:
 
 elif is_windows:
 
-    @win32.LPTHREAD_START_ROUTINE
-    def init_and_exit(arg: win32.LPVOID) -> thread_return_t:
+    @winapi.LPTHREAD_START_ROUTINE
+    def init_and_exit(arg: winapi.LPVOID) -> thread_return_t:
         try:
             return _init_and_exit(arg)
         except:
@@ -218,7 +218,7 @@ def _init_and_exit(arg):
                         ASSERT_EQ(raw_desc.bDeviceProtocol, desc.bDeviceProtocol)
                         ASSERT_EQ(raw_desc.bMaxPacketSize0, desc.bMaxPacketSize0)
                         ASSERT_EQ(raw_desc.bcdDevice, desc.bcdDevice)
-                    #endif
+                    # endif
                     ASSERT_EQ(raw_desc.idVendor, desc.idVendor)
                     ASSERT_EQ(raw_desc.idProduct, desc.idProduct)
                     ASSERT_EQ(raw_desc.iManufacturer, desc.iManufacturer)

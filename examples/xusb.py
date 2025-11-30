@@ -26,7 +26,7 @@ import ctypes as ct
 
 import libusb as usb
 from libusb._platform import is_windows
-if is_windows: from libusb._platform._windows import _win32 as win32
+if is_windows: from libusb._platform.windows import winapi
 
 usb_strerror   = lambda r: usb.strerror(r).decode("utf-8")
 usb_error_name = lambda status: usb.error_name(status).decode("utf-8")
@@ -35,7 +35,7 @@ UINT16_MAX = ct.c_uint16(-1).value
 
 def msleep(msecs: int):
     if is_windows:
-       win32.Sleep(msecs)
+       winapi.Sleep(msecs)
     else:
        ts = struct_timespec({ msecs // 1000, (msecs % 1000) * 1000000 })
        nanosleep(ct.byref(ts), NULL)
@@ -1044,20 +1044,20 @@ def test_device(vid, pid) -> int:
         usb.set_auto_detach_kernel_driver(handle, 1)
         for iface in range(nb_ifaces):
             print("\nKernel driver attached for interface {}: ".format(iface), end="")
-            ret = usb.kernel_driver_active(handle, iface)
-            if ret == 0:
+            r = usb.kernel_driver_active(handle, iface)
+            if r == 0:
                 print("none")
-            elif ret == 1:
+            elif r == 1:
                 print("yes")
-            elif ret == usb.LIBUSB_ERROR_NOT_SUPPORTED:
+            elif r == usb.LIBUSB_ERROR_NOT_SUPPORTED:
                 print("(not supported)")
             else:
-                perr("\n   Failed (error {}) {}\n", ret, usb_strerror(ret))
+                perr("\n   Failed (error {}) {}\n", r, usb_strerror(r))
 
             print("\nClaiming interface {}...".format(iface))
             r = usb.claim_interface(handle, iface)
             if r != usb.LIBUSB_SUCCESS:
-                perr("   Failed (error {}) {}\n", ret, usb_strerror(ret))
+                perr("   Failed (error {}) {}\n", r, usb_strerror(r))
 
         print("\nReading string descriptors:")
         string = (ct.c_ubyte * 128)()

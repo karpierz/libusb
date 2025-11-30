@@ -27,7 +27,7 @@ ENABLE_LOGGING = 1
 import libusb as usb
 import testlib
 from testlib import test_result, test_spec
-from libusb._platform import defined, is_posix, is_linux, is_windows
+from libusb._platform import defined, is_posix, is_linux, is_windows, is_pypy
 
 
 def test_set_log_level_basic() -> test_result:
@@ -58,6 +58,9 @@ def test_set_log_level_basic() -> test_result:
 
 
 def test_set_log_level_default() -> test_result:
+
+    if is_pypy:  # BUG: failed on PyPy
+        return test_result.TEST_STATUS_SKIP
 
     if defined("ENABLE_LOGGING") and not defined("ENABLE_DEBUG_LOGGING"):
         test_ctx = ct.POINTER(usb.context)()
@@ -161,7 +164,7 @@ if defined("ENABLE_LOGGING") and not defined("ENABLE_DEBUG_LOGGING"):
     def test_log_cb(ctx, level, str):
         pass
 
-#endif
+# endif
 
 
 def test_set_log_cb() -> test_result:

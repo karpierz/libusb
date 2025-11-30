@@ -1,6 +1,17 @@
 Changelog
 =========
 
+1.0.29.post2 (2025-11-30)
+-------------------------
+- | Upgrade of dll-s for Windows and addition of shared libraries for
+  | multiple platforms (mostly from conda-forge, others from Debian
+  | package repository).
+- Drop support for macOS versions earlier than 10.13
+- Making and mark the package typed.
+- Preliminary unittests have been added.
+- Improvement of code lint.
+- Setup (dependencies) update.
+
 1.0.29 (2025-06-30)
 -------------------
 - Libusb API update: v.1.0.28 -> v.1.0.29
@@ -50,7 +61,7 @@ Changelog
 -------------------------
 - Add support for Python 3.13
 - Setup (dependencies) update.
-- Improvements and cleanup for win32.
+- Improvements and cleanup for winapi.
 - Source code refactoring and cleanup.
 
 1.0.27 (2024-02-05)

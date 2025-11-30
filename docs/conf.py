@@ -4,9 +4,11 @@
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-__import__("pkg_about").about_from_setup()
+from sphinx import application
 
-def setup(app):
+about = __import__("pkg_about").about_from_setup()
+
+def setup(app: application.Sphinx) -> None:
     pass
 
 # -- Path setup --------------------------------------------------------------

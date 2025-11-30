@@ -78,7 +78,7 @@ Prerequisites:
 + Python 3.10 or higher
 
   * https://www.python.org/
-  * with C libusb 1.0.28 is a primary test environment.
+  * with C libusb 1.0.29 is a primary test environment.
 
 + pip and setuptools
 

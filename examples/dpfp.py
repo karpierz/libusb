@@ -31,7 +31,7 @@ import ctypes as ct
 
 import libusb as usb
 from libusb._platform import defined, is_windows, is_posix
-if is_windows: from libusb._platform._windows import _win32 as win32
+if is_windows: from libusb._platform.windows import winapi
 
 usb_strerror = lambda r: usb.strerror(r).decode("utf-8")
 
@@ -74,40 +74,40 @@ if defined("DPFP_THREADED"):
 
     elif is_windows:
 
-        semaphore_t = win32.HANDLE
-        thread_t    = win32.HANDLE
+        semaphore_t = winapi.HANDLE
+        thread_t    = winapi.HANDLE
         if defined("__CYGWIN__"):
-            thread_return_t = win32.DWORD
+            thread_return_t = winapi.DWORD
         else:
            #thread_return_t = ct.c_uint
-            thread_return_t = win32.DWORD
+            thread_return_t = winapi.DWORD
         THREAD_RETURN_VALUE = 0
 
         def semaphore_create() -> semaphore_t:
-            return win32.CreateSemaphore(None, 0, 1, None)
+            return winapi.CreateSemaphore(None, 0, 1, None)
 
         def semaphore_give(semaphore: semaphore_t):
-            win32.ReleaseSemaphore(semaphore, 1, None)
+            winapi.ReleaseSemaphore(semaphore, 1, None)
 
         def semaphore_take(semaphore: semaphore_t):
-            win32.WaitForSingleObject(semaphore, win32.INFINITE)
+            winapi.WaitForSingleObject(semaphore, winapi.INFINITE)
 
         def semaphore_destroy(semaphore: semaphore_t):
-            win32.CloseHandle(semaphore)
+            winapi.CloseHandle(semaphore)
 
         def thread_create(thread: ct.POINTER(thread_t),
-                          thread_entry: win32.LPTHREAD_START_ROUTINE,
+                          thread_entry: winapi.LPTHREAD_START_ROUTINE,
                           arg: ct.c_void_p) -> int:
             if defined("__CYGWIN__"):
-                thread[0] = win32.CreateThread(None, 0, thread_entry, arg, 0, None)
+                thread[0] = winapi.CreateThread(None, 0, thread_entry, arg, 0, None)
             else:
-               #thread[0] = ct.cast(_beginthreadex(None, 0, thread_entry, arg, 0, None), win32.HANDLE)
-                thread[0] = win32.CreateThread(None, 0, thread_entry, arg, 0, None)
+               #thread[0] = ct.cast(_beginthreadex(None, 0, thread_entry, arg, 0, None), winapi.HANDLE)
+                thread[0] = winapi.CreateThread(None, 0, thread_entry, arg, 0, None)
             return 0 if thread[0] else -1
 
         def thread_join(thread: thread_t):
-            win32.WaitForSingleObject(thread, win32.INFINITE)
-            win32.CloseHandle(thread)
+            winapi.WaitForSingleObject(thread, winapi.INFINITE)
+            winapi.CloseHandle(thread)
 
 EP_INTR     = 1 | usb.LIBUSB_ENDPOINT_IN
 EP_DATA     = 2 | usb.LIBUSB_ENDPOINT_IN
@@ -164,8 +164,8 @@ if defined("DPFP_THREADED"):
 
     elif is_windows:
 
-        @win32.LPTHREAD_START_ROUTINE
-        def poll_thread_main(arg: win32.LPVOID) -> thread_return_t:
+        @winapi.LPTHREAD_START_ROUTINE
+        def poll_thread_main(arg: winapi.LPVOID) -> thread_return_t:
             return _poll_thread_main(arg)
 
     def _poll_thread_main(arg):
