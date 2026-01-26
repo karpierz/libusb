@@ -1,32 +1,47 @@
 Changelog
 =========
 
+1.0.29.post6 (2026-01-26)
+-------------------------
+- | Upgrade of dll-s for Windows and addition of shared libraries for
+  | multiple platforms (mostly from conda-forge, others from Debian
+  | package repository).
+- Dropped support for macOS versions earlier than 10.13
+- Making and mark the package typed.
+- Preliminary unittests have been added.
+- Improvement of code lint.
+- Copyright year update.
+- Switched from tox to Nox for project automation.
+- The documentation has been moved from Read the Docs to GitHub Pages.
+- Added the nox's 'cleanup' test environment.
+- Setup update (mainly dependencies) and bug fixes.
+
 1.0.29 (2025-06-30)
 -------------------
 - Libusb API update: v.1.0.28 -> v.1.0.29
 - Upgrade of dll-s for Windows: libusb v.1.0.28 -> v.1.0.29
-- Setup (dependencies) update.
+- Setup update (mainly dependencies).
 
 1.0.28.post2 (2025-05-15)
 -------------------------
-- The distribution is now created using 'build' instead of 'setuptools'.
-- Setup (dependencies) update (due to regressions in tox and setuptools).
+- The distribution is now built using 'build' instead of 'setuptools'.
+- Setup update (mainly dependencies) (due to regressions in tox and setuptools).
 
 1.0.28.post1 (2025-05-04)
 -------------------------
-- Setup (dependencies) update.
+- Setup update (mainly dependencies).
 
 1.0.28 (2025-04-28)
 -------------------
-- Add support for Python 3.14
-- Drop support for Python 3.9 (due to compatibility issues).
-- Update readthedocs's python to version 3.13
-- Update tox's base_python to version 3.13
+- Added support for Python 3.14
+- Dropped support for Python 3.9 (due to compatibility issues).
+- Updated Read the Docs' Python version to 3.13
+- Updated tox's base_python to version 3.13
 - Libusb API update: v.1.0.27 -> v.1.0.28
 - Upgrade of dll-s for Windows: libusb v.1.0.27 -> v.1.0.28
-- Add support for PyPy 3.11
-- Drop support for PyPy 3.9
-- Setup (dependencies) update.
+- Added support for PyPy 3.11
+- Dropped support for PyPy 3.9
+- Setup update (mainly dependencies).
 
 1.0.27.post4 (2025-02-14)
 -------------------------
@@ -35,22 +50,22 @@ Changelog
 - 100% code linting.
 - Tox configuration is now in native (toml) format.
 - Copyright year update.
-- Setup (dependencies) update.
+- Setup update (mainly dependencies).
 
 1.0.27.post3 (2024-10-09)
 -------------------------
-- Setup (dependencies) update.
+- Setup update (mainly dependencies).
 
 1.0.27.post2 (2024-09-30)
 -------------------------
-- Drop support for Python 3.8
-- Setup (dependencies) update.
+- Dropped support for Python 3.8
+- Setup update (mainly dependencies).
 
 1.0.27.post1 (2024-08-13)
 -------------------------
-- Add support for Python 3.13
-- Setup (dependencies) update.
-- Improvements and cleanup for win32.
+- Added support for Python 3.13
+- Setup update (mainly dependencies).
+- Improvements and cleanup for winapi.
 - Source code refactoring and cleanup.
 
 1.0.27 (2024-02-05)
@@ -80,15 +95,15 @@ Changelog
 
 1.0.26rc1 (2023-12-15)
 ----------------------
-- Add support for Python 3.12
-- Drop support for Python 3.7
-- Add support for PyPy 3.10
-- Drop support for PyPy 3.7 and 3.8
+- Added support for Python 3.12
+- Dropped support for Python 3.7
+- Added support for PyPy 3.10
+- Dropped support for PyPy 3.7 and 3.8
 - Copyright year update.
 
 1.0.26b5 (2022-09-10)
 ---------------------
-- Tox configuration has been moved to pyproject.toml
+- The tox configuration has been moved to pyproject.toml
 
 1.0.26b4 (2022-08-25)
 ---------------------
@@ -107,20 +122,20 @@ Changelog
 ---------------------
 - Upgrade for Windows: libusb v.1.0.24 -> v.1.0.26
 - Update for macOS (v.11.6 64bit).
-- Add support for Python 3.10 and 3.11
-- Add support for PyPy 3.7, 3.8 and 3.9
+- Added support for Python 3.10 and 3.11
+- Added support for PyPy 3.7, 3.8 and 3.9
 - Setup update.
 
 1.0.24b3 (2022-01-10)
 ---------------------
-- Drop support for Python 3.6
+- Dropped support for Python 3.6
 - Copyright year update.
 - Setup update.
 
 1.0.24b1 (2021-11-10)
 ---------------------
 - Upgrade for Windows: libusb v.1.0.23 -> v.1.0.24
-- Add support for macOS (thank you very much dccote@Github!).
+- Added support for macOS (thank you very much dccote@Github!).
 - Copyright year update.
 - *backward incompatibility* - libusb.cfg is now a regular INI file.
 - Fixes for examples (but still some examples don't work properly).
@@ -140,8 +155,8 @@ Changelog
 - | Upgrade for Windows: libusb v.1.0.22 -> v.1.0.23
   | (partially; without libusb_wrap_sys_device, because
   |  original Windows v.1.0.23 dlls do not export this function).
-- Add support for Python 3.9
-- Drop support for Python 3.5
+- Added support for Python 3.9
+- Dropped support for Python 3.5
 - Setup update.
 - Cleanup.
 
@@ -162,9 +177,9 @@ Changelog
 
 1.0.22b5 (2019-11-14)
 ---------------------
-- Drop support for Python 2
-- Drop support for Python 3.4
-- Add support for Python 3.8
+- Dropped support for Python 2
+- Dropped support for Python 3.4
+- Added support for Python 3.8
 - Setup update and cleanup.
 
 1.0.22b4 (2019-02-15)

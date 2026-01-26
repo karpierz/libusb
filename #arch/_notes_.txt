@@ -1,0 +1,12 @@
+https://anaconda.org/conda-forge/libusb/files?channel=main&type=conda
+https://anaconda.org/conda-forge/libusb/files?channel=main&type=conda&version=1.0.29&sort=-version
+
+https://packages.debian.org/search?keywords=libusb
+https://packages.debian.org/bullseye/libusb-1.0-0 # Debian 11 (bullseye)
+https://packages.debian.org/bookworm/libusb-1.0-0 # Debian 12 (bookworm)
+
+http://ftp.debian.org/debian/pool/main/libu/libusb-1.0/?C=M;O=D
+http://ftp.debian.org/debian/pool/main/libu/libusb-1.0/libusb-1.0-0_1.0.29-2_i386.deb
+7z l libusb-1.0-0_1.0.29-2_i386.deb
+
+https://github.com/pyusb/pyusb

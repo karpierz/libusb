@@ -78,12 +78,11 @@ Prerequisites:
 + Python 3.10 or higher
 
   * https://www.python.org/
-  * with C libusb 1.0.28 is a primary test environment.
+  * with C libusb 1.0.29 is a primary test environment.
 
-+ pip and setuptools
++ pip
 
   * https://pypi.org/project/pip/
-  * https://pypi.org/project/setuptools/
 
 To install run:
 
@@ -96,9 +95,9 @@ Development
 
 Prerequisites:
 
-+ Development is strictly based on *tox*. To install it run::
++ Development is strictly based on *nox*. To install it run::
 
-    python -m pip install --upgrade tox
+    python -m pip install --upgrade nox
 
 Visit `Development page`_.
 
@@ -135,11 +134,22 @@ Authors
 
 * Adam Karpierz <adam@karpierz.net>
 
+Sponsoring
+==========
+
+| If you would like to sponsor the development of this project, your contribution
+  is greatly appreciated.
+| As I am now retired, any support helps me dedicate more time to maintaining and
+  improving this work.
+
+`Donate`_
+
 .. |package| replace:: libusb
 .. |package_bold| replace:: **libusb**
-.. |copyright| replace:: Copyright (c) 2016-2025 Adam Karpierz
-.. |respository| replace:: https://github.com/karpierz/libusb.git
+.. |copyright| replace:: Copyright (c) 2016-2026 Adam Karpierz
+.. |respository| replace:: https://github.com/karpierz/libusb
 .. _Development page: https://github.com/karpierz/libusb
 .. _PyPI record: https://pypi.org/project/libusb/
-.. _Documentation: https://libusb.readthedocs.io/
+.. _Documentation: https://karpierz.github.io/libusb/
+.. _Donate: https://www.paypal.com/donate/?hosted_button_id=FX8L7CJUGLW7S
 .. _USB Vendors: https://devicehunt.com/all-usb-vendors

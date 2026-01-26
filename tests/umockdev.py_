@@ -40,7 +40,7 @@ import libusb as usb
 #if not defined("__clang__") and __GNUC__ > 9:
 #pragma GCC diagnostic ignored "-Wanalyzer-malloc-leak"
 #pragma GCC diagnostic ignored "-Wanalyzer-file-leak"
-#endif
+# endif
 
 class LogMessage(ct.Structure):
     _fields_ = [
@@ -77,9 +77,9 @@ UsbChat._fields_ = [
 
 class UMockdevTestbedFixture(ct.Structure):
     _fields_ = [
-    UMockdevTestbed *testbed;
-    UMockdevIoctlBase *handler;
-    struct libusb_context *ctx;
+    ("testbed", ct.POINTER(UMockdevTestbed)),
+    ("handler", ct.POINTER(UMockdevIoctlBase)),
+    ("ctx", ct.POINTER(usb.context)),
 
     gchar *root_dir;
     gchar *sys_dir;
@@ -99,7 +99,7 @@ class UMockdevTestbedFixture(ct.Structure):
 cur_fixture: cp.POINTER(UMockdevTestbedFixture)()
 
 
-def log_handler(libusb_context *ctx, enum libusb_log_level level, const char *str):
+def log_handler(ctx: ct.POINTER(usb.context), level: usb.log_level, const char *str):
 
     # May be called from different threads without synchronization!
     LogMessage *msg;
@@ -121,13 +121,13 @@ def log_handler(libusb_context *ctx, enum libusb_log_level level, const char *st
     pthread_mutex_unlock(&cur_fixture->mutex)
 
 
-def log_handler_null(libusb_context *ctx, enum libusb_log_level level, const char *str):
+def log_handler_null(ctx: ct.POINTER(usb.context), level: usb.log_level, const char *str):
     pass
 
 
-def clear_libusb_log(fixture: ct.POINTER(UMockdevTestbedFixture), enum libusb_log_level level):
+def clear_libusb_log(fixture: ct.POINTER(UMockdevTestbedFixture), level: usb.log_level):
 
-    g_assert(pthread_mutex_lock(&fixture->mutex) == 0)
+    g_assert(pthread_mutex_lock(ct.byref(fixture->mutex)) == 0)
 
     while fixture->libusb_log:
         LogMessage *msg = fixture->libusb_log->data
@@ -135,18 +135,18 @@ def clear_libusb_log(fixture: ct.POINTER(UMockdevTestbedFixture), enum libusb_lo
         g_assert(msg->ctx == fixture->ctx)
 
         if msg->level < level:
-            pthread_mutex_unlock(&fixture->mutex)
+            pthread_mutex_unlock(ct.byref(fixture->mutex))
             return
 
         fixture->libusb_log = g_list_delete_link(fixture->libusb_log, fixture->libusb_log)
         log_message_free(msg)
 
-    pthread_mutex_unlock(&fixture->mutex)
+    pthread_mutex_unlock(ct.byref(fixture->mutex))
 
 
-def assert_libusb_log_msg(fixture: ct.POINTER(UMockdevTestbedFixture), enum libusb_log_level level, const char *re):
+def assert_libusb_log_msg(fixture: ct.POINTER(UMockdevTestbedFixture), level: usb.log_level, const char *re):
 
-    g_assert(pthread_mutex_lock(&fixture->mutex) == 0)
+    g_assert(pthread_mutex_lock(ct.byref(fixture->mutex)) == 0)
 
     while fixture->libusb_log:
         g_autoptr(LogMessage) msg = NULL
@@ -162,23 +162,23 @@ def assert_libusb_log_msg(fixture: ct.POINTER(UMockdevTestbedFixture), enum libu
                     msg->str, msg->ctx, fixture->ctx);
 
         if msg->level == level and g_regex_match_simple(re, msg->str, 0, 0):
-            pthread_mutex_unlock(&fixture->mutex)
+            pthread_mutex_unlock(ct.byref(fixture->mutex))
             return
 
         # Allow skipping INFO and DEBUG messages
-        if (msg->level >= LIBUSB_LOG_LEVEL_INFO)
+        if msg->level >= usb.LIBUSB_LOG_LEVEL_INFO:
             continue
 
         g_error("Searched for \"%s\" (%d) but found \"%s\" (%d)",
                 re, level, msg->str, msg->level)
 
-    pthread_mutex_unlock(&fixture->mutex)
+    pthread_mutex_unlock(ct.byref(fixture->mutex))
     g_error("Searched for \"%s\" (%d) but no message matched", re, level)
 
 
-def assert_libusb_no_log_msg(fixture: ct.POINTER(UMockdevTestbedFixture), enum libusb_log_level level, const char *re):
+def assert_libusb_no_log_msg(fixture: ct.POINTER(UMockdevTestbedFixture), level: usb.log_level, const char *re):
 
-    g_assert(pthread_mutex_lock(&fixture->mutex) == 0)
+    g_assert(pthread_mutex_lock(ct.byref(fixture->mutex)) == 0)
 
     while fixture->libusb_log:
         g_autoptr(LogMessage) msg = NULL
@@ -192,13 +192,13 @@ def assert_libusb_no_log_msg(fixture: ct.POINTER(UMockdevTestbedFixture), enum l
         matching = (msg->level == level and g_regex_match_simple(re, msg->str, 0, 0))
 
         # Allow skipping INFO and DEBUG messages
-        if not matching and msg->level >= LIBUSB_LOG_LEVEL_INFO:
+        if not matching and msg->level >= usb.LIBUSB_LOG_LEVEL_INFO:
             continue
 
         g_error("Asserting \"%s\" (%d) not logged and found \"%s\" (%d)",
                 re, level, msg->str, msg->level)
 
-    pthread_mutex_unlock(&fixture->mutex)
+    pthread_mutex_unlock(ct.byref(fixture->mutex))
 
 
 def dump_buffer(const unsigned char *buffer, int len):
@@ -220,9 +220,9 @@ static gint cmp_ioctl_data_addr(const void *data, const void *addr):
     return ((const UMockdevIoctlData*) data)->client_addr != (gulong) addr
 
 
-static gboolean handle_ioctl_cb(UMockdevIoctlBase *handler,
-                                UMockdevIoctlClient *client,
-                                UMockdevTestbedFixture *fixture):
+static gboolean handle_ioctl_cb(handler: ct.POINTER(UMockdevIoctlBase),
+                                client:  ct.POINTER(UMockdevIoctlClient),
+                                fixture: ct.POINTER(UMockdevTestbedFixture)):
 
     UMockdevIoctlData *ioctl_arg;
     long int request;
@@ -302,7 +302,7 @@ static gboolean handle_ioctl_cb(UMockdevIoctlBase *handler,
         g_printerr("Could not process submit urb:\n")
         g_printerr(" t: %d, ep: %d, actual_length: %d, buffer_length: %d\n",
                    urb->type, urb->endpoint, urb->actual_length, urb->buffer_length)
-        if urb->type == USBDEVFS_URB_TYPE_CONTROL or urb->endpoint & LIBUSB_ENDPOINT_IN:
+        if urb->type == USBDEVFS_URB_TYPE_CONTROL or urb->endpoint & usb.LIBUSB_ENDPOINT_IN:
             dump_buffer(urb->buffer, urb->buffer_length)
         g_printerr("Looking for:\n")
         g_printerr(" t: %d, ep: %d, actual_length: %d, buffer_length: %d\n",
@@ -418,11 +418,11 @@ def test_fixture_setup_libusb(fixture: ct.POINTER(UMockdevTestbedFixture), int d
 
     # Suppress global log messages completely
     # (though, in some tests it might be interesting to check there are no real ones).
-    libusb_set_log_cb(NULL, log_handler_null, LIBUSB_LOG_CB_GLOBAL)
+    libusb_set_log_cb(NULL, log_handler_null, usb.LIBUSB_LOG_CB_GLOBAL)
     usb.set_option(fixture->ctx, usb.LIBUSB_OPTION_LOG_LEVEL, usb.LIBUSB_LOG_LEVEL_DEBUG)
-    g_assert_cmpint(libusb_get_device_list(fixture->ctx, &devs), ==, devcount)
-    usb.free_device_list(devs, TRUE)
-    libusb_set_log_cb(fixture->ctx, log_handler, LIBUSB_LOG_CB_CONTEXT)
+    g_assert_cmpint(usb.get_device_list(fixture->ctx, ct.byref(devs)), ==, devcount)
+    usb.free_device_list(devs, True)
+    libusb_set_log_cb(fixture->ctx, log_handler, usb.LIBUSB_LOG_CB_CONTEXT)
 
 
 def test_fixture_setup_common(fixture: ct.POINTER(UMockdevTestbedFixture)):
@@ -430,12 +430,12 @@ def test_fixture_setup_common(fixture: ct.POINTER(UMockdevTestbedFixture)):
     g_assert(cur_fixture == NULL)
     cur_fixture = fixture
 
-    pthread_mutex_init(&fixture->mutex, NULL)
+    pthread_mutex_init(ct.byref(fixture->mutex), NULL)
 
     fixture->testbed = umockdev_testbed_new()
     g_assert(fixture->testbed != NULL)
     fixture->root_dir = umockdev_testbed_get_root_dir(fixture->testbed)
-    fixture->sys_dir = umockdev_testbed_get_sys_dir(fixture->testbed)
+    fixture->sys_dir  = umockdev_testbed_get_sys_dir(fixture->testbed)
 
     fixture->handler = umockdev_ioctl_base_new()
     g_object_connect(fixture->handler,
@@ -459,14 +459,14 @@ def test_fixture_teardown(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DA
     g_assert(cur_fixture == fixture)
 
     # Abort if there are any warnings/errors in the log
-    clear_libusb_log(fixture, LIBUSB_LOG_LEVEL_INFO)
+    clear_libusb_log(fixture, usb.LIBUSB_LOG_LEVEL_INFO)
 
     if fixture->ctx:
         devs = ct.POINTER(ct.POINTER(usb.device))()
-        int count = libusb_get_device_list(fixture->ctx, &devs)
-        usb.free_device_list(devs, TRUE)
+        int count = usb.get_device_list(fixture->ctx, ct.byref(devs))
+        usb.free_device_list(devs, True)
 
-        libusb_exit(fixture->ctx)
+        usb.exit(fixture->ctx)
 
         # libusb_exit should result in the correct number of devices being destroyed
         for i in range(count):
@@ -476,11 +476,11 @@ def test_fixture_teardown(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DA
         assert_libusb_no_log_msg(fixture, usb.LIBUSB_LOG_LEVEL_DEBUG,
                                  "libusb_unref_device")
 
-    libusb_set_log_cb(NULL, NULL, LIBUSB_LOG_CB_GLOBAL)
+    libusb_set_log_cb(NULL, NULL, usb.LIBUSB_LOG_CB_GLOBAL)
     cur_fixture = NULL
 
     # Abort if there are any warnings/errors in the log
-    clear_libusb_log(fixture, LIBUSB_LOG_LEVEL_INFO)
+    clear_libusb_log(fixture, usb.LIBUSB_LOG_LEVEL_INFO)
     fixture->ctx = NULL
     g_assert_null(fixture->libusb_log)
 
@@ -497,25 +497,25 @@ def test_fixture_teardown(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DA
         fixture->flying_urbs = g_list_delete_link(fixture->flying_urbs,
                                                   fixture->flying_urbs)
 
-    pthread_mutex_destroy(&fixture->mutex)
+    pthread_mutex_destroy(ct.byref(fixture->mutex))
 
 
 def test_open_close(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
-    devs = ct.POINTER(ct.POINTER(usb.device))()
-    desc = usb.device_descriptor()
-    libusb_device_handle *handle = NULL
+    devs   = ct.POINTER(ct.POINTER(usb.device))()
+    desc   = usb.device_descriptor()
+    handle = ct.POINTER(usb.device_handle)()
 
-    g_assert_cmpint(libusb_get_device_list(fixture->ctx, &devs), ==, 1)
+    g_assert_cmpint(usb.get_device_list(fixture->ctx, ct.byref(devs)), ==, 1)
     # The linux_enumerate_device may happen from a different thread
     assert_libusb_log_msg(fixture, usb.LIBUSB_LOG_LEVEL_DEBUG,
                           "libusb_get_device_list")
     # We have exactly one device
-    g_assert_cmpint(libusb_get_bus_number(devs[0]), ==, 1)
-    g_assert_cmpint(libusb_get_device_address(devs[0]), ==, 1)
+    g_assert_cmpint(usb.get_bus_number(devs[0]), ==, 1)
+    g_assert_cmpint(usb.get_device_address(devs[0]), ==, 1)
 
     # Get/Check descriptor
-    clear_libusb_log(fixture, LIBUSB_LOG_LEVEL_INFO)
+    clear_libusb_log(fixture, usb.LIBUSB_LOG_LEVEL_INFO)
     libusb_get_device_descriptor(devs[0], &desc)
     assert_libusb_log_msg(fixture, usb.LIBUSB_LOG_LEVEL_DEBUG,
                           "libusb_get_device_descriptor")
@@ -531,7 +531,7 @@ def test_open_close(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
     assert_libusb_log_msg(fixture, usb.LIBUSB_LOG_LEVEL_DEBUG,
                           "usbi_remove_event_source")
 
-    usb.free_device_list(devs, TRUE)
+    usb.free_device_list(devs, True)
 
     # Open and close using vid/pid
     handle = usb.open_device_with_vid_pid(fixture->ctx, 0x04a9, 0x31c0)
@@ -543,41 +543,41 @@ def test_implicit_default(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DA
 
     devs = ct.POINTER(ct.POINTER(usb.device))()
 
-    clear_libusb_log(fixture, LIBUSB_LOG_LEVEL_INFO)
-    g_assert_cmpint(libusb_get_device_list(NULL, &devs), ==, 1)
-    usb.free_device_list(devs, TRUE)
+    clear_libusb_log(fixture, usb.LIBUSB_LOG_LEVEL_INFO)
+    g_assert_cmpint(usb.get_device_list(None, ct.byref(devs)), ==, 1)
+    usb.free_device_list(devs, True)
     assert_libusb_log_msg(fixture, usb.LIBUSB_LOG_LEVEL_ERROR,
                           "\\[usbi_get_context\\].*implicit default")
 
     # Only warns once
-    g_assert_cmpint(libusb_get_device_list(NULL, &devs), ==, 1)
-    usb.free_device_list(devs, TRUE)
-    clear_libusb_log(fixture, LIBUSB_LOG_LEVEL_INFO)
+    g_assert_cmpint(usb.get_device_list(None, ct.byref(devs)), ==, 1)
+    usb.free_device_list(devs, True)
+    clear_libusb_log(fixture, usb.LIBUSB_LOG_LEVEL_INFO)
 
     usb.init_context(None, None, 0)
-    g_assert_cmpint(libusb_get_device_list(NULL, &devs), ==, 1)
+    g_assert_cmpint(usb.get_device_list(None, ct.byref(devs)), ==, 1)
     usb.exit(None)
 
     # We free late, causing a warning from libusb_exit. However,
     # we never see this warning (i.e. test success) because it is on a
     # different context.
-    usb.free_device_list(devs, TRUE)
+    usb.free_device_list(devs, True)
 
 
 def test_close_flying(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
-    UsbChat chat[] = {
+    UsbChat chat [] = [
         {
           .submit = TRUE,
           .type = USBDEVFS_URB_TYPE_BULK,
-          .endpoint = LIBUSB_ENDPOINT_OUT,
+          .endpoint = usb.LIBUSB_ENDPOINT_OUT,
           .buffer = (unsigned char[]) { 0x01, 0x02, 0x03, 0x04 },
           .buffer_length = 4,
         },
         { .submit = FALSE }
-    };
-    libusb_device_handle   *handle   = NULL
-    struct libusb_transfer *transfer = NULL
+    ]
+    handle   = ct.POINTER(usb.device_handle)()
+    transfer = ct.POINTER(usb.transfer)()
 
     fixture->chat = chat
 
@@ -586,14 +586,14 @@ def test_close_flying(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
     g_assert_nonnull(handle)
 
     transfer = usb.alloc_transfer(0)
-    libusb_fill_bulk_transfer(transfer,
-                              handle,
-                              LIBUSB_ENDPOINT_OUT,
-                              (unsigned char*) chat[0].buffer,
-                              chat[0].buffer_length,
-                              NULL,
-                              NULL,
-                              1)
+    usb.fill_bulk_transfer(transfer,
+                           handle,
+                           usb.LIBUSB_ENDPOINT_OUT,
+                           (unsigned char*) chat[0].buffer,
+                           chat[0].buffer_length,
+                           NULL,
+                           NULL,
+                           1)
 
     # Submit
     usb.submit_transfer(transfer)
@@ -609,25 +609,25 @@ def test_close_flying(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
                           "\\[do_close\\] Removed transfer")
 
     # Free'ing the transfer works, and logs to the right context
-    libusb_free_transfer(transfer)
+    usb.free_transfer(transfer)
     assert_libusb_log_msg(fixture, usb.LIBUSB_LOG_LEVEL_DEBUG,
                           "\\[libusb_free_transfer\\]")
 
 
 def test_close_cancelled(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
-    UsbChat chat[] = {
+    UsbChat chat [] = [
         {
           .submit = TRUE,
           .type = USBDEVFS_URB_TYPE_BULK,
-          .endpoint = LIBUSB_ENDPOINT_OUT,
+          .endpoint = usb.LIBUSB_ENDPOINT_OUT,
           .buffer = (unsigned char[]) { 0x01, 0x02, 0x03, 0x04 },
           .buffer_length = 4,
         },
-        { .submit = FALSE }
-    };
-    libusb_device_handle   *handle   = NULL
-    struct libusb_transfer *transfer = NULL
+        { .submit = FALSE },
+    ]
+    handle   = ct.POINTER(usb.device_handle)()
+    transfer = ct.POINTER(usb.transfer)()
 
     fixture->chat = chat
 
@@ -636,14 +636,14 @@ def test_close_cancelled(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DAT
     g_assert_nonnull(handle)
 
     transfer = usb.alloc_transfer(0)
-    libusb_fill_bulk_transfer(transfer,
-                              handle,
-                              LIBUSB_ENDPOINT_OUT,
-                              (unsigned char*) chat[0].buffer,
-                              chat[0].buffer_length,
-                              NULL,
-                              NULL,
-                              1)
+    usb.fill_bulk_transfer(transfer,
+                           handle,
+                           usb.LIBUSB_ENDPOINT_OUT,
+                           (unsigned char*) chat[0].buffer,
+                           chat[0].buffer_length,
+                           NULL,
+                           NULL,
+                           1)
 
     # Submit
     usb.submit_transfer(transfer)
@@ -654,28 +654,28 @@ def test_close_cancelled(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DAT
     usb.close(handle)
     assert_libusb_log_msg(fixture, usb.LIBUSB_LOG_LEVEL_ERROR,
                           "\\[do_close\\] .*connected as far as we know")
-    assert_libusb_log_msg(fixture, LIBUSB_LOG_LEVEL_WARNING,
+    assert_libusb_log_msg(fixture, usb.LIBUSB_LOG_LEVEL_WARNING,
                           "\\[do_close\\] .*cancellation.*hasn't completed")
     assert_libusb_log_msg(fixture, usb.LIBUSB_LOG_LEVEL_DEBUG,
                           "\\[do_close\\] Removed transfer")
 
-    libusb_free_transfer(transfer)
+    usb.free_transfer(transfer)
 
 
 def test_ctx_destroy(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
-    UsbChat chat[] = {
+    UsbChat chat [] = [
         {
           .submit = TRUE,
           .type = USBDEVFS_URB_TYPE_BULK,
-          .endpoint = LIBUSB_ENDPOINT_OUT,
+          .endpoint = usb.LIBUSB_ENDPOINT_OUT,
           .buffer = (unsigned char[]) { 0x01, 0x02, 0x03, 0x04 },
           .buffer_length = 4,
         },
         { .submit = FALSE }
-    };
-    libusb_device_handle   *handle   = NULL
-    struct libusb_transfer *transfer = NULL
+    ]
+    handle   = ct.POINTER(usb.device_handle)()
+    transfer = ct.POINTER(usb.transfer)()
 
     fixture->chat = chat
 
@@ -684,24 +684,24 @@ def test_ctx_destroy(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
     g_assert_nonnull(handle)
 
     transfer = usb.alloc_transfer(0)
-    libusb_fill_bulk_transfer(transfer,
-                              handle,
-                              LIBUSB_ENDPOINT_OUT,
-                              (unsigned char*) chat[0].buffer,
-                              chat[0].buffer_length,
-                              NULL,
-                              NULL,
-                              1)
+    usb.fill_bulk_transfer(transfer,
+                           handle,
+                           usb.LIBUSB_ENDPOINT_OUT,
+                           (unsigned char*) chat[0].buffer,
+                           chat[0].buffer_length,
+                           NULL,
+                           NULL,
+                           1)
 
     # Submit
     usb.submit_transfer(transfer)
 
     # Now we are evil and destroy the ctx!
-    libusb_exit(fixture->ctx)
+    usb.exit(fixture->ctx)
 
-    assert_libusb_log_msg(fixture, LIBUSB_LOG_LEVEL_WARNING,
+    assert_libusb_log_msg(fixture, usb.LIBUSB_LOG_LEVEL_WARNING,
                           "\\[libusb_exit\\] device.*still referenced")
-    assert_libusb_log_msg(fixture, LIBUSB_LOG_LEVEL_WARNING,
+    assert_libusb_log_msg(fixture, usb.LIBUSB_LOG_LEVEL_WARNING,
                           "\\[libusb_exit\\] application left some devices open")
 
     clear_libusb_log(fixture, usb.LIBUSB_LOG_LEVEL_DEBUG)
@@ -710,14 +710,14 @@ def test_ctx_destroy(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
     # XXX: Closing crashes the application as it unref's the NULL pointer
     # usb.close(handle)
 
-    libusb_free_transfer(transfer)
+    usb.free_transfer(transfer)
 
 
 def test_get_string_descriptor(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
     unsigned char data[255] = { 0, };
-    libusb_device_handle *handle = NULL
-    UsbChat chat[] = {
+    handle = ct.POINTER(usb.device_handle)()
+    UsbChat chat [] = [
         {
           .submit = TRUE,
           .reaps = &chat[1],
@@ -758,7 +758,7 @@ def test_get_string_descriptor(fixture: ct.POINTER(UMockdevTestbedFixture), UNUS
         }, {
           .submit = FALSE,
         }
-    };
+    ]
 
     fixture->chat = chat
 
@@ -783,27 +783,27 @@ def test_get_string_descriptor(fixture: ct.POINTER(UMockdevTestbedFixture), UNUS
     usb.close(handle)
 
 
-def transfer_cb_inc_user_data(struct libusb_transfer *transfer):
+def transfer_cb_inc_user_data(transfer: ct.POINTER(usb.transfer)):
     *(int*)transfer->user_data += 1
 
 
 def test_timeout(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
-    UsbChat chat[] = {
+    UsbChat chat [] = [
         {
           .submit = TRUE,
           .type = USBDEVFS_URB_TYPE_BULK,
-          .endpoint = LIBUSB_ENDPOINT_OUT,
+          .endpoint = usb.LIBUSB_ENDPOINT_OUT,
           .buffer = (unsigned char[]) { 0x01, 0x02, 0x03, 0x04 },
           .buffer_length = 4,
         },
         {
           .submit = FALSE,
         }
-    };
-    int completed = 0
-    libusb_device_handle   *handle   = NULL
-    struct libusb_transfer *transfer = NULL
+    ]
+    completed = ct.c_int(0)
+    handle    = ct.POINTER(usb.device_handle)()
+    transfer  = ct.POINTER(usb.transfer)()
 
     fixture->chat = chat
 
@@ -811,25 +811,24 @@ def test_timeout(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
     g_assert_nonnull(handle)
 
     transfer = usb.alloc_transfer(0)
-    libusb_fill_bulk_transfer(transfer,
-                              handle,
-                              LIBUSB_ENDPOINT_OUT,
-                              (unsigned char*) chat[0].buffer,
-                              chat[0].buffer_length,
-                              transfer_cb_inc_user_data,
-                              &completed,
-                              10)
+    usb.fill_bulk_transfer(transfer,
+                           handle,
+                           usb.LIBUSB_ENDPOINT_OUT,
+                           (unsigned char*) chat[0].buffer,
+                           chat[0].buffer_length,
+                           transfer_cb_inc_user_data,
+                           ct.byref(completed),
+                           10)
 
     usb.submit_transfer(transfer)
-    while (!completed) {
-        g_assert_cmpint(libusb_handle_events_completed(fixture->ctx, &completed), ==, 0)
+    while not completed.value:
+        g_assert_cmpint(usb.handle_events_completed(fixture->ctx, ct.byref(completed)), ==, 0)
         # Silence after one iteration.
         fixture->libusb_log_silence = TRUE
-    }
     fixture->libusb_log_silence = FALSE
 
-    g_assert_cmpint(transfer->status, ==, LIBUSB_TRANSFER_TIMED_OUT)
-    libusb_free_transfer(transfer)
+    g_assert_cmpint(transfer->status, ==, usb.LIBUSB_TRANSFER_TIMED_OUT)
+    usb.free_transfer(transfer)
 
     usb.close(handle)
 
@@ -837,31 +836,33 @@ def test_timeout(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 THREADED_SUBMIT_URB_SETS      = 64
 THREADED_SUBMIT_URB_IN_FLIGHT = 64
 
-typedef struct {
-    struct libusb_transfer *transfers[THREADED_SUBMIT_URB_IN_FLIGHT * THREADED_SUBMIT_URB_SETS];
-    int submitted;
-    int completed;
-    int done;
-    UMockdevTestbedFixture *fixture;
-} TestThreadedSubmit;
+class TestThreadedSubmit(ct.Structure):
+    _fields_ = [
+    ("transfers": (ct.POINTER(usb.transfer) * (THREADED_SUBMIT_URB_IN_FLIGHT
+                                               * THREADED_SUBMIT_URB_SETS))),
+    ("submitted", ct.c_int);
+    ("completed", ct.c_int);
+    ("done",      ct.c_int);
+    ("fixture",   ct.POINTER(UMockdevTestbedFixture)),
+]
 
 
-static gpointer transfer_submit_all_retry(TestThreadedSubmit *data):
+static gpointer transfer_submit_all_retry(data: TestThreadedSubmit):
 
-    for guint i in ranhe(G_N_ELEMENTS(data->transfers)):
-        while usb.submit_transfer(data->transfers[i]) < 0:
-            assert_libusb_log_msg(data->fixture,
+    for guint i in ranhe(G_N_ELEMENTS(data.transfers)):
+        while usb.submit_transfer(data.transfers[i]) < 0:
+            assert_libusb_log_msg(data.fixture,
                                   usb.LIBUSB_LOG_LEVEL_ERROR, "submit_bulk_transfer")
             continue
 
-        data->submitted += 1
+        data.submitted += 1
 
     return NULL
 
 
-def LIBUSB_CALL test_threaded_submit_transfer_cb(struct libusb_transfer *transfer):
+def LIBUSB_CALL test_threaded_submit_transfer_cb(transfer: ct.POINTER(usb.transfer)):
 
-    TestThreadedSubmit *data = transfer->user_data
+    data: ct.POINTER(TestThreadedSubmit) = transfer->user_data
 
     # We should only be receiving packets in the main thread
     g_assert_cmpint(getpid(), ==, gettid())
@@ -881,7 +882,7 @@ def test_threaded_submit(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DAT
     UsbChat out_msg = {
           .submit = TRUE,
           .type = USBDEVFS_URB_TYPE_BULK,
-          .endpoint = LIBUSB_ENDPOINT_IN,
+          .endpoint = usb.LIBUSB_ENDPOINT_IN,
           .buffer_length = sizeof(int),
     };
     UsbChat in_msg = {
@@ -889,7 +890,7 @@ def test_threaded_submit(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DAT
           .actual_length = 4,
     };
     UsbChat *c;
-    libusb_device_handle *handle = NULL
+    handle = ct.POINTER(usb.device_handle)()
     int urb;
 
     handle = usb.open_device_with_vid_pid(fixture->ctx, 0x04a9, 0x31c0)
@@ -908,21 +909,22 @@ def test_threaded_submit(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DAT
             *(int*) c[(i*2+1)*THREADED_SUBMIT_URB_IN_FLIGHT + j].buffer = urb
 
             data.transfers[urb] = usb.alloc_transfer(0)
-            libusb_fill_bulk_transfer(data.transfers[urb],
-                                      handle,
-                                      LIBUSB_ENDPOINT_IN,
-                                      g_malloc(out_msg.buffer_length),
-                                      out_msg.buffer_length,
-                                      test_threaded_submit_transfer_cb,
-                                      &data,
-                                      G_MAXUINT)
-            data.transfers[urb]->flags = LIBUSB_TRANSFER_FREE_BUFFER | LIBUSB_TRANSFER_FREE_TRANSFER
+            usb.fill_bulk_transfer(data.transfers[urb],
+                                   handle,
+                                   usb.LIBUSB_ENDPOINT_IN,
+                                   g_malloc(out_msg.buffer_length),
+                                   out_msg.buffer_length,
+                                   test_threaded_submit_transfer_cb,
+                                   ct.byref(data),
+                                   G_MAXUINT)
+            data.transfers[urb]->flags = (usb.LIBUSB_TRANSFER_FREE_BUFFER
+                                          | usb.LIBUSB_TRANSFER_FREE_TRANSFER)
             urb += 1
 
-    thread = g_thread_new("transfer all", (GThreadFunc) transfer_submit_all_retry, &data)
+    thread = g_thread_new("transfer all", (GThreadFunc) transfer_submit_all_retry, data)
 
     while not data.done:
-        g_assert_cmpint(libusb_handle_events_completed(fixture->ctx, &data.done), ==, 0)
+        g_assert_cmpint(usb.handle_events_completed(fixture->ctx, ct.byref(data.done)), ==, 0)
 
     g_thread_join(thread)
 
@@ -934,10 +936,10 @@ def test_threaded_submit(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DAT
     g_free(c)
 
 
-static int LIBUSB_CALL hotplug_count_arrival_cb(libusb_context *ctx,
-                                                libusb_device  *device,
-                                                libusb_hotplug_event event,
-                                                void *user_data):
+static int LIBUSB_CALL hotplug_count_arrival_cb(ctx: ct.POINTER(usb.context),
+                                                device: ct.POINTER(usb.device),
+                                                event: usb.hotplug_event,
+                                                user_data: ct.c_void_p):
 
     g_assert_cmpint(event, ==, usb.LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED)
     *(int*) user_data += 1
@@ -945,23 +947,23 @@ static int LIBUSB_CALL hotplug_count_arrival_cb(libusb_context *ctx,
 
 if defined("UMOCKDEV_HOTPLUG"):
 
-    static int LIBUSB_CALL hotplug_count_removal_cb(libusb_context *ctx,
-                                                    libusb_device  *device,
-                                                    libusb_hotplug_event event,
-                                                    void *user_data):
+    static int LIBUSB_CALL hotplug_count_removal_cb(ctx: ct.POINTER(usb.context),
+                                                    device: ct.POINTER(usb.device),
+                                                    event: usb.hotplug_event,
+                                                    user_data: ct.c_void_p):
 
         g_assert_cmpint(event, ==, usb.LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT)
         *(int*) user_data += 1
         return 0
 
-#endif
+# endif
 
 def test_hotplug_enumerate(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_DATA):
 
-    libusb_hotplug_callback_handle handle_enumerate;
-    libusb_hotplug_callback_handle handle_no_enumerate;
-    int event_count_enumerate    = 0
-    int event_count_no_enumerate = 0
+    handle_enumerate    = usb.hotplug_callback_handle(0)
+    handle_no_enumerate = usb.hotplug_callback_handle(0)
+    event_count_enumerate    = ct.c_int(0)
+    event_count_no_enumerate = ct.c_int(0)
     struct timeval zero_tv = { 0 };
     int r;
 
@@ -973,8 +975,8 @@ def test_hotplug_enumerate(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_D
                                       usb.LIBUSB_HOTPLUG_MATCH_ANY,
                                       usb.LIBUSB_HOTPLUG_MATCH_ANY,
                                       hotplug_count_arrival_cb,
-                                      &event_count_enumerate,
-                                      &handle_enumerate)
+                                      ct.byref(event_count_enumerate),
+                                      ct.byref(handle_enumerate))
     g_assert_cmpint(r, ==, 0)
 
     r = usb.hotplug_register_callback(fixture->ctx,
@@ -985,22 +987,22 @@ def test_hotplug_enumerate(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_D
                                       usb.LIBUSB_HOTPLUG_MATCH_ANY,
                                       usb.LIBUSB_HOTPLUG_MATCH_ANY,
                                       hotplug_count_arrival_cb,
-                                      &event_count_no_enumerate,
-                                      &handle_no_enumerate)
+                                      ct.byref(event_count_no_enumerate),
+                                      ct.byref(handle_no_enumerate))
     g_assert_cmpint(r, ==, 0)
 
     g_assert_cmpint(event_count_enumerate, ==, 1)
     g_assert_cmpint(event_count_no_enumerate, ==, 0)
 
-    libusb_handle_events_timeout(fixture->ctx, &zero_tv)
+    usb.handle_events_timeout(fixture->ctx, ct.byref(zero_tv))
 
     g_assert_cmpint(event_count_enumerate, ==, 1)
     g_assert_cmpint(event_count_no_enumerate, ==, 0)
 
-    libusb_hotplug_deregister_callback(fixture->ctx, handle_enumerate)
-    libusb_hotplug_deregister_callback(fixture->ctx, handle_no_enumerate)
+    usb.hotplug_deregister_callback(fixture->ctx, handle_enumerate)
+    usb.hotplug_deregister_callback(fixture->ctx, handle_no_enumerate)
 
-    libusb_handle_events_timeout(fixture->ctx, &zero_tv)
+    usb.handle_events_timeout(fixture->ctx, ct.byref(zero_tv))
 
     g_assert_cmpint(event_count_enumerate, ==, 1)
     g_assert_cmpint(event_count_no_enumerate, ==, 0)
@@ -1010,10 +1012,10 @@ def test_hotplug_add_remove(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_
 
     if defined("UMOCKDEV_HOTPLUG"):
         devs = ct.POINTER(ct.POINTER(usb.device))()
-        libusb_hotplug_callback_handle handle_add;
-        libusb_hotplug_callback_handle handle_remove;
-        int event_count_add    = 0
-        int event_count_remove = 0
+        handle_add    = usb.hotplug_callback_handle(0)
+        handle_remove = usb.hotplug_callback_handle(0)
+        event_count_add    = ct.c_int(0)
+        event_count_remove = ct.c_int(0)
         struct timeval zero_tv = { 0 };
         int r;
 
@@ -1024,8 +1026,8 @@ def test_hotplug_add_remove(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_
                                           usb.LIBUSB_HOTPLUG_MATCH_ANY,
                                           usb.LIBUSB_HOTPLUG_MATCH_ANY,
                                           hotplug_count_arrival_cb,
-                                          &event_count_add,
-                                          &handle_add)
+                                          ct.byref(event_count_add),
+                                          ct.byref(handle_add))
         g_assert_cmpint(r, ==, 0)
 
         r = usb.hotplug_register_callback(fixture->ctx,
@@ -1035,12 +1037,12 @@ def test_hotplug_add_remove(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_
                                           usb.LIBUSB_HOTPLUG_MATCH_ANY,
                                           usb.LIBUSB_HOTPLUG_MATCH_ANY,
                                           hotplug_count_removal_cb,
-                                          &event_count_remove,
-                                          &handle_remove)
+                                          ct.byref(event_count_remove),
+                                          ct.byref(handle_remove))
         g_assert_cmpint(r, ==, 0)
 
         # No device, even going into the mainloop will not call cb.
-        libusb_handle_events_timeout(fixture->ctx, &zero_tv)
+        usb.handle_events_timeout(fixture->ctx, ct.byref(zero_tv))
         g_assert_cmpint(event_count_add, ==, 0)
         g_assert_cmpint(event_count_remove, ==, 0)
 
@@ -1048,15 +1050,15 @@ def test_hotplug_add_remove(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_
         test_fixture_add_canon(fixture)
 
         # Either the thread has picked it up already, or we do so now.
-        g_assert_cmpint(libusb_get_device_list(fixture->ctx, &devs), ==, 1)
-        usb.free_device_list(devs, TRUE)
+        g_assert_cmpint(usb.get_device_list(fixture->ctx, ct.byref(devs)), ==, 1)
+        usb.free_device_list(devs, True)
 
         # The hotplug event is pending now, but has not yet fired.
         g_assert_cmpint(event_count_add, ==, 0)
         g_assert_cmpint(event_count_remove, ==, 0)
 
         # Fire hotplug event.
-        libusb_handle_events_timeout(fixture->ctx, &zero_tv)
+        usb.handle_events_timeout(fixture->ctx, ct.byref(zero_tv))
         g_assert_cmpint(event_count_add, ==, 1)
         g_assert_cmpint(event_count_remove, ==, 0)
 
@@ -1064,23 +1066,23 @@ def test_hotplug_add_remove(fixture: ct.POINTER(UMockdevTestbedFixture), UNUSED_
         //umockdev_testbed_remove_device(fixture->testbed, "/devices/usb1")
 
         # Either the thread has picked it up already, or we do so now.
-        g_assert_cmpint(libusb_get_device_list(fixture->ctx, &devs), ==, 0)
-        usb.free_device_list(devs, TRUE)
+        g_assert_cmpint(usb.get_device_list(fixture->ctx, ct.byref(devs)), ==, 0)
+        usb.free_device_list(devs, True)
 
         # The hotplug event is pending now, but has not yet fired.
         g_assert_cmpint(event_count_add, ==, 1)
         g_assert_cmpint(event_count_remove, ==, 0)
 
         # Fire hotplug event.
-        libusb_handle_events_timeout(fixture->ctx, &zero_tv)
+        usb.handle_events_timeout(fixture->ctx, ct.byref(zero_tv))
         g_assert_cmpint(event_count_add, ==, 1)
         g_assert_cmpint(event_count_remove, ==, 1)
 
-        libusb_hotplug_deregister_callback(fixture->ctx, handle_add)
-        libusb_hotplug_deregister_callback(fixture->ctx, handle_remove)
+        usb.hotplug_deregister_callback(fixture->ctx, handle_add)
+        usb.hotplug_deregister_callback(fixture->ctx, handle_remove)
     else:
         g_test_skip("UMockdev is too old to test hotplug")
-    #endif
+    # endif
 
 
 def main(int argc, char **argv) -> int:

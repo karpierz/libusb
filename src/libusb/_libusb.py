@@ -3,6 +3,8 @@
 # Copyright (c) 2016 Adam Karpierz
 # SPDX-License-Identifier: Zlib
 
+from __future__ import annotations
+
 # Public libusb header file
 # Copyright (c) 2001 Johannes Erdfelt <johannes@erdfelt.com>
 # Copyright (c) 2007-2008 Daniel Drake <dsd@gentoo.org>
@@ -25,17 +27,25 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
+import typing
+from typing import TYPE_CHECKING, TypeVar, TypeAlias
+from collections.abc import Callable
 import ctypes as ct
+
+from utlx import ctypes as ctx
 
 from ._platform import CFUNC
 from ._platform import timeval
 from ._platform import defined
-from ._platform._limits import INT_MAX
+from ._platform import limits
 from ._dll      import dll
 
 intptr_t = (ct.c_int32 if ct.sizeof(ct.c_void_p) == ct.sizeof(ct.c_int32) else ct.c_int64)
 
-def LIBUSB_DEPRECATED_FOR(f): pass
+_F = TypeVar("_F", bound=Callable[..., object])
+
+def LIBUSB_DEPRECATED_FOR(f: _F) -> _F:
+    return f
 
 # \def LIBUSB_CALL
 # \ingroup libusb::misc
@@ -139,8 +149,8 @@ LIBUSBX_API_VERSION = LIBUSB_API_VERSION
 # :returns: the value in little-endian byte order
 
 # static inline
-@CFUNC(ct.c_uint16, ct.c_uint16)
-def cpu_to_le16(x):
+def cpu_to_le16(x: ct.c_uint16) -> ct.c_uint16:
+    xx = typing.cast(int, x)
 
     class Tmp(ct.Union):
         _fields_ = [
@@ -149,10 +159,11 @@ def cpu_to_le16(x):
     ]
 
     tmp = Tmp()
-    tmp.b8[1] = ct.c_uint8(x >> 8)
-    tmp.b8[0] = ct.c_uint8(x & 0xff)
+    tmp.b8[1] = ct.c_uint8(xx >> 8)
+    tmp.b8[0] = ct.c_uint8(xx & 0xff)
 
-    return tmp.b16
+    return typing.cast(ct.c_uint16, tmp.b16)
+cpu_to_le16 = CFUNC(ct.c_uint16, ct.c_uint16)(cpu_to_le16)
 
 # \def libusb.le16_to_cpu
 # \ingroup libusb::misc
@@ -1477,6 +1488,8 @@ class transfer(ct.Structure): pass
 # notified about.
 
 transfer_cb_fn = CFUNC(None, ct.POINTER(transfer))
+if TYPE_CHECKING:
+    transfer_cb_fn_type: TypeAlias = Callable[[ctx.POINTER[transfer]], None]
 
 # \ingroup libusb::asyncio
 # The generic USB transfer structure. The user populates this structure and
@@ -1696,6 +1709,8 @@ LIBUSB_OPTION_WEAK_AUTHORITY = LIBUSB_OPTION_NO_DEVICE_DISCOVERY
 # \see libusb.set_log_cb()
 
 log_cb = CFUNC(None, ct.POINTER(context), log_level, ct.c_char_p)
+if TYPE_CHECKING:
+    log_cb_type: TypeAlias = Callable[[ctx.POINTER[context], log_level, ct.c_char_p], None]
 
 # \ingroup libusb_lib
 # Structure used for setting options through \ref libusb.init_context.
@@ -1730,7 +1745,7 @@ try:
         (1, "ctx"),
         (1, "options"),
         (1, "num_options"),))
-except: pass
+except: pass  # pragma: no cover
 
 exit = CFUNC(None,  # noqa: A001
     ct.POINTER(context))(
@@ -1754,7 +1769,7 @@ try:
         (1, "ctx"),
         (1, "cb"),
         (1, "mode"),))
-except: pass
+except: pass  # pragma: no cover
 
 has_capability = CFUNC(ct.c_int,
     ct.c_uint32)(
@@ -1912,7 +1927,7 @@ try:
         ct.POINTER(ssplus_usb_device_capability_descriptor))(
         ("libusb_free_ssplus_usb_device_capability_descriptor", dll), (
         (1, "ssplus_usb_device_cap"),))
-except: pass
+except: pass  # pragma: no cover
 
 get_container_id_descriptor = CFUNC(ct.c_int,
     ct.POINTER(context),
@@ -1942,7 +1957,7 @@ try:
         ct.POINTER(platform_descriptor))(
         ("libusb_free_platform_descriptor", dll), (
         (1, "platform_descriptor"),))
-except: pass
+except: pass  # pragma: no cover
 
 get_bus_number = CFUNC(ct.c_uint8,
     ct.POINTER(device))(
@@ -1954,7 +1969,7 @@ get_port_number = CFUNC(ct.c_uint8,
     ("libusb_get_port_number", dll), (
     (1, "dev"),))
 
-get_port_numbers = CFUNC(ct.c_int,
+get_port_numbers = LIBUSB_DEPRECATED_FOR(CFUNC(ct.c_int,
     ct.POINTER(device),
     ct.POINTER(ct.c_uint8),
     ct.c_int)(
@@ -1962,7 +1977,7 @@ get_port_numbers = CFUNC(ct.c_int,
     (1, "dev"),
     (1, "port_numbers"),
     (1, "port_numbers_len"),))
-LIBUSB_DEPRECATED_FOR("get_port_numbers")
+)
 
 get_port_path = CFUNC(ct.c_int,
     ct.POINTER(context),
@@ -2015,7 +2030,7 @@ try:
         (1, "interface_number"),
         (1, "alternate_setting"),
         (1, "endpoint"),))
-except: pass
+except: pass  # pragma: no cover
 
 try:
     get_interface_association_descriptors = CFUNC(ct.c_int,
@@ -2038,7 +2053,7 @@ try:
         ct.POINTER(interface_association_descriptor_array))(
         ("libusb_free_interface_association_descriptors", dll), (
         (1, "iad_array"),))
-except: pass
+except: pass  # pragma: no cover
 
 try:
     wrap_sys_device = CFUNC(ct.c_int,
@@ -2049,7 +2064,7 @@ try:
         (1, "ctx"),
         (1, "sys_dev"),
         (1, "dev_handle"),))
-except: pass
+except: pass  # pragma: no cover
 
 open = CFUNC(ct.c_int,  # noqa: A001
     ct.POINTER(device),
@@ -2195,10 +2210,11 @@ set_auto_detach_kernel_driver = CFUNC(ct.c_int,
 # :returns: pointer to the first byte of the data section
 
 # static inline
-# @CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer))
-def control_transfer_get_data(transfer):
-    transfer = transfer[0]
-    return ct.cast(transfer.buffer + LIBUSB_CONTROL_SETUP_SIZE, ct.POINTER(ct.c_ubyte))
+def control_transfer_get_data(transfer: ctx.POINTER[transfer]) -> ctx.POINTER[ct.c_ubyte]:
+    transf = transfer[0]
+    return ct.cast(transf.buffer + LIBUSB_CONTROL_SETUP_SIZE, ct.POINTER(ct.c_ubyte))
+# control_transfer_get_data = CFUNC(ct.POINTER(ct.c_ubyte),
+#                                   ct.POINTER(transfer))(control_transfer_get_data)
 
 # \ingroup libusb::asyncio
 # Get the control setup packet of a control transfer. This convenience
@@ -2213,10 +2229,11 @@ def control_transfer_get_data(transfer):
 # :returns: a casted pointer to the start of the transfer data buffer
 
 # static inline
-# @CFUNC(ct.POINTER(control_setup), ct.POINTER(transfer))
-def control_transfer_get_setup(transfer):
-    transfer = transfer[0]
-    return ct.cast(transfer.buffer, ct.POINTER(control_setup))
+def control_transfer_get_setup(transfer: ctx.POINTER[transfer]) -> ctx.POINTER[control_setup]:
+    transf = transfer[0]
+    return ct.cast(transf.buffer, ct.POINTER(control_setup))
+# control_transfer_get_setup = CFUNC(ct.POINTER(control_setup),
+#                                    ct.POINTER(transfer))(control_transfer_get_setup)
 
 # \ingroup libusb::asyncio
 # Helper function to populate the setup packet (first 8 bytes of the data
@@ -2242,15 +2259,17 @@ def control_transfer_get_setup(transfer):
 # \ref libusb.control_setup
 
 # static inline
-@CFUNC(None,
-       ct.POINTER(ct.c_ubyte), ct.c_uint8,  ct.c_uint8,  ct.c_uint16, ct.c_uint16, ct.c_uint16)
-def fill_control_setup(buffer, bmRequestType, bRequest, wValue, wIndex, wLength):
+def fill_control_setup(buffer: ctx.POINTER[ct.c_ubyte], bmRequestType: ct.c_uint8,
+                       bRequest: ct.c_uint8, wValue: ct.c_uint16, wIndex: ct.c_uint16,
+                       wLength: ct.c_uint16) -> None:
     setup = ct.cast(buffer, ct.POINTER(control_setup))[0]
     setup.bmRequestType = bmRequestType
     setup.bRequest      = bRequest
     setup.wValue        = cpu_to_le16(wValue)
     setup.wIndex        = cpu_to_le16(wIndex)
     setup.wLength       = cpu_to_le16(wLength)
+fill_control_setup = CFUNC(None, ct.POINTER(ct.c_ubyte), ct.c_uint8, ct.c_uint8,
+                           ct.c_uint16, ct.c_uint16, ct.c_uint16)(fill_control_setup)
 
 alloc_transfer = CFUNC(ct.POINTER(transfer),
     ct.c_int)(
@@ -2312,21 +2331,23 @@ transfer_set_stream_id = CFUNC(None,
 # :param timeout: timeout for the transfer in milliseconds
 
 # static inline
-@CFUNC(None,
-       ct.POINTER(transfer), ct.POINTER(device_handle),
-       ct.POINTER(ct.c_ubyte), transfer_cb_fn, ct.c_void_p, ct.c_uint)
-def fill_control_transfer(transfer, dev_handle, buffer, callback, user_data, timeout):
-    transfer  = transfer[0]
+def fill_control_transfer(transfer: ctx.POINTER[transfer], dev_handle: ctx.POINTER[device_handle],
+                          buffer: ctx.POINTER[ct.c_ubyte], callback: transfer_cb_fn_type,
+                          user_data: ct.c_void_p, timeout: ct.c_uint) -> None:
+    transf = transfer[0]
     setup_ptr = ct.cast(buffer, ct.POINTER(control_setup))
-    transfer.dev_handle = dev_handle
-    transfer.endpoint   = 0
-    transfer.type       = LIBUSB_TRANSFER_TYPE_CONTROL
-    transfer.timeout    = timeout
-    transfer.buffer     = buffer
+    transf.dev_handle = dev_handle
+    transf.endpoint   = 0
+    transf.type       = LIBUSB_TRANSFER_TYPE_CONTROL
+    transf.timeout    = timeout
+    transf.buffer     = buffer
     if setup_ptr:
-        transfer.length = ct.c_int(LIBUSB_CONTROL_SETUP_SIZE + le16_to_cpu(setup_ptr[0].wLength))
-    transfer.user_data  = user_data
-    transfer.callback   = callback
+        transf.length = ct.c_int(LIBUSB_CONTROL_SETUP_SIZE + le16_to_cpu(setup_ptr[0].wLength))
+    transf.user_data  = user_data
+    transf.callback   = callback
+fill_control_transfer = CFUNC(None, ct.POINTER(transfer), ct.POINTER(device_handle),
+                              ct.POINTER(ct.c_ubyte), transfer_cb_fn, ct.c_void_p,
+                              ct.c_uint)(fill_control_transfer)
 
 # \ingroup libusb::asyncio
 # Helper function to populate the required \ref libusb.transfer fields
@@ -2342,20 +2363,22 @@ def fill_control_transfer(transfer, dev_handle, buffer, callback, user_data, tim
 # :param timeout: timeout for the transfer in milliseconds
 
 # static inline
-@CFUNC(None,
-       ct.POINTER(transfer), ct.POINTER(device_handle), ct.c_ubyte,
-       ct.POINTER(ct.c_ubyte), ct.c_int, transfer_cb_fn, ct.c_void_p, ct.c_uint)
-def fill_bulk_transfer(transfer, dev_handle, endpoint,
-                       buffer, length, callback, user_data, timeout):
-    transfer = transfer[0]
-    transfer.dev_handle = dev_handle
-    transfer.endpoint   = endpoint
-    transfer.type       = LIBUSB_TRANSFER_TYPE_BULK
-    transfer.timeout    = timeout
-    transfer.buffer     = buffer
-    transfer.length     = length
-    transfer.user_data  = user_data
-    transfer.callback   = callback
+def fill_bulk_transfer(transfer: ctx.POINTER[transfer], dev_handle: ctx.POINTER[device_handle],
+                       endpoint: ct.c_ubyte, buffer: ctx.POINTER[ct.c_ubyte], length: ct.c_int,
+                       callback: transfer_cb_fn_type, user_data: ct.c_void_p,
+                       timeout: ct.c_uint) -> None:
+    transf = transfer[0]
+    transf.dev_handle = dev_handle
+    transf.endpoint   = endpoint
+    transf.type       = LIBUSB_TRANSFER_TYPE_BULK
+    transf.timeout    = timeout
+    transf.buffer     = buffer
+    transf.length     = length
+    transf.user_data  = user_data
+    transf.callback   = callback
+fill_bulk_transfer = CFUNC(None, ct.POINTER(transfer), ct.POINTER(device_handle), ct.c_ubyte,
+                           ct.POINTER(ct.c_ubyte), ct.c_int, transfer_cb_fn, ct.c_void_p,
+                           ct.c_uint)(fill_bulk_transfer)
 
 # \ingroup libusb::asyncio
 # Helper function to populate the required \ref libusb.transfer fields
@@ -2374,15 +2397,20 @@ def fill_bulk_transfer(transfer, dev_handle, endpoint,
 # :param timeout: timeout for the transfer in milliseconds
 
 # static inline
-@CFUNC(None,
-       ct.POINTER(transfer), ct.POINTER(device_handle), ct.c_ubyte, ct.c_uint32,
-       ct.POINTER(ct.c_ubyte), ct.c_int, transfer_cb_fn, ct.c_void_p, ct.c_uint)
-def fill_bulk_stream_transfer(transfer, dev_handle, endpoint, stream_id,
-                              buffer, length, callback, user_data, timeout):
+def fill_bulk_stream_transfer(transfer: ctx.POINTER[transfer],
+                              dev_handle: ctx.POINTER[device_handle], endpoint: ct.c_ubyte,
+                              stream_id: ct.c_uint32, buffer: ctx.POINTER[ct.c_ubyte],
+                              length: ct.c_int, callback: transfer_cb_fn_type,
+                              user_data: ct.c_void_p, timeout: ct.c_uint) -> None:
     fill_bulk_transfer(transfer, dev_handle, endpoint,
                        buffer, length, callback, user_data, timeout)
-    transfer[0].type = LIBUSB_TRANSFER_TYPE_BULK_STREAM
+    transf = transfer[0]
+    transf.type = LIBUSB_TRANSFER_TYPE_BULK_STREAM
     transfer_set_stream_id(transfer, stream_id)
+fill_bulk_stream_transfer = CFUNC(None, ct.POINTER(transfer), ct.POINTER(device_handle),
+                                  ct.c_ubyte, ct.c_uint32, ct.POINTER(ct.c_ubyte),
+                                  ct.c_int, transfer_cb_fn, ct.c_void_p,
+                                  ct.c_uint)(fill_bulk_stream_transfer)
 
 # \ingroup libusb::asyncio
 # Helper function to populate the required \ref libusb.transfer fields
@@ -2398,20 +2426,23 @@ def fill_bulk_stream_transfer(transfer, dev_handle, endpoint, stream_id,
 # :param timeout: timeout for the transfer in milliseconds
 
 # static inline
-@CFUNC(None,
-       ct.POINTER(transfer), ct.POINTER(device_handle), ct.c_ubyte,
-       ct.POINTER(ct.c_ubyte), ct.c_int, transfer_cb_fn, ct.c_void_p, ct.c_uint)
-def fill_interrupt_transfer(transfer, dev_handle, endpoint,
-                            buffer, length, callback, user_data, timeout):
-    transfer = transfer[0]
-    transfer.dev_handle = dev_handle
-    transfer.endpoint   = endpoint
-    transfer.type       = LIBUSB_TRANSFER_TYPE_INTERRUPT
-    transfer.timeout    = timeout
-    transfer.buffer     = buffer
-    transfer.length     = length
-    transfer.user_data  = user_data
-    transfer.callback   = callback
+def fill_interrupt_transfer(transfer: ctx.POINTER[transfer],
+                            dev_handle: ctx.POINTER[device_handle], endpoint: ct.c_ubyte,
+                            buffer: ctx.POINTER[ct.c_ubyte], length: ct.c_int,
+                            callback: transfer_cb_fn_type, user_data: ct.c_void_p,
+                            timeout: ct.c_uint) -> None:
+    transf = transfer[0]
+    transf.dev_handle = dev_handle
+    transf.endpoint   = endpoint
+    transf.type       = LIBUSB_TRANSFER_TYPE_INTERRUPT
+    transf.timeout    = timeout
+    transf.buffer     = buffer
+    transf.length     = length
+    transf.user_data  = user_data
+    transf.callback   = callback
+fill_interrupt_transfer = CFUNC(None, ct.POINTER(transfer), ct.POINTER(device_handle),
+                                ct.c_ubyte, ct.POINTER(ct.c_ubyte), ct.c_int, transfer_cb_fn,
+                                ct.c_void_p, ct.c_uint)(fill_interrupt_transfer)
 
 # \ingroup libusb::asyncio
 # Helper function to populate the required \ref libusb.transfer fields
@@ -2428,21 +2459,23 @@ def fill_interrupt_transfer(transfer, dev_handle, endpoint,
 # :param timeout: timeout for the transfer in milliseconds
 
 # static inline
-@CFUNC(None,
-       ct.POINTER(transfer), ct.POINTER(device_handle), ct.c_ubyte,
-       ct.POINTER(ct.c_ubyte), ct.c_int, ct.c_int, transfer_cb_fn, ct.c_void_p, ct.c_uint)
-def fill_iso_transfer(transfer, dev_handle, endpoint,
-                      buffer, length, num_iso_packets, callback, user_data, timeout):
-    transfer = transfer[0]
-    transfer.dev_handle      = dev_handle
-    transfer.endpoint        = endpoint
-    transfer.type            = LIBUSB_TRANSFER_TYPE_ISOCHRONOUS
-    transfer.timeout         = timeout
-    transfer.buffer          = buffer
-    transfer.length          = length
-    transfer.num_iso_packets = num_iso_packets
-    transfer.user_data       = user_data
-    transfer.callback        = callback
+def fill_iso_transfer(transfer: ctx.POINTER[transfer], dev_handle: ctx.POINTER[device_handle],
+                      endpoint: ct.c_ubyte, buffer: ctx.POINTER[ct.c_ubyte], length: ct.c_int,
+                      num_iso_packets: ct.c_int, callback: transfer_cb_fn_type,
+                      user_data: ct.c_void_p, timeout: ct.c_uint) -> None:
+    transf = transfer[0]
+    transf.dev_handle      = dev_handle
+    transf.endpoint        = endpoint
+    transf.type            = LIBUSB_TRANSFER_TYPE_ISOCHRONOUS
+    transf.timeout         = timeout
+    transf.buffer          = buffer
+    transf.length          = length
+    transf.num_iso_packets = num_iso_packets
+    transf.user_data       = user_data
+    transf.callback        = callback
+fill_iso_transfer = CFUNC(None, ct.POINTER(transfer), ct.POINTER(device_handle),
+                          ct.c_ubyte, ct.POINTER(ct.c_ubyte), ct.c_int, ct.c_int,
+                          transfer_cb_fn, ct.c_void_p, ct.c_uint)(fill_iso_transfer)
 
 # \ingroup libusb::asyncio
 # Convenience function to set the length of all packets in an isochronous
@@ -2453,11 +2486,11 @@ def fill_iso_transfer(transfer, dev_handle, endpoint,
 # \see libusb.get_max_packet_size()
 
 # static inline
-@CFUNC(None, ct.POINTER(transfer), ct.c_uint)
-def set_iso_packet_lengths(transfer, length):
-    transfer = transfer[0]
-    for i in range(transfer.num_iso_packets):
-        transfer.iso_packet_desc[i].length = length
+def set_iso_packet_lengths(transfer: ctx.POINTER[transfer], length: ct.c_uint) -> None:
+    transf = transfer[0]
+    for i in range(transf.num_iso_packets):
+        transf.iso_packet_desc[i].length = length
+set_iso_packet_lengths = CFUNC(None, ct.POINTER(transfer), ct.c_uint)(set_iso_packet_lengths)
 
 # \ingroup libusb::asyncio
 # Convenience function to locate the position of an isochronous packet
@@ -2476,26 +2509,28 @@ def set_iso_packet_lengths(transfer, length):
 # \see libusb.get_iso_packet_buffer_simple()
 
 # static inline
-# @CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer), ct.c_uint)
-def get_iso_packet_buffer(transfer, packet):
-    packet = packet.value
+def get_iso_packet_buffer(transfer: ctx.POINTER[transfer],
+                          packet: ct.c_uint) -> ctx.POINTER[ct.c_ubyte]:
+    packet_no: int = packet.value
 
     # oops..slight bug in the API. packet is an unsigned int, but we use
     # signed integers almost everywhere else. range-check and convert to
     # signed to avoid compiler warnings. FIXME for libusb-2.
-    if packet > INT_MAX:
-        return None
+    if packet_no > limits.INT_MAX:
+        return ct.POINTER(ct.c_ubyte)()
 
-    transfer = transfer[0]
+    transf = transfer[0]
 
-    if packet >= transfer.num_iso_packets:
-        return None
+    if packet_no >= transf.num_iso_packets:
+        return ct.POINTER(ct.c_ubyte)()
 
     offset = 0
-    for i in range(packet):
-        offset += transfer.iso_packet_desc[i].length
+    for i in range(packet_no):
+        offset += transf.iso_packet_desc[i].length
 
-    return ct.cast(transfer.buffer + offset, ct.POINTER(ct.c_ubyte))
+    return ct.cast(transf.buffer + offset, ct.POINTER(ct.c_ubyte))
+# get_iso_packet_buffer = CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer),
+#                               ct.c_uint)(get_iso_packet_buffer)
 
 # \ingroup libusb::asyncio
 # Convenience function to locate the position of an isochronous packet
@@ -2517,24 +2552,26 @@ def get_iso_packet_buffer(transfer, packet):
 # \see libusb.get_iso_packet_buffer()
 
 # static inline
-# @CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer), ct.c_uint)
-def get_iso_packet_buffer_simple(transfer, packet):
-    packet = packet.value
+def get_iso_packet_buffer_simple(transfer: ctx.POINTER[transfer],
+                                 packet: ct.c_uint) -> ctx.POINTER[ct.c_ubyte]:
+    packet_no: int = packet.value
 
     # oops..slight bug in the API. packet is an unsigned int, but we use
     # signed integers almost everywhere else. range-check and convert to
     # signed to avoid compiler warnings. FIXME for libusb-2.
-    if packet > INT_MAX:
-        return None
+    if packet_no > limits.INT_MAX:
+        return ct.POINTER(ct.c_ubyte)()
 
-    transfer = transfer[0]
+    transf = transfer[0]
 
-    if packet >= transfer.num_iso_packets:
-        return None
+    if packet_no >= transf.num_iso_packets:
+        return ct.POINTER(ct.c_ubyte)()
 
-    return ct.cast(transfer.buffer
-                   + ct.c_int(transfer.iso_packet_desc[0].length).value * packet,
+    return ct.cast(transf.buffer
+                   + ct.c_int(transf.iso_packet_desc[0].length).value * packet_no,
                    ct.POINTER(ct.c_ubyte))
+# get_iso_packet_buffer_simple = CFUNC(ct.POINTER(ct.c_ubyte), ct.POINTER(transfer),
+#                                      ct.c_uint)(get_iso_packet_buffer_simple)
 
 ## sync I/O ##
 
@@ -2600,13 +2637,17 @@ interrupt_transfer = CFUNC(ct.c_int,
 # :returns: number of bytes returned in data, or LIBUSB_ERROR code on failure
 
 # static inline
-@CFUNC(ct.c_int,
-       ct.POINTER(device_handle), ct.c_uint8, ct.c_uint8, ct.POINTER(ct.c_ubyte), ct.c_int)
-def get_descriptor(dev_handle, desc_type, desc_index, data, length):
-    return control_transfer(dev_handle,
+def get_descriptor(dev_handle: ctx.POINTER[device_handle], desc_type: ct.c_uint8,
+                   desc_index: ct.c_uint8, data: ctx.POINTER[ct.c_ubyte],
+                   length: ct.c_int) -> ct.c_int:
+    return typing.cast(ct.c_int,
+           control_transfer(dev_handle,
                             LIBUSB_ENDPOINT_IN, LIBUSB_REQUEST_GET_DESCRIPTOR,
-                            ct.c_uint16((desc_type << 8) | desc_index),
-                            0, data, ct.c_uint16(length), 1000)
+                            ct.c_uint16((typing.cast(int, desc_type) << 8)
+                                         | typing.cast(int, desc_index)),
+                            0, data, ct.c_uint16(typing.cast(int, length)), 1000))
+get_descriptor = CFUNC(ct.c_int, ct.POINTER(device_handle), ct.c_uint8, ct.c_uint8,
+                       ct.POINTER(ct.c_ubyte), ct.c_int)(get_descriptor)
 
 # \ingroup libusb::desc
 # Retrieve a descriptor from a device.
@@ -2623,13 +2664,17 @@ def get_descriptor(dev_handle, desc_type, desc_index, data, length):
 # \see libusb.get_string_descriptor_ascii()
 
 # static inline
-@CFUNC(ct.c_int,
-       ct.POINTER(device_handle), ct.c_uint8, ct.c_uint16, ct.POINTER(ct.c_ubyte), ct.c_int)
-def get_string_descriptor(dev_handle, desc_index, langid, data, length):
-    return control_transfer(dev_handle,
+def get_string_descriptor(dev_handle: ctx.POINTER[device_handle],
+                          desc_index: ct.c_uint8, langid: ct.c_uint16,
+                          data: ctx.POINTER[ct.c_ubyte], length: ct.c_int) -> ct.c_int:
+    return typing.cast(ct.c_int,
+           control_transfer(dev_handle,
                             LIBUSB_ENDPOINT_IN, LIBUSB_REQUEST_GET_DESCRIPTOR,
-                            ct.c_uint16((LIBUSB_DT_STRING << 8) | desc_index),
-                            langid, data, ct.c_uint16(length), 1000)
+                            ct.c_uint16((LIBUSB_DT_STRING << 8)
+                                        | typing.cast(int, desc_index)),
+                            langid, data, ct.c_uint16(typing.cast(int, length)), 1000))
+get_string_descriptor = CFUNC(ct.c_int, ct.POINTER(device_handle), ct.c_uint8, ct.c_uint16,
+                              ct.POINTER(ct.c_ubyte), ct.c_int)(get_string_descriptor)
 
 get_string_descriptor_ascii = CFUNC(ct.c_int,
     ct.POINTER(device_handle),
@@ -2967,7 +3012,7 @@ try:
         ("libusb_hotplug_get_user_data", dll), (
         (1, "ctx"),
         (1, "callback_handle"),))
-except: pass
+except: pass  # pragma: no cover
 
 _set_option_int = CFUNC(ct.c_int,
     ct.POINTER(context),
@@ -2987,16 +3032,20 @@ _set_option_log_cb = CFUNC(ct.c_int,
     (1, "option"),
     (1, "value"),))
 
-def set_option(ctx, option, *values):  # LIBUSB_CALLV
-    if option == LIBUSB_OPTION_LOG_LEVEL:
-        return _set_option_int(ctx, option, values[0])
-    elif option == LIBUSB_OPTION_LOG_CB:
-        return _set_option_log_cb(ctx, option, values[0])
-    elif option in [LIBUSB_OPTION_USE_USBDK,
-                    LIBUSB_OPTION_NO_DEVICE_DISCOVERY]:
-        return _set_option_int(ctx, option, 0)
+def set_option(ctx: ctx.POINTER[context], option: option,
+               *values: ct.c_int | log_cb_type) -> ct.c_int:
+    # LIBUSB_CALLV
+    opt = typing.cast(int, option)
+    if opt == LIBUSB_OPTION_LOG_LEVEL:
+        result = _set_option_int(ctx, opt, values[0])
+    elif opt == LIBUSB_OPTION_LOG_CB:
+        result = _set_option_log_cb(ctx, opt, values[0])
+    elif opt in [LIBUSB_OPTION_USE_USBDK,
+                 LIBUSB_OPTION_NO_DEVICE_DISCOVERY]:
+        result = _set_option_int(ctx, opt, 0)
     else:
-        return _set_option_int(ctx, option, 0)
+        result = _set_option_int(ctx, opt, 0)
+    return typing.cast(ct.c_int, result)
 
 # if defined("ENABLE_LOGGING") and not defined("ENABLE_DEBUG_LOGGING"):
 context._fields_ = [

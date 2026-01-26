@@ -245,7 +245,7 @@ def current_line(level=1):
     return getframeinfo(_getframe(level)).lineno
 
 
-#if is_windows and not defined("__CYGWIN__"):
+# if is_windows and not defined("__CYGWIN__"):
 
 def setenv(env: str, value: str, *, overwrite: bool = True) -> int:
     if os.environ.get(env) is not None and not overwrite:
@@ -267,4 +267,4 @@ def unsetenv(env: str) -> int:
     else:
         return 0
 
-#endif
+# endif
