@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.0.29.post7 (2026-02-13)
+-------------------------
+- Added support for Python 3.15
+- Setup update (mainly dependencies).
+
 1.0.29.post6 (2026-01-26)
 -------------------------
 - | Upgrade of dll-s for Windows and addition of shared libraries for

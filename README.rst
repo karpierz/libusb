@@ -20,7 +20,7 @@ Overview
 |
 | *libusb* API 1.0 documentation can be found at:
 
-  `libusb-1.0 API Reference <http://api.libusb.info>`__
+  `libusb-1.0 API Reference <https://libusb.info/>`__ on Documentation.
 
 |package_bold| uses the underlying *libusb* C shared library as specified in
 libusb.cfg (included libusb-X.X.* is the default), but there is also ability
@@ -68,7 +68,7 @@ Requirements
 
 - | It is a fully independent package.
   | All necessary things are installed during the normal installation process.
-- ATTENTION: currently works and tested only for Windows.
+- ATTENTION: currently fully tested only for Windows.
 
 Installation
 ============
