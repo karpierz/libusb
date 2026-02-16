@@ -1,0 +1,244 @@
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>libusb &#8212; libusb 1.0.29.post7 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=5283bb3d" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=a5c4661c" />
+    
+    <script src="_static/documentation_options.js?v=b7ce922a"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/tabs.js?v=3030b3cb"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">libusb 1.0.29.post7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">libusb</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="libusb">
+<h1>libusb<a class="headerlink" href="#libusb" title="Link to this heading">¶</a></h1>
+<p>Python binding for the <em>libusb</em> C library.</p>
+</section>
+<section id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h1>
+<div class="line-block">
+<div class="line">Python <strong>libusb</strong> module is a low-level binding for <em>libusb</em> C library.</div>
+<div class="line">It is an effort to allow python programs full access to the API implemented
+and provided by the well known <a class="reference external" href="https://libusb.info/">*libusb*</a> library.</div>
+</div>
+<p><a class="reference external" href="https://pypi.org/project/libusb/">PyPI record</a>.</p>
+<p><a class="reference external" href="https://karpierz.github.io/libusb/">Documentation</a>.</p>
+<div class="line-block">
+<div class="line"><strong>libusb</strong> is a lightweight Python package, based on the <em>ctypes</em> library.</div>
+<div class="line">It is fully compliant implementation of the original C <em>libusb</em> 1.0 API
+by implementing whole its functionality in a clean Python instead of C.</div>
+<div class="line"><br /></div>
+<div class="line"><em>libusb</em> API 1.0 documentation can be found at:</div>
+</div>
+<blockquote>
+<div><p><a class="reference external" href="https://libusb.info/">libusb-1.0 API Reference</a> on Documentation.</p>
+</div></blockquote>
+<p><strong>libusb</strong> uses the underlying <em>libusb</em> C shared library as specified in
+libusb.cfg (included libusb-X.X.* is the default), but there is also ability
+to specify it programmatically by one of the following ways:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">libusb</span>
+<span class="n">libusb</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">LIBUSB</span><span class="o">=</span><span class="s2">&quot;libusb C shared library absolute path&quot;</span><span class="p">)</span>
+<span class="c1"># or</span>
+<span class="n">libusb</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">LIBUSB</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>  <span class="c1"># included libusb-X.X.* will be used</span>
+</pre></div>
+</div>
+<section id="about-original-libusb">
+<h2>About original libusb:<a class="headerlink" href="#about-original-libusb" title="Link to this heading">¶</a></h2>
+<p>Borrowed from the <a class="reference external" href="https://libusb.info/">original website</a>:</p>
+<p><strong>libusb</strong> - A cross-platform user library to access USB devices</p>
+<p><strong>Overview</strong></p>
+<p><strong>libusb</strong> is a C library that provides generic access to USB devices.
+It is intended to be used by developers to facilitate the production of
+applications that communicate with USB hardware.</p>
+<p>It is <strong>portable</strong>: Using a single cross-platform API, it provides access
+to USB devices on Linux, OS X, Windows, Android, OpenBSD, etc.</p>
+<p>It is <strong>user-mode</strong>: No special privilege or elevation is required for the
+application to communicate with a device.</p>
+<p>It is <strong>version-agnostic</strong>: All versions of the USB protocol, from 1.0 to 3.1
+(latest), are supported.</p>
+<p><strong>What platforms are supported?</strong></p>
+<p>Linux, OS X, Windows, Windows CE, Android, OpenBSD/NetBSD, Haiku.</p>
+<p><strong>For additional information, please consult the</strong>
+<a class="reference external" href="https://github.com/libusb/libusb/wiki/FAQ">FAQ</a>
+<strong>or the</strong> <a class="reference external" href="https://github.com/libusb/libusb/wiki">Wiki</a>.</p>
+</section>
+</section>
+<section id="requirements">
+<h1>Requirements<a class="headerlink" href="#requirements" title="Link to this heading">¶</a></h1>
+<ul>
+<li><div class="line-block">
+<div class="line">It is a fully independent package.</div>
+<div class="line">All necessary things are installed during the normal installation process.</div>
+</div>
+</li>
+<li><p>ATTENTION: currently fully tested only for Windows.</p></li>
+</ul>
+</section>
+<section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h1>
+<p>Prerequisites:</p>
+<ul class="simple">
+<li><p>Python 3.10 or higher</p>
+<ul>
+<li><p><a class="reference external" href="https://www.python.org/">https://www.python.org/</a></p></li>
+<li><p>with C libusb 1.0.29 is a primary test environment.</p></li>
+</ul>
+</li>
+<li><p>pip</p>
+<ul>
+<li><p><a class="reference external" href="https://pypi.org/project/pip/">https://pypi.org/project/pip/</a></p></li>
+</ul>
+</li>
+</ul>
+<p>To install run:</p>
+<blockquote>
+<div><pre class="literal-block">python -m pip install --upgrade libusb</pre>
+</div></blockquote>
+</section>
+<section id="development">
+<h1>Development<a class="headerlink" href="#development" title="Link to this heading">¶</a></h1>
+<p>Prerequisites:</p>
+<ul>
+<li><p>Development is strictly based on <em>nox</em>. To install it run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">nox</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p>Visit <a class="reference external" href="https://github.com/karpierz/libusb">Development page</a>.</p>
+<p>Installation from sources:</p>
+<p>clone the sources:</p>
+<blockquote>
+<div><pre class="literal-block">git clone <a class="reference external" href="https://github.com/karpierz/libusb">https://github.com/karpierz/libusb</a> libusb</pre>
+</div></blockquote>
+<p>and run:</p>
+<blockquote>
+<div><pre class="literal-block">python -m pip install ./libusb</pre>
+</div></blockquote>
+<p>or on development mode:</p>
+<blockquote>
+<div><pre class="literal-block">python -m pip install --editable ./libusb</pre>
+</div></blockquote>
+</section>
+<section id="license">
+<h1>License<a class="headerlink" href="#license" title="Link to this heading">¶</a></h1>
+<blockquote>
+<div><div class="line-block">
+<div class="line">Copyright (c) 2016-2026 Adam Karpierz</div>
+<div class="line">Licensed under the zlib/libpng License</div>
+<div class="line"><a class="reference external" href="https://opensource.org/license/zlib">https://opensource.org/license/zlib</a></div>
+<div class="line">Please refer to the accompanying LICENSE file.</div>
+</div>
+</div></blockquote>
+</section>
+<section id="authors">
+<h1>Authors<a class="headerlink" href="#authors" title="Link to this heading">¶</a></h1>
+<ul class="simple">
+<li><p>Adam Karpierz &lt;<a class="reference external" href="mailto:adam&#37;&#52;&#48;karpierz&#46;net">adam<span>&#64;</span>karpierz<span>&#46;</span>net</a>&gt;</p></li>
+</ul>
+</section>
+<section id="sponsoring">
+<h1>Sponsoring<a class="headerlink" href="#sponsoring" title="Link to this heading">¶</a></h1>
+<div class="line-block">
+<div class="line">If you would like to sponsor the development of this project, your contribution
+is greatly appreciated.</div>
+<div class="line">As I am now retired, any support helps me dedicate more time to maintaining and
+improving this work.</div>
+</div>
+<p><a class="reference external" href="https://www.paypal.com/donate/?hosted_button_id=FX8L7CJUGLW7S">Donate</a></p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">libusb</a></li>
+<li><a class="reference internal" href="#overview">Overview</a><ul>
+<li><a class="reference internal" href="#about-original-libusb">About original libusb:</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#requirements">Requirements</a></li>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#development">Development</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
+<li><a class="reference internal" href="#authors">Authors</a></li>
+<li><a class="reference internal" href="#sponsoring">Sponsoring</a></li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/README.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">libusb 1.0.29.post7 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">libusb</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright Adam Karpierz.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>
