@@ -1,0 +1,8 @@
+Url:       https://github.com/libusb/libusb/archive/refs/tags/v1.0.30-rc1.zip
+Url redir: https://codeload.github.com/libusb/libusb/zip/refs/tags/v1.0.30-rc1
+Completed: 2026-03-09 08:12:16
+File name: libusb-1.0.30-rc1.zip
+File date: 2026-03-09 08:12:16.024885
+File size: 519289
+SHA256sum: 180C13B95DCFEE7E59AB4830E58E11A1417BB3B383E91E60B0360D9085C33C6F
+SHA1sum:   6A6E1123E6022881C610913FD52F6CBFC9CAC102

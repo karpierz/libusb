@@ -247,7 +247,7 @@ def main(argv=sys.argv[1:]):
             i += 1
             device_name = argv[i]
         else:
-            print("Usage python {} [-v] [-d </dev/bus/usb/...>]".format(progname))
+            print("Usage: python {} [-v] [-d </dev/bus/usb/...>]".format(progname))
             print("Note use -d to test libusb.wrap_sys_device()")
             return 1
         i += 1

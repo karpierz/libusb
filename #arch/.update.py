@@ -10,15 +10,18 @@ import bs4
 from utlx import module_path, Path
 import patoolib
 
+# https://anaconda.org/conda-forge/libusb/files/manage?channel=main&type=conda&version=1.0.29
+# http://ftp.debian.org/debian/pool/main/libu/libusb-1.0
+
 here = Path(module_path())
 
 PKG_NAME        = "libusb"
 CONDA_VERSION   = "1.0.29"
-DEB_VERSION     = "1.0.29"
+DEB_VERSION     = "1.0.30~rc1"
 CONDA_BUILD_NO  = "0"
 DEB_SO_NO       = "1.0"
 DEB_SO_BUILD_NO = "0"
-DEB_BUILD_NO    = "2"
+DEB_BUILD_NO    = "1"
 
 conda_channel = "main"
 conda_type    = "conda"
@@ -48,7 +51,7 @@ debian_archs = (
     #"armel",
     "ppc64el",
     #"mips64el",
-    "riscv64",
+    #"riscv64",
     "s390x",
 )
 

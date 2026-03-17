@@ -262,7 +262,7 @@ def test_multi_init(enumer: int) -> int:
                   tinfo[t].iteration,
                   usb_error_name(tinfo[t].err)),
                   file=sys.stderr)
-        elif enumer:
+        if enumer:
             if t > 0 and tinfo[t].devcount != last_devcount:
                 devcount_mismatch += 1
                 print("Device count mismatch: "

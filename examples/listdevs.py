@@ -23,7 +23,7 @@ import ctypes as ct
 import libusb as usb
 
 
-def print_devs(devs):
+def print_devs(devs, verbose: int):
 
     path = (ct.c_uint8 * 8)()
 
@@ -46,12 +46,44 @@ def print_devs(devs):
             print(" path: {:d}".format(path[0]), end="")
             for j in range(1, r):
                 print(".{:d}".format(path[j]), end="")
+        if verbose and hasattr(usb, "get_device_string"):
+            string_buffer = ct.create_string_buffer(usb.LIBUSB_DEVICE_STRING_BYTES_MAX)
 
+            r = usb.get_device_string(dev, usb.LIBUSB_DEVICE_STRING_MANUFACTURER,
+                                      string_buffer, ct.sizeof(string_buffer))
+            if r >= 0:
+                print("\n    manufacturer = {}".format(string_buffer.value.decode()), end="")
+
+            r = usb.get_device_string(dev, usb.LIBUSB_DEVICE_STRING_PRODUCT,
+                                      string_buffer, ct.sizeof(string_buffer))
+            if r >= 0:
+                print("\n    product = {}".format(string_buffer.value.decode()), end="")
+
+            r = usb.get_device_string(dev, usb.LIBUSB_DEVICE_STRING_SERIAL_NUMBER,
+                                      string_buffer, ct.sizeof(string_buffer))
+            if r >= 0:
+                print("\n    serial_number = {}".format(string_buffer.value.decode()), end="")
         print()
         i += 1
 
 
+def usage(progname: str) -> int:
+    print("usage: python {} [--verbose]".format(progname))
+    return 1
+
+
 def main(argv=sys.argv[1:]):
+
+    progname = sys.argv[0]
+
+    verbose = 0
+    i = 0
+    while i < len(argv):
+        if argv[i] in ("-v", "--verbose"):
+            verbose += 1
+        else:
+            return usage(progname)
+        i += 1
 
     r = (usb.init_context(None, None, 0)
          if hasattr(usb, "init_context") else
@@ -65,7 +97,7 @@ def main(argv=sys.argv[1:]):
         if cnt < 0:
             return cnt
 
-        print_devs(devs)
+        print_devs(devs, verbose)
 
         usb.free_device_list(devs, 1)
     finally:

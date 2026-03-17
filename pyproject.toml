@@ -7,7 +7,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name        = 'libusb'
-version     = '1.0.29.post7'
+version     = '1.0.30rc1'
 description = 'Python binding for the libusb C library.'
 authors = [
     { name  = 'Adam Karpierz', email = 'adam@karpierz.net' },

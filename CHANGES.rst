@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.0.30rc1 (2026-03-11)
+----------------------
+- Libusb API update: v.1.0.29 -> v.1.0.30
+- Upgrade of dll-s for Windows: libusb v.1.0.29 -> v.1.0.30
+- Setup update (mainly dependencies).
+
 1.0.29.post7 (2026-02-13)
 -------------------------
 - Added support for Python 3.15

@@ -129,9 +129,10 @@ def LIBUSB_DEPRECATED_FOR(f: _F) -> _F:
 # <li>libusb version 1.0.27: LIBUSB_API_VERSION = 0x0100010A
 # <li>libusb version 1.0.28: LIBUSB_API_VERSION = 0x0100010A
 # <li>libusb version 1.0.29: LIBUSB_API_VERSION = 0x0100010B
+# <li>libusb version 1.0.30: LIBUSB_API_VERSION = 0x0100010C
 # </ul>
 
-LIBUSB_API_VERSION = 0x0100010B
+LIBUSB_API_VERSION = 0x0100010C
 
 # \def LIBUSBX_API_VERSION
 # \ingroup libusb_misc
@@ -226,6 +227,24 @@ class_code = ct.c_int
     # Personal Healthcare
     LIBUSB_CLASS_PERSONAL_HEALTHCARE,
 
+    # Audio & Video
+    LIBUSB_CLASS_AUDIO_VIDEO,
+
+    # Billboard
+    LIBUSB_CLASS_BILLBOARD,
+
+    # Interface class
+    LIBUSB_CLASS_TYPE_C_BRIDGE,
+
+    # Bulk display
+    LIBUSB_CLASS_BULK_DISPLAY_PROTOCOL,
+
+    # MCTP
+    LIBUSB_CLASS_MCTP,
+
+    # I3C
+    LIBUSB_CLASS_I3C,
+
     # Diagnostic Device
     LIBUSB_CLASS_DIAGNOSTIC_DEVICE,
 
@@ -242,7 +261,8 @@ class_code = ct.c_int
     LIBUSB_CLASS_VENDOR_SPEC,
 
 ) = (0x00, 0x01, 0x02, 0x03, 0x05, 0x06, 0x06, 0x07, 0x08, 0x09,
-     0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0xdc, 0xe0, 0xef, 0xfe, 0xff)
+     0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14,
+     0x3c, 0xdc, 0xe0, 0xef, 0xfe, 0xff)
 
 # \ingroup libusb::desc
 # Descriptor types as defined by the USB specification.
@@ -1697,6 +1717,31 @@ option = ct.c_int
 ) = (0, 1, 2, 3, 4)
 LIBUSB_OPTION_WEAK_AUTHORITY = LIBUSB_OPTION_NO_DEVICE_DISCOVERY
 
+# \ingroup libusb_desc
+# The device string type.
+
+device_string_type = ct.c_int
+(
+    LIBUSB_DEVICE_STRING_MANUFACTURER,
+    LIBUSB_DEVICE_STRING_PRODUCT,
+    LIBUSB_DEVICE_STRING_SERIAL_NUMBER,
+    LIBUSB_DEVICE_STRING_COUNT,  # The total number of string types.
+
+) = (0, 1, 2, 3)
+
+# \ingroup libusb_desc
+# The maximum length for a device string descriptor in UTF-8.
+# 
+# 255 max descriptor length with 2 byte header 
+#  => 253 bytes UTF-16LE, no null termination (USB 2.0 9.6.7)
+#  => 126.5 codepoints
+#  => 126 * 3 + 1
+#  => 382 bytes
+# 
+# Stay with 256 * 2/3 = 384 to be safe.
+
+LIBUSB_DEVICE_STRING_BYTES_MAX = 384
+
 # \ingroup libusb::lib
 # Callback function for handling log messages.
 # \param ctx the context which is related to the log message, or NULL if it
@@ -1814,6 +1859,19 @@ unref_device = CFUNC(None,
     ct.POINTER(device))(
     ("libusb_unref_device", dll), (
     (1, "dev"),))
+
+try:
+    get_device_string = CFUNC(ct.c_int,
+        ct.POINTER(device),
+        device_string_type,
+        ct.c_char_p,
+        ct.c_int)(
+        ("libusb_get_device_string", dll), (
+        (1, "dev"),
+        (1, "string_type"),
+        (1, "data"),
+        (1, "length"),))
+except: pass  # pragma: no cover
 
 get_configuration = CFUNC(ct.c_int,
     ct.POINTER(device_handle),
@@ -1957,6 +2015,13 @@ try:
         ct.POINTER(platform_descriptor))(
         ("libusb_free_platform_descriptor", dll), (
         (1, "platform_descriptor"),))
+except: pass  # pragma: no cover
+
+try:
+    get_session_data = CFUNC(ct.c_ulong,
+        ct.POINTER(device))(
+        ("libusb_get_session_data", dll), (
+        (1, "dev"),))
 except: pass  # pragma: no cover
 
 get_bus_number = CFUNC(ct.c_uint8,
@@ -2194,6 +2259,31 @@ set_auto_detach_kernel_driver = CFUNC(ct.c_int,
     ("libusb_set_auto_detach_kernel_driver", dll), (
     (1, "dev_handle"),
     (1, "enable"),))
+
+try:
+    endpoint_supports_raw_io = CFUNC(ct.c_int,
+        ct.POINTER(device_handle),
+        ct.c_uint8)(
+        ("libusb_endpoint_supports_raw_io", dll), (
+        (1, "dev_handle"),
+        (1, "endpoint"),))
+
+    endpoint_set_raw_io = CFUNC(ct.c_int,
+        ct.POINTER(device_handle),
+        ct.c_uint8,
+        ct.c_int)(
+        ("libusb_endpoint_set_raw_io", dll), (
+        (1, "dev_handle"),
+        (1, "endpoint"),
+        (1, "enable"),))
+
+    get_max_raw_io_transfer_size = CFUNC(ct.c_int,
+        ct.POINTER(device_handle),
+        ct.c_uint8)(
+        ("libusb_get_max_raw_io_transfer_size", dll), (
+        (1, "dev_handle"),
+        (1, "endpoint"),))
+except: pass  # pragma: no cover
 
 ## async I/O ##
 

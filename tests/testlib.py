@@ -76,8 +76,7 @@ def print_usage(progname: str):
 
 def logf(fmt: str, *args):
     """Logs some test information or state"""
-    print(fmt.format(*args), file=sys.stdout)
-    sys.stdout.flush()
+    print(fmt.format(*args), flush=True, file=sys.stdout)
 
 
 def run_tests(argv: list, tests: list) -> int:

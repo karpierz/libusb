@@ -1,0 +1,8 @@
+Url:       https://github.com/libusb/libusb/releases/download/v1.0.30-rc1/libusb-1.0.30-rc1.7z
+Url redir: https://release-assets.githubusercontent.com/github-production-release-asset/15120676/c2808f94-5b3a-47a9-89d8-eb4662e041cf?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-03-09T08%3A09%3A17Z&rscd=attachment%3B+filename%3Dlibusb-1.0.30-rc1.7z&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-03-09T07%3A09%3A09Z&ske=2026-03-09T08%3A09%3A17Z&sks=b&skv=2018-11-09&sig=5fo0ljueouX7zm7v28O7x2ozrzgpNK5pInMOJqZrdAw%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc3MzA0MDY0MCwibmJmIjoxNzczMDQwMzQwLCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.y-55V-1AYMTVTD_453uWqlwxqCKeLC3u0VyZfc1iVc8&response-content-disposition=attachment%3B%20filename%3Dlibusb-1.0.30-rc1.7z&response-content-type=application%2Foctet-stream
+Completed: 2026-03-09 08:12:23
+File name: libusb-1.0.30-rc1.7z
+File date: 2026-02-24 11:27:35
+File size: 6141442
+SHA256sum: 62CF163880D9D4B607CC4F7F16462C6C213ABC5CF513D18C6679098CBBC8891D
+SHA1sum:   C216497DE34C6DABE9BEE6A55CC1A40E417EB10A

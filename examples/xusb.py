@@ -532,7 +532,7 @@ def test_mass_storage(handle, endpoint_in, endpoint_out) -> int:
     for i in range(8):
         vid[i]      = buffer[8  + i]
         pid[i]      = buffer[16 + i]
-        rev[i // 2] = buffer[32 + i // 2]  # instead of another loop
+        rev[i // 2] = buffer[32 + (i // 2)]  # instead of another loop
     vid[8] = 0
     pid[8] = 0
     rev[4] = 0
