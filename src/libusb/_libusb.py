@@ -1731,13 +1731,13 @@ device_string_type = ct.c_int
 
 # \ingroup libusb_desc
 # The maximum length for a device string descriptor in UTF-8.
-# 
-# 255 max descriptor length with 2 byte header 
+#
+# 255 max descriptor length with 2 byte header
 #  => 253 bytes UTF-16LE, no null termination (USB 2.0 9.6.7)
 #  => 126.5 codepoints
 #  => 126 * 3 + 1
 #  => 382 bytes
-# 
+#
 # Stay with 256 * 2/3 = 384 to be safe.
 
 LIBUSB_DEVICE_STRING_BYTES_MAX = 384

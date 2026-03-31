@@ -193,9 +193,9 @@ def TEST_CLEAN_EXIT(test_ctx, code):
 def EXPECT_SUCCESS(test_ctx, expr):
     # Fail the test if the expression does not evaluate to libusb.LIBUSB_SUCCESS.
     result = int(expr)
-    if result != usb.LIBUSB_SUCCESS:  #expr
-        logf("Not success ({}) at {}:{:d}",
-             expr, current_file(2), current_line(2))
+    if result != usb.LIBUSB_SUCCESS:
+        logf("Not success ({}) at {}:{:d}", expr,
+             current_file(2), current_line(2))
         TEST_CLEAN_EXIT(test_ctx, test_result.TEST_STATUS_FAILURE)
 
 
@@ -218,8 +218,8 @@ def EXPECT_GE(test_ctx, lhs, rhs):
     _EXPECT(test_ctx, operator.ge, lhs, rhs)
 
 def _EXPECT(test_ctx, operator, lhs, rhs):
-    # Use relational operator to compare two values and fail the test if the
-    # comparison is false. Intended to compare integer or pointer types.
+    # Use relational operator to compare two values and fail the test if
+    # the comparison is false. Intended to compare integer or pointer types.
     #
     # Example: _EXPECT(test_ctx, operator.eq, 0, 1) -> fail,
     #          _EXPECT(test_ctx, operator.eq, 0, 0) -> ok.

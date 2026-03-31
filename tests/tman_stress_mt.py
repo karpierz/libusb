@@ -25,8 +25,6 @@ import libusb as usb
 from libusb._platform import defined, is_windows, is_posix
 if is_windows: from libusb._platform.windows import winapi
 
-usb_error_name = lambda status: usb.error_name(status).decode("utf-8")
-
 if is_posix:
 
     #include <pthread.h>
@@ -260,7 +258,7 @@ def test_multi_init(enumer: int) -> int:
             print("Thread {} failed (iteration {}): {}".format(
                   tinfo[t].number,
                   tinfo[t].iteration,
-                  usb_error_name(tinfo[t].err)),
+                  usb.error_name(tinfo[t].err).decode()),
                   file=sys.stderr)
         if enumer:
             if t > 0 and tinfo[t].devcount != last_devcount:

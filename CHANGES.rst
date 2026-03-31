@@ -1,11 +1,12 @@
 Changelog
 =========
 
-1.0.30rc1 (2026-03-11)
+1.0.30rc1 (2026-03-30)
 ----------------------
 - Libusb API update: v.1.0.29 -> v.1.0.30
 - Upgrade of dll-s for Windows: libusb v.1.0.29 -> v.1.0.30
-- Setup update (mainly dependencies).
+- Upgrade of so-s  for Linux:   libusb v.1.0.29 -> v.1.0.30
+- Setup update and improvement.
 
 1.0.29.post7 (2026-02-13)
 -------------------------
@@ -201,37 +202,9 @@ Changelog
 
 1.0.22b2 (2018-11-08)
 ---------------------
-- Setup improvement.
-- Update required setuptools version.
-
-1.0.22b1 (2018-03-30)
----------------------
 - Upgrade to the libusb v.1.0.22
+- Update required setuptools version.
 - Setup improvement.
-
-1.0.21b4 (2018-02-26)
----------------------
-- Improve and simplify setup and packaging.
-
-1.0.21b3 (2018-02-25)
----------------------
-- Setup improvement.
-
-1.0.21b2 (2017-12-18)
----------------------
-- Fix the error of platform detecting.
-
-1.0.21b1 (2017-10-11)
----------------------
-- First beta release.
-
-1.0.21a3 (2017-08-20)
----------------------
-- Next alpha release.
-
-1.0.21a0 (2016-09-24)
----------------------
-- First alpha release.
 
 0.0.1 (2016-09-23)
 ------------------

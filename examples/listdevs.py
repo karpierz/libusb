@@ -67,13 +67,15 @@ def print_devs(devs, verbose: int):
         i += 1
 
 
-def usage(progname: str) -> int:
+def usage(error_code: int = 1) -> int:
+    global progname
     print("usage: python {} [--verbose]".format(progname))
-    return 1
+    return error_code
 
 
 def main(argv=sys.argv[1:]):
 
+    global progname
     progname = sys.argv[0]
 
     verbose = 0
@@ -82,7 +84,7 @@ def main(argv=sys.argv[1:]):
         if argv[i] in ("-v", "--verbose"):
             verbose += 1
         else:
-            return usage(progname)
+            return usage()
         i += 1
 
     r = (usb.init_context(None, None, 0)

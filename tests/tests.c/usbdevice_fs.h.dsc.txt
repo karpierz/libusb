@@ -1,0 +1,7 @@
+Url:       https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/include/uapi/linux/usbdevice_fs.h
+Completed: 2026-03-18 23:52:03
+File name: usbdevice_fs.h
+File date: 2026-03-18 23:52:03.073901
+File size: 8372
+SHA256sum: D822C4C7AC5DD7FA54CF0D1A440FE3413EDFEE443A611A6D8D4CE69856393D25
+SHA1sum:   59A41BBF6BD096366437BE452CF0703BD5C6CAB8

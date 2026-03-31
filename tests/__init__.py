@@ -1,4 +1,4 @@
-# Copyright (c) 2016 Adam Karpierz
+# Copyright (c) 1994 Adam Karpierz
 # SPDX-License-Identifier: Zlib
 
 __all__ = ('top_dir', 'test_dir')

@@ -33,8 +33,6 @@ import libusb as usb
 from libusb._platform import defined, is_windows, is_posix
 if is_windows: from libusb._platform.windows import winapi
 
-usb_strerror = lambda r: usb.strerror(r).decode("utf-8")
-
 if defined("DPFP_THREADED"):
 
     if is_posix:
@@ -130,12 +128,12 @@ STATE_AWAIT_IMAGE                        = 4
 STATE_AWAIT_MODE_CHANGE_AWAIT_FINGER_OFF = 5
 STATE_AWAIT_IRQ_FINGER_REMOVED           = 6
 
-VID = 0x05ba
-PID = 0x000a
+VID = 0x05BA
+PID = 0x000A
 
 state = 0  # int
 devh  = ct.POINTER(usb.device_handle)()
-imgbuf = (ct.c_ubyte * 0x1b340)()
+imgbuf = (ct.c_ubyte * 0x1B340)()
 irqbuf = (ct.c_ubyte * INTR_LENGTH)()
 img_transfer = ct.POINTER(usb.transfer)()
 irq_transfer = ct.POINTER(usb.transfer)()
@@ -201,7 +199,7 @@ def print_f0_data() ->int:
     global devh
 
     data = (ct.c_ubyte * 0x10)()
-    r = usb.control_transfer(devh, CTRL_IN, USB_RQ, 0xf0, 0, data, ct.sizeof(data), 0)
+    r = usb.control_transfer(devh, CTRL_IN, USB_RQ, 0xF0, 0, data, ct.sizeof(data), 0)
     if r < 0:
         print("F0 error {}".format(r), file=sys.stderr)
         return r
@@ -256,7 +254,7 @@ def set_mode(data) -> int:
     global devh
 
     print("set mode {:02x}".format(data))
-    r = usb.control_transfer(devh, CTRL_OUT, USB_RQ, 0x4e, 0, ct.byref(data), 1, 0)
+    r = usb.control_transfer(devh, CTRL_OUT, USB_RQ, 0x4E, 0, ct.byref(data), 1, 0)
     if r < 0:
         print("set mode error {}".format(r), file=sys.stderr)
         return r
@@ -298,7 +296,7 @@ def set_mode_async(data) -> int:
         return -1
 
     print("async set mode {:02x}".format(data))
-    usb.fill_control_setup(buf, CTRL_OUT, USB_RQ, 0x4e, 0, 1)
+    usb.fill_control_setup(buf, CTRL_OUT, USB_RQ, 0x4E, 0, 1)
     buf[usb.LIBUSB_CONTROL_SETUP_SIZE] = data
     usb.fill_control_transfer(transfer, devh, buf, cb_mode_changed, None, 1000)
 
@@ -563,7 +561,7 @@ def main(argv=sys.argv[1:]):
          if hasattr(usb, "init_context") else
          usb.init(None))
     if r < 0:
-        print("failed to initialise libusb {} - {}".format(r, usb_strerror(r)),
+        print("failed to initialise libusb {} - {}".format(r, usb.strerror(r).decode()),
               file=sys.stderr)
         sys.exit(1)
 
@@ -575,7 +573,7 @@ def main(argv=sys.argv[1:]):
 
         r = usb.claim_interface(devh, 0)
         if r < 0:
-            print("claim interface error {} - {}".format(r, usb_strerror(r)),
+            print("claim interface error {} - {}".format(r, usb.strerror(r).decode()),
                   file=sys.stderr)
             return abs(r)
         print("claimed interface")
@@ -634,13 +632,13 @@ def main(argv=sys.argv[1:]):
             if img_transfer:
                 r = usb.cancel_transfer(img_transfer)
                 if r < 0:
-                    print("failed to cancel transfer {} - {}".format(r, usb_strerror(r)),
+                    print("failed to cancel transfer {} - {}".format(r, usb.strerror(r).decode()),
                           file=sys.stderr)
 
             if irq_transfer:
                 r = usb.cancel_transfer(irq_transfer)
                 if r < 0:
-                    print("failed to cancel transfer {} - {}".format(r, usb_strerror(r)),
+                    print("failed to cancel transfer {} - {}".format(r, usb.strerror(r).decode()),
                           file=sys.stderr)
 
             while img_transfer or irq_transfer:

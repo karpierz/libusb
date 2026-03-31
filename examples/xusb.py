@@ -28,9 +28,6 @@ import libusb as usb
 from libusb._platform import is_windows
 if is_windows: from libusb._platform.windows import winapi
 
-usb_strerror   = lambda r: usb.strerror(r).decode("utf-8")
-usb_error_name = lambda status: usb.error_name(status).decode("utf-8")
-
 UINT16_MAX = ct.c_uint16(-1).value
 
 def msleep(msecs: int):
@@ -55,7 +52,7 @@ def perr(fmt, *args):
     sys.stderr.flush()
 
 def err_exit(errcode):
-    perr("   {}\n", usb.strerror(errcode).decode("utf-8"))
+    perr("   {}\n", usb.strerror(errcode).decode())
     return -1
 
 B           = lambda x: 1 if x != 0 else 0
@@ -152,7 +149,7 @@ PID = 0  # ct.c_uint16
 
 
 #@annotate(buffer=unsigned char*, size=unsigned int)
-def display_buffer_hex(buffer, size):
+def display_buffer_hex(buffer, size) -> None:
 
     for i in range(0, size, 16):
         print("\n  {:08x}  ".format(i), end="")
@@ -172,10 +169,10 @@ def display_buffer_hex(buffer, size):
     print()
 
 
-#@annotate(str|None, uuid=const ct.POINTER(ct.c_uint8))
-def uuid_to_string(uuid):
+#@annotate(uuid=const ct.POINTER(ct.c_uint8))
+def uuid_to_string(uuid) -> str | None:
 
-    if uuid == NULL:
+    if not uuid:
         return None
     return ("{{{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}"
             "-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}}}".format(
@@ -339,10 +336,10 @@ def set_xbox_actuators(handle, left, right) -> int:
 
 _tag = 1  # ct.c_uint32
 
-#@annotate(int, handle=ct.POINTER(usb.device_handle), endpoint=int)
+#@annotate(handle=ct.POINTER(usb.device_handle), endpoint=int,
 #          ct.c_uint8 lun, ct.c_uint8* cdb, ct.c_uint8 direction, int data_length,
 #          ct.c_uint32* ret_tag):
-def send_mass_storage_command(handle, endpoint, lun, cdb, direction, data_length, ret_tag):
+def send_mass_storage_command(handle, endpoint, lun, cdb, direction, data_length, ret_tag) -> int:
 
     global _tag
 
@@ -389,7 +386,7 @@ def send_mass_storage_command(handle, endpoint, lun, cdb, direction, data_length
         if r != usb.LIBUSB_ERROR_PIPE or i >= RETRY_MAX:
             break
     if r != usb.LIBUSB_SUCCESS:
-        perr("   send_mass_storage_command: {}\n", usb_strerror(r))
+        perr("   send_mass_storage_command: {}\n", usb.strerror(r).decode())
         return -1
 
     print("   sent {:d} CDB bytes".format(cdb_len))
@@ -415,7 +412,7 @@ def get_mass_storage_status(handle, endpoint, expected_tag) -> int:
         if r != usb.LIBUSB_ERROR_PIPE or i >= RETRY_MAX:
             break
     if r != usb.LIBUSB_SUCCESS:
-        perr("   get_mass_storage_status: {}\n", usb_strerror(r))
+        perr("   get_mass_storage_status: {}\n", usb.strerror(r).decode())
         return -1
     size = size.value
     if size != 13:
@@ -445,7 +442,7 @@ def get_mass_storage_status(handle, endpoint, expected_tag) -> int:
 
 
 #@annotate(handle=ct.POINTER(usb.device_handle), endpoint_in=int, endpoint_out=int)
-def get_sense(handle, endpoint_in, endpoint_out):
+def get_sense(handle, endpoint_in, endpoint_out) -> None:
 
     # Request Sense
     print("Request Sense:")
@@ -459,7 +456,7 @@ def get_sense(handle, endpoint_in, endpoint_out):
     size = ct.c_int()
     rc = usb.bulk_transfer(handle, endpoint_in, ct.cast(ct.pointer(sense), ct.POINTER(ct.c_ubyte)), REQUEST_SENSE_LENGTH, ct.byref(size), 1000)
     if rc < 0:
-        print("libusb.bulk_transfer failed: {}".format(usb_error_name(rc)))
+        print("libusb.bulk_transfer failed: {}".format(usb.error_name(rc).decode()))
         return
 
     size = size.value
@@ -537,7 +534,7 @@ def test_mass_storage(handle, endpoint_in, endpoint_out) -> int:
     pid[8] = 0
     rev[4] = 0
     print("   VID:PID:REV \"{:>8s}\":\"{:>8s}\":\"{:>4s}\"".format(
-          bytes(vid).decode("utf-8"), bytes(pid).decode("utf-8"), bytes(rev).decode("utf-8")))
+          bytes(vid).decode(), bytes(pid).decode(), bytes(rev).decode()))
     if get_mass_storage_status(handle, endpoint_in, expected_tag) == -2:
         get_sense(handle, endpoint_in, endpoint_out)
 
@@ -603,8 +600,8 @@ def test_mass_storage(handle, endpoint_in, endpoint_out) -> int:
 
 # HID
 
-#@annotate(int, ct.c_uint8* hid_report_descriptor, int size, int type)
-def get_hid_record_size(hid_report_descriptor, size, type):
+#@annotate(ct.c_uint8* hid_report_descriptor, int size, int type)
+def get_hid_record_size(hid_report_descriptor, size, type) -> int:
 
     record_size = [0, 0, 0]  # [int, ...]
     nb_bits  = 0  # unsigned int
@@ -715,7 +712,7 @@ def test_hid(handle, endpoint_in) -> int:
                 print("   Detected stall - resetting pipe...")
                 usb.clear_halt(handle, 0)
             else:
-                print("   Error: {}".format(usb_strerror(r)))
+                print("   Error: {}".format(usb.strerror(r).decode()))
 
         del report_buffer
 
@@ -749,7 +746,7 @@ def test_hid(handle, endpoint_in) -> int:
                 print("   Detected stall - resetting pipe...")
                 usb.clear_halt(handle, 0)
             else:
-                print("   Error: {}".format(usb_strerror(r)))
+                print("   Error: {}".format(usb.strerror(r).decode()))
 
         # Attempt a bulk read from endpoint 0 (this should just return a raw input report)
         print("\nTesting interrupt read using endpoint {:02X}...".format(endpoint_in))
@@ -757,7 +754,7 @@ def test_hid(handle, endpoint_in) -> int:
         if r >= 0:
             display_buffer_hex(report_buffer, size)
         else:
-            print("   {}".format(usb_strerror(r)))
+            print("   {}".format(usb.strerror(r).decode()))
 
         del report_buffer
 
@@ -765,7 +762,7 @@ def test_hid(handle, endpoint_in) -> int:
 
 
 #@annotate(handle=ct.POINTER(usb.device_handle), ct.c_uint8 bRequest, int iface_number)
-def read_ms_winsub_feature_descriptors(handle, bRequest, iface_number):
+def read_ms_winsub_feature_descriptors(handle, bRequest, iface_number) -> None:
 
     # Read the MS WinUSB Feature Descriptors, that are used on Windows 8 for automated driver installation
 
@@ -801,7 +798,7 @@ def read_ms_winsub_feature_descriptors(handle, bRequest, iface_number):
     for i in range(2):
 
         print("\nReading {} OS Feature Descriptor (wIndex = 0x{:04x}):".format(
-              os_fd[i].desc.decode("utf-8"), os_fd[i].index))
+              os_fd[i].desc.decode(), os_fd[i].index))
 
         # Read the header part
         r = usb.control_transfer(handle,
@@ -813,7 +810,7 @@ def read_ms_winsub_feature_descriptors(handle, bRequest, iface_number):
                                  os_desc, os_fd[i].header_size,
                                  1000)
         if r < os_fd[i].header_size:
-            perr("   Failed: {}", usb_strerror(r)
+            perr("   Failed: {}", usb.strerror(r).decode()
                                   if r < 0 else "header size is too small")
             return
         le_type_punning_IS_fine = ct.cast(os_desc, ct.c_void_p)
@@ -830,14 +827,14 @@ def read_ms_winsub_feature_descriptors(handle, bRequest, iface_number):
                                  os_desc, ct.c_uint16(length),
                                  1000)
         if r < 0:
-            perr("   Failed: {}", usb_strerror(r))
+            perr("   Failed: {}", usb.strerror(r).decode())
             return
         else:
             display_buffer_hex(os_desc, r)
 
 
 #@annotate(ss_attr=ct.POINTER(usb.ssplus_sublink_attribute))
-def print_sublink_speed_attribute(ss_attr):
+def print_sublink_speed_attribute(ss_attr) -> None:
      exponent = " KMG"
      print("                  id=%u speed=%u%cbs %s %s SuperSpeed%s" % (
            ss_attr[0].ssid,
@@ -849,7 +846,7 @@ def print_sublink_speed_attribute(ss_attr):
 
 
 #@annotate(dev_cap=ct.POINTER(usb.bos_dev_capability_descriptor))
-def print_device_cap(dev_cap):
+def print_device_cap(dev_cap) -> None:
 
     if dev_cap[0].bDevCapabilityType == usb.LIBUSB_BT_USB_2_0_EXTENSION:
 
@@ -1052,12 +1049,12 @@ def test_device(vid, pid) -> int:
             elif r == usb.LIBUSB_ERROR_NOT_SUPPORTED:
                 print("(not supported)")
             else:
-                perr("\n   Failed (error {}) {}\n", r, usb_strerror(r))
+                perr("\n   Failed (error {}) {}\n", r, usb.strerror(r).decode())
 
             print("\nClaiming interface {}...".format(iface))
             r = usb.claim_interface(handle, iface)
             if r != usb.LIBUSB_SUCCESS:
-                perr("   Failed (error {}) {}\n", r, usb_strerror(r))
+                perr("   Failed (error {}) {}\n", r, usb.strerror(r).decode())
 
         print("\nReading string descriptors:")
         string = (ct.c_ubyte * 128)()
@@ -1067,7 +1064,7 @@ def test_device(vid, pid) -> int:
             if usb.get_string_descriptor_ascii(handle, string_index[i],
                                                string, ct.sizeof(string)) > 0:
                 print("   String ({:#04x}): \"{}\"".format(
-                      string_index[i], bytes(string).rstrip(b"\0").decode("utf-8")))
+                      string_index[i], bytes(string).rstrip(b"\0").decode()))
 
         print("\nReading OS string descriptor:", end="")
         r = usb.get_string_descriptor(handle, MS_OS_DESC_STRING_INDEX, 0,
@@ -1102,7 +1099,7 @@ def test_device(vid, pid) -> int:
                         if usb.get_string_descriptor_ascii(handle, iad.iFunction,
                                                            string, ct.sizeof(string)) > 0:
                             print("                  iFunction: {} ({})".format(iad.iFunction,
-                                                                                bytes(string).decode("utf-8")))
+                                                                                bytes(string).decode()))
                         else:
                             print("                  iFunction: {} "
                                   "(libusb.get_string_descriptor_ascii failed!)".format(iad.iFunction))
@@ -1146,7 +1143,8 @@ def test_device(vid, pid) -> int:
     return 0
 
 
-def display_help(progname: str, error_code: int = 1):
+def display_help(error_code: int = 1) -> int:
+    global progname
     print("usage: python {} [-h] [-d] [-i] [-k] [-b file] [-l lang] "
           "[-j] [-x] [-s] [-p] [-w] [vid:pid]".format(progname))
     print("   -h      : display usage\n"
@@ -1166,6 +1164,7 @@ def display_help(progname: str, error_code: int = 1):
 
 def main(argv=sys.argv[1:]):
 
+    global progname
     progname = sys.argv[0]
 
     global VID, PID
@@ -1191,7 +1190,7 @@ def main(argv=sys.argv[1:]):
         return 1
 
     if len(argv) < 1 or len(argv) > 6:
-        return display_help(progname)
+        return display_help()
 
     for j in range(len(argv)):
         arglen = len(argv[j])
@@ -1243,9 +1242,9 @@ def main(argv=sys.argv[1:]):
                 PID = 0x0289
                 test_mode = USE_XBOX
             elif opt == 'h':
-                return display_help(progname, 0)
+                return display_help(0)
             else:
-                return display_help(progname)
+                return display_help()
         else:
             for i in range(arglen):
                 if argv[j][i] == ':':
@@ -1258,7 +1257,7 @@ def main(argv=sys.argv[1:]):
                     PID = ct.c_uint16(tmp_pid).value
                     break
             else:
-                return display_help(progname)
+                return display_help()
 
     version = usb.get_version()[0]
     print("Using libusb v{}.{}.{}.{}\n".format(
@@ -1300,7 +1299,7 @@ def main(argv=sys.argv[1:]):
             r = usb.setlocale(error_lang)
             if r < 0:
                 print("Invalid or unsupported locale '{}': {}".format(
-                      error_lang, usb_strerror(r)))
+                      error_lang, usb.strerror(r).decode()))
 
         r = test_device(VID, PID)
     finally:

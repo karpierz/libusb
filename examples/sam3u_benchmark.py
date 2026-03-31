@@ -33,8 +33,6 @@ import ctypes as ct
 import libusb as usb
 from libusb._platform import is_posix
 
-usb_error_name = lambda status: usb.error_name(status).decode("utf-8")
-
 EP_DATA_IN = 0x82
 EP_ISO_IN  = 0x86
 
@@ -174,7 +172,7 @@ def main(argv=sys.argv[1:]):
           if hasattr(usb, "init_context") else
           usb.init(None))
     if rc < 0:
-        print("Error initializing libusb: {}".format(usb_error_name(rc)),
+        print("Error initializing libusb: {}".format(usb.error_name(rc).decode()),
               file=sys.stderr)
         sys.exit(1)
 
@@ -186,7 +184,7 @@ def main(argv=sys.argv[1:]):
 
         rc = usb.claim_interface(devh, 2)
         if rc < 0:
-            print("Error claiming interface: {}".format(usb_error_name(rc)),
+            print("Error claiming interface: {}".format(usb.error_name(rc).decode()),
                   file=sys.stderr)
             return rc
 

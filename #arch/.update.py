@@ -71,7 +71,6 @@ for plat in conda_platforms:
     conda_pkg.write_bytes(requests.get(download_url, stream=True).content)
 
     conda_pkg.unpack_archive(subdir, format="zip")
-    #patoolib.extract_archive(str(conda_pkg), outdir=str(subdir))
 
     for zstd in subdir.glob("*.zst"):
         zstd.unpack_archive(subdir, format="zstdtar")
@@ -97,8 +96,8 @@ for plat in debian_archs:
     debian_pkg = subdir/f"{PKG_NAME}.deb"
     debian_pkg.write_bytes(requests.get(download_url, stream=True).content)
 
-    patoolib.extract_archive(str(debian_pkg), outdir=str(subdir), verbosity=-1,
-                             interactive=False)
+    patoolib.extract_archive(str(debian_pkg), outdir=str(subdir), interactive=False,
+                             verbosity=-1)
     data_tar = subdir/"data.tar"
     data_tar.unpack_archive(subdir, format="zstdtar")
 

@@ -23,12 +23,11 @@
 #    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
 
 import sys
+import io
 import errno
 import ctypes as ct
 
 import libusb as usb
-
-usb_error_name = lambda status: usb.error_name(status).decode("utf-8")
 
 FX_TYPE_UNDEFINED = -1
 FX_TYPE_AN21      = 0  # Original AnchorChips parts
@@ -68,9 +67,9 @@ FX_KNOWN_DEVICES = (
     fx_known_device(0x0547, 0x2226, FX_TYPE_AN21,  b"Cypress EZ-USB (2226)"),
     fx_known_device(0x0547, 0x2235, FX_TYPE_AN21,  b"Cypress EZ-USB (2235)"),
     fx_known_device(0x0547, 0x2236, FX_TYPE_AN21,  b"Cypress EZ-USB (2236)"),
-    fx_known_device(0x04b4, 0x6473, FX_TYPE_FX1,   b"Cypress EZ-USB FX1"),
-    fx_known_device(0x04b4, 0x8613, FX_TYPE_FX2LP, b"Cypress EZ-USB FX2LP (68013A/68014A/68015A/68016A)"),
-    fx_known_device(0x04b4, 0x00f3, FX_TYPE_FX3,   b"Cypress FX3"),
+    fx_known_device(0x04B4, 0x6473, FX_TYPE_FX1,   b"Cypress EZ-USB FX1"),
+    fx_known_device(0x04B4, 0x8613, FX_TYPE_FX2LP, b"Cypress EZ-USB FX2LP (68013A/68014A/68015A/68016A)"),
+    fx_known_device(0x04B4, 0x00F3, FX_TYPE_FX3,   b"Cypress FX3"),
 )
 
 # This file contains functions for uploading firmware into Cypress
@@ -97,15 +96,15 @@ verbose = 1  # int
 #@annotate(addr=ct.c_uint32, size=ct.c_size_t)
 def fx_is_external(addr, size) -> bool:
 
-    # with 8KB RAM, 0x0000-0x1b3f can be written
+    # with 8KB RAM, 0x0000-0x1B3F can be written
     # we can't tell if it's a 4KB device here
 
-    if addr <= 0x1b3f:
-        return (addr + size) > 0x1b40
+    if addr <= 0x1B3F:
+        return (addr + size) > 0x1B40
 
     # there may be more RAM; unclear if we can write it.
-    # some bulk buffers may be unused, 0x1b3f-0x1f3f
-    # firmware can set ISODISAB for 2KB at 0x2000-0x27ff
+    # some bulk buffers may be unused, 0x1B3F-0x1F3F
+    # firmware can set ISODISAB for 2KB at 0x2000-0x27FF
 
     return True
 
@@ -116,12 +115,12 @@ def fx_is_external(addr, size) -> bool:
 #@annotate(addr=ct.c_uint32, size=ct.c_size_t)
 def fx2_is_external(addr, size) -> bool:
 
-    # 1st 8KB for data/code, 0x0000-0x1fff
-    if addr <= 0x1fff:
+    # 1st 8KB for data/code, 0x0000-0x1FFF
+    if addr <= 0x1FFF:
         return (addr + size) > 0x2000
-    # and 512 for data, 0xe000-0xe1ff
-    elif addr >= 0xe000 and addr <= 0xe1ff:
-        return (addr + size) > 0xe200
+    # and 512 for data, 0xE000-0xE1FF
+    elif addr >= 0xE000 and addr <= 0xE1FF:
+        return (addr + size) > 0xE200
     # otherwise, it's certainly external
     else:
         return True
@@ -136,9 +135,9 @@ def fx2lp_is_external(addr, size) -> bool:
     # 1st 16KB for data/code, 0x0000-0x3fff
     if addr <= 0x3fff:
         return (addr + size) > 0x4000
-    # and 512 for data, 0xe000-0xe1ff
-    elif addr >= 0xe000 and addr <= 0xe1ff:
-        return (addr + size) > 0xe200
+    # and 512 for data, 0xE000-0xE1FF
+    elif addr >= 0xE000 and addr <= 0xE1FF:
+        return (addr + size) > 0xE200
     # otherwise, it's certainly external
     else:
         return True
@@ -180,7 +179,7 @@ def ezusb_write(device, label, opcode, addr, data, size) -> int:
                                   1000)
     if status != ct.c_int(size).value:
         if status < 0:
-            logerror("{}: {}\n", label, usb_error_name(status))
+            logerror("{}: {}\n", label, usb.error_name(status).decode())
         else:
             logerror("{} ==> {}\n", label, status)
 
@@ -214,7 +213,7 @@ def ezusb_read(device, label, opcode, addr, data, size) -> int:
                                   1000)
     if status != ct.c_int(size).value:
         if status < 0:
-            logerror("{}: {}\n", label, usb_error_name(status))
+            logerror("{}: {}\n", label, usb.error_name(status).decode())
         else:
             logerror("{} ==> {}\n", label, status)
 
@@ -250,7 +249,7 @@ def ezusb_cpucs(device, addr, do_run: bool) -> bool:
         (not do_run or status != usb.LIBUSB_ERROR_IO)):
         mesg = "can't modify CPUCS"
         if status < 0:
-            logerror("{}: {}\n", mesg, usb_error_name(status))
+            logerror("{}: {}\n", mesg, usb.error_name(status).decode())
         else:
             logerror("{}\n", mesg)
         return False
@@ -281,7 +280,7 @@ def ezusb_fx3_jump(device, addr) -> bool:
     if status != 0 and status != usb.LIBUSB_ERROR_IO:
         mesg = "failed to send jump command"
         if status < 0:
-            logerror("{}: {}\n", mesg, usb_error_name(status))
+            logerror("{}: {}\n", mesg, usb.error_name(status).decode())
         else:
             logerror("{}\n", mesg)
         return False
@@ -507,10 +506,10 @@ def parse_iic(image, context, is_external, poke) -> int:
     initial_pos = ftell(image)
     if initial_pos < 0:
         return -1
-    if fseek(image, 0, SEEK_END) != 0:
+    if fseek(image, 0, io.SEEK_END) != 0:
         return -1
     file_size = ftell(image);
-    if fseek(image, initial_pos, SEEK_SET) != 0:
+    if fseek(image, initial_pos, io.SEEK_SET) != 0:
         return -1
     while True:
         # Ignore the trailing reset IIC data (5 bytes)
@@ -846,7 +845,7 @@ def ezusb_load_ram(device, path, fx_type, img_type, stage) -> int:
             if cpucs_addr is not None and not ezusb_cpucs(device, cpucs_addr, False):
                 return -1
             # at least write the interrupt vectors (at 0x0000) for reset!
-            status = fseek(image, 0, SEEK_SET)
+            status = fseek(image, 0, io.SEEK_SET)
             if status < 0:
                 logerror("unable to rewind file %s\n", path)
                 return status
