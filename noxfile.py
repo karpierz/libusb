@@ -56,7 +56,7 @@ def cleanup(session: nox.Session) -> None:
     cmd = here/".clean.cmd"
     if cmd.is_file(): subprocess.run([cmd], stderr=subprocess.DEVNULL)
     rmtree(here/"build")
-    rmtree(here/"dist"),
+    rmtree(here/"dist")
     for item in here.glob("src/*.egg-info"): rmtree(item)
     for item in here.glob("**/__pycache__"): rmtree(item)
     for item in here.glob("**/.mypy_cache"): rmtree(item)
@@ -74,10 +74,15 @@ def tests(session: nox.Session) -> None:
 def coverage(session: nox.Session) -> None:
     """Running code coverage analysis"""
     session.install(".", "--group=coverage")
-    session.py("-m", "coverage", "erase")
-    session.py("-m", "coverage", "run", "-m", "tests", *session.posargs, success_codes=range(0, 256))
-    session.py("-m", "coverage", "html", success_codes=range(0, 256))
-    session.py("-m", "coverage", "report")
+    env_dir = Path(session.virtualenv.location)
+    data_file = env_dir/".coverage"
+    html_dir  = env_dir/'.coverage.html'
+    session.py("-m", "coverage", "erase", f"--data-file={data_file}")
+    session.py("-m", "coverage", "run",   f"--data-file={data_file}", "-m", "tests",
+               *session.posargs, success_codes=range(0, 256))
+    session.py("-m", "coverage", "html",  f"--data-file={data_file}", f"--directory={html_dir}",
+               success_codes=range(0, 256))
+    session.py("-m", "coverage", "report", f"--data-file={data_file}")
 
 @nox.session(python=[PY_DEFAULT])
 def docs(session: nox.Session) -> None:
@@ -139,11 +144,12 @@ def publish(session: nox.Session) -> None:
 @nox.session(python=[PY_DEFAULT])
 def typing(session: nox.Session) -> None:
     """Static type checking"""
-    session.install(".", "--group=typing")
+    session.install(".", "--group=type")
     session.py("-m", "mypy")
 
 @nox.session(python=[PY_DEFAULT])
 def lint(session: nox.Session) -> None:
     """Checking code style and quality"""
     session.install(".", "--group=lint")
-    session.py("-m", "flake8", here/"src/")
+    out_file = env_dir/"flake8out.txt"
+    session.py("-m", "flake8", "--output-file", out_file, here/"src/")

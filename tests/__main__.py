@@ -11,14 +11,15 @@ sys.path.insert(0, str(test_dir))
 log = logging.getLogger(__name__)
 
 
-def test_suite(names=None, omit=()):
+def test_suite(names=None, include=(), exclude=()):
     from . import __name__ as pkg_name
     from . import __path__ as pkg_path
     import unittest
     import pkgutil
     if names is None:
         names = [name for _, name, _ in pkgutil.iter_modules(pkg_path)
-                 if name.startswith("test_") and name not in omit]
+                 if (name.startswith("test_") or name in include)
+                     and name not in exclude]
     names = [".".join((pkg_name, name)) for name in names]
     tests = unittest.defaultTestLoader.loadTestsFromNames(names)
     return tests

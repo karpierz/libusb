@@ -34,8 +34,6 @@ from ezusb import FX_KNOWN_DEVICES, FX_TYPE_MAX, FX_TYPE_NAMES, IMG_TYPE_NAMES, 
 from ezusb import ezusb_load_ram
 from ezusb import verbose
 
-usb_error_name = lambda status: usb.error_name(status).decode("utf-8")
-
 if not is_windows or defined("__CYGWIN__"):
     #include <syslog.h>
     dosyslog = False  # bool
@@ -55,7 +53,8 @@ def logerror(fmt, *args):
         print(fmt.format(*args), file=sys.stderr, end="")
 
 
-def print_usage(progname: str, error_code: int = -1):
+def print_usage(error_code: int = -1):
+    global progname
     print("\nUsage: python {} [-v] [-V] [-t type] [-d vid:pid] [-p bus,addr] [-s loader] "
           "-i firmware".format(progname), file=sys.stderr)
     print("  -i <path>       -- Firmware to upload\n"
@@ -71,6 +70,7 @@ def print_usage(progname: str, error_code: int = -1):
 
 def main(argv=sys.argv[1:]):
 
+    global progname
     progname = sys.argv[0]
 
     global verbose
@@ -105,7 +105,7 @@ def main(argv=sys.argv[1:]):
     try:
         opts, args = getopt.getopt(argv, "qvV?hd:p:i:I:s:S:t:")
     except getopt.GetoptError:
-        return print_usage(progname)
+        return print_usage()
 
     for opt, optarg in opts:
         if opt == "-d":
@@ -136,17 +136,17 @@ def main(argv=sys.argv[1:]):
         elif opt == "-q":
             verbose -= 1
         elif opt in ("-?", "-h"):
-            return print_usage(progname)
+            return print_usage()
         else:
-            return print_usage(progname)
+            return print_usage()
 
     if paths[FIRMWARE] is None:
         logerror("no firmware specified!\n")
-        return print_usage(progname)
+        return print_usage()
 
     if device_id is not None and device_path is not None:
         logerror("only one of -d or -p can be specified\n")
-        return print_usage(progname)
+        return print_usage()
 
     # determine the target type
     if target_type is not None:
@@ -156,7 +156,7 @@ def main(argv=sys.argv[1:]):
                 break
         else:
             logerror("illegal microcontroller type: {}\n", target_type)
-            return print_usage(progname)
+            return print_usage()
 
     # open the device using libusb
     status = (usb.init_context(None, None, 0)
@@ -165,7 +165,7 @@ def main(argv=sys.argv[1:]):
     if status < 0:
         logerror("libusb.init_context() failed: {}\n"
                  if hasattr(usb, "init_context") else
-                 "libusb.init() failed: {}\n", usb_error_name(status))
+                 "libusb.init() failed: {}\n", usb.error_name(status).decode())
         return -1
 
     try:
@@ -175,7 +175,7 @@ def main(argv=sys.argv[1:]):
         if target_type is None or device_id is None or device_path is not None:
 
             if usb.get_device_list(None, ct.byref(devs)) < 0:
-                logerror("libusb.get_device_list() failed: {}\n", usb_error_name(status))
+                logerror("libusb.get_device_list() failed: {}\n", usb.error_name(status).decode())
                 return -1
 
             i = 0
@@ -184,7 +184,7 @@ def main(argv=sys.argv[1:]):
                 if not dev:
                     usb.free_device_list(devs, 1)
                     logerror("could not find a known device - please specify type and/or vid:pid and/or bus,dev\n")
-                    return print_usage(progname)
+                    return print_usage()
 
                 _busnum  = usb.get_bus_number(dev)
                 _devaddr = usb.get_device_address(dev)
@@ -230,7 +230,7 @@ def main(argv=sys.argv[1:]):
             status = usb.open(dev, ct.byref(device))
             usb.free_device_list(devs, 1)
             if status < 0:
-                logerror("libusb.open() failed: {}\n", usb_error_name(status))
+                logerror("libusb.open() failed: {}\n", usb.error_name(status).decode())
                 return -1
 
         elif device_id is not None:
@@ -245,7 +245,7 @@ def main(argv=sys.argv[1:]):
         status = usb.claim_interface(device, 0)
         if status != usb.LIBUSB_SUCCESS:
             usb.close(device)
-            logerror("libusb.claim_interface failed: {}\n", usb_error_name(status))
+            logerror("libusb.claim_interface failed: {}\n", usb.error_name(status).decode())
             return -1
 
         if verbose:

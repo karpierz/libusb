@@ -17,6 +17,7 @@ prune src/libusb/libusb.h
 
 graft tests
 prune tests/tests.c
+prune tests/fuzz
 
 global-exclude \#* \#*/**
 global-exclude .build .build/** .build.* .build.*/**

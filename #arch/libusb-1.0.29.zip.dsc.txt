@@ -1,8 +1,0 @@
-Url:       https://github.com/libusb/libusb/archive/refs/tags/v1.0.29.zip
-Url redir: https://codeload.github.com/libusb/libusb/zip/refs/tags/v1.0.29
-Completed: 2025-11-08 09:04:20
-File name: libusb-1.0.29.zip
-File date: 2025-11-08 09:04:20
-File size: 498003
-SHA256sum: F3D18A4F0C617BD3DA0B9A4F70DB0397744E0C15C05B709B4DE40BEF5D57D4B2
-SHA1sum:   4C6CD405695A80B9688754D5CDA2468E8313405E

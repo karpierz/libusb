@@ -22,37 +22,42 @@ import sys
 import ctypes as ct
 
 import libusb as usb
-
-usb_strerror = lambda r: usb.strerror(r).decode("utf-8")
+from libusb._platform import is_windows
 
 handle = ct.POINTER(usb.device_handle)()
-done = 0
+done_attach = 0
+done_detach = 0
 
 
 @usb.hotplug_callback_fn
 def hotplug_callback(ctx, dev, event, user_data):
 
-    global handle, done
+    global handle, done_attach
 
     desc = usb.device_descriptor()
+    new_handle = ct.POINTER(usb.device_handle)()
+
     rc = usb.get_device_descriptor(dev, ct.byref(desc))
     if rc == usb.LIBUSB_SUCCESS:
         print("Device attached: {:04x}:{:04x}".format(desc.idVendor, desc.idProduct))
     else:
         print("Device attached")
-        print("Error getting device descriptor: {}".format(usb_strerror(rc)),
+        print("Error getting device descriptor: {}".format(usb.strerror(rc).decode()),
               file=sys.stderr)
 
-    if handle:
-        usb.close(handle)
-        handle = ct.POINTER(usb.device_handle)()
-
-    rc = usb.open(dev, ct.byref(handle))
-    if rc != usb.LIBUSB_SUCCESS:
-        print("No access to device: {}".format(usb_strerror(rc)),
+    rc = usb.open(dev, ct.byref(new_handle))
+    if rc == usb.LIBUSB_SUCCESS:
+        if handle:
+            usb.close(handle)
+        handle = new_handle
+    elif (rc != usb.LIBUSB_ERROR_ACCESS
+          and (not is_windows
+               or rc not in (usb.LIBUSB_ERROR_NOT_SUPPORTED,
+                             usb.LIBUSB_ERROR_NOT_FOUND))):
+        print("No access to device: {}".format(usb.strerror(rc).decode()),
               file=sys.stderr)
 
-    done += 1
+    done_attach += 1
 
     return 0
 
@@ -60,7 +65,7 @@ def hotplug_callback(ctx, dev, event, user_data):
 @usb.hotplug_callback_fn
 def hotplug_callback_detach(ctx, dev, event, user_data):
 
-    global handle, done
+    global handle, done_detach
 
     desc = usb.device_descriptor()
     rc = usb.get_device_descriptor(dev, ct.byref(desc))
@@ -68,21 +73,21 @@ def hotplug_callback_detach(ctx, dev, event, user_data):
         print("Device detached: {:04x}:{:04x}".format(desc.idVendor, desc.idProduct))
     else:
         print("Device detached")
-        print("Error getting device descriptor: {}".format(usb_strerror(rc)),
+        print("Error getting device descriptor: {}".format(usb.strerror(rc).decode()),
               file=sys.stderr)
 
     if handle:
         usb.close(handle)
         handle = ct.POINTER(usb.device_handle)()
 
-    done += 1
+    done_detach += 1
 
     return 0
 
 
 def main(argv=sys.argv[1:]):
 
-    global handle, done
+    global handle, done_attach, done_detach
 
     hp = [usb.hotplug_callback_handle() for i in range(2)]
 
@@ -94,7 +99,7 @@ def main(argv=sys.argv[1:]):
           if hasattr(usb, "init_context") else
           usb.init(None))
     if rc != usb.LIBUSB_SUCCESS:
-        print("failed to initialise libusb: {}".format(usb_strerror(rc)))
+        print("failed to initialise libusb: {}".format(usb.strerror(rc).decode()))
         return 1
 
     try:
@@ -118,12 +123,13 @@ def main(argv=sys.argv[1:]):
             print("Error registering callback 1", file=sys.stderr)
             return 1
 
-        while done < 2:
+        while done_detach < done_attach or done_attach == 0:
             rc = usb.handle_events(None)
             if rc != usb.LIBUSB_SUCCESS:
-                print("libusb.handle_events() failed: {}".format(usb_strerror(rc)))
+                print("libusb.handle_events() failed: {}".format(usb.strerror(rc).decode()))
     finally:
         if handle:
+            print("Warning: Closing left-over open handle")
             usb.close(handle)
         usb.exit(None)
 

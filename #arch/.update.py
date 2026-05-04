@@ -10,15 +10,18 @@ import bs4
 from utlx import module_path, Path
 import patoolib
 
+# https://anaconda.org/conda-forge/libusb/files/manage?channel=main&type=conda&version=1.0.29
+# http://ftp.debian.org/debian/pool/main/libu/libusb-1.0
+
 here = Path(module_path())
 
 PKG_NAME        = "libusb"
 CONDA_VERSION   = "1.0.29"
-DEB_VERSION     = "1.0.29"
+DEB_VERSION     = "1.0.30~rc2"
 CONDA_BUILD_NO  = "0"
 DEB_SO_NO       = "1.0"
 DEB_SO_BUILD_NO = "0"
-DEB_BUILD_NO    = "2"
+DEB_BUILD_NO    = "1"
 
 conda_channel = "main"
 conda_type    = "conda"
@@ -48,7 +51,7 @@ debian_archs = (
     #"armel",
     "ppc64el",
     #"mips64el",
-    "riscv64",
+    #"riscv64",
     "s390x",
 )
 
@@ -68,7 +71,6 @@ for plat in conda_platforms:
     conda_pkg.write_bytes(requests.get(download_url, stream=True).content)
 
     conda_pkg.unpack_archive(subdir, format="zip")
-    #patoolib.extract_archive(str(conda_pkg), outdir=str(subdir))
 
     for zstd in subdir.glob("*.zst"):
         zstd.unpack_archive(subdir, format="zstdtar")
@@ -94,8 +96,8 @@ for plat in debian_archs:
     debian_pkg = subdir/f"{PKG_NAME}.deb"
     debian_pkg.write_bytes(requests.get(download_url, stream=True).content)
 
-    patoolib.extract_archive(str(debian_pkg), outdir=str(subdir), verbosity=-1,
-                             interactive=False)
+    patoolib.extract_archive(str(debian_pkg), outdir=str(subdir), interactive=False,
+                             verbosity=-1)
     data_tar = subdir/"data.tar"
     data_tar.unpack_archive(subdir, format="zstdtar")
 
