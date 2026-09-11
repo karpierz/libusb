@@ -1,12 +1,17 @@
 Changelog
 =========
 
-1.0.30rc2 (2026-05-04)
-----------------------
+1.0.30 (2026-06-30)
+-------------------
 - Libusb API update: v.1.0.29 -> v.1.0.30
 - Upgrade of dll-s for Windows: libusb v.1.0.29 -> v.1.0.30
 - Upgrade of so-s  for Linux:   libusb v.1.0.29 -> v.1.0.30
-- Setup update and improvement.
+- | For macOS, dylib-s are still at version 1.0.29 due to a lack of updates
+  | of conda packages.
+- Full support for Python 3.15
+- Dropped support for Python 3.10 (due to compatibility issues).
+- Fix for nox 'lint' session.
+- Setup updates, fixes and improvements.
 
 1.0.29.post7 (2026-02-13)
 -------------------------
@@ -103,14 +108,11 @@ Changelog
 
 1.0.26rc2 (2023-12-20)
 ----------------------
-- Add linux aarch64 support.
-
-1.0.26rc1 (2023-12-15)
-----------------------
 - Added support for Python 3.12
 - Dropped support for Python 3.7
 - Added support for PyPy 3.10
 - Dropped support for PyPy 3.7 and 3.8
+- Add linux aarch64 support.
 - Copyright year update.
 
 1.0.26b5 (2022-09-10)

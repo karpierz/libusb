@@ -75,7 +75,7 @@ Installation
 
 Prerequisites:
 
-+ Python 3.10 or higher
++ Python 3.11 or higher
 
   * https://www.python.org/
   * with C libusb 1.0.30 is a primary test environment.

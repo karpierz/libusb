@@ -44,21 +44,28 @@ needs_sphinx = '8.1.3'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'myst_parser',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
    #'sphinx.ext.todo',
    #'sphinx.ext.coverage',
+    'sphinx.ext.viewcode',
     'sphinx.ext.ifconfig',
     'sphinx.ext.napoleon',
     'sphinx_autodoc_typehints',
-   #'sphinx_toolbox',
     'sphinx_tabs.tabs',
+    'sphinx-prompt',
     'sphinx_copybutton',
     'sphinxcontrib.spelling',
     'nbsphinx',
 ]
+
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md':  'markdown',
+}
 
 # Needed for e.g. linkcheck builder
 tls_verify = False
@@ -96,6 +103,16 @@ html_static_path = ['_static']
 
 
 # -- Extension configuration -------------------------------------------------
+
+# -- Options for MyST extension ----------------------------------------------
+
+myst_enable_extensions = [
+    'colon_fence',      # ```{note} ... ```
+    'deflist',          # definitions list
+    'fieldlist',        # fields as in reST
+    'html_admonition',  # :::note
+    'html_image',       # ![alt](img.png)
+]
 
 # -- Options for autodoc extension -------------------------------------------
 
