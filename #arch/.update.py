@@ -4,14 +4,14 @@ if sys.version_info < (3,14):
     raise AssertionError("Python version 3.14 or higher is required.")
 from utlx import module_path, Path
 
-# https://anaconda.org/conda-forge/libusb/files/manage?channel=main&type=conda&version=1.0.29
+# https://anaconda.org/conda-forge/libusb/files/manage?channel=main&type=conda&version=1.0.30
 # http://ftp.debian.org/debian/pool/main/libu/libusb-1.0/?C=M;O=D
 
 here = Path(module_path())
 
 PKG_NAME = "libusb"
 
-CONDA_VERSION  = "1.0.29"
+CONDA_VERSION  = "1.0.30"
 CONDA_BUILD_NO = "0"
 
 DEB_PKG_SUBDIR   = "libu/libusb-1.0"
@@ -21,11 +21,11 @@ DEB_VERSION      = "1.0.30"
 DEB_BUILD_NO     = "1"
 
 conda_platforms = (
-    "win-64",
-    "win-arm64",
-    "linux-64",
-    "linux-aarch64",
-    "linux-ppc64le",
+    # "win-64",
+    # "win-arm64",
+    # "linux-64",
+    # "linux-aarch64",
+    # "linux-ppc64le",
     "osx-64",
     "osx-arm64",
 )

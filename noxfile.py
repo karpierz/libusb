@@ -28,7 +28,7 @@ PKG = nox.get_package_data()
 
 PYPROJECT   = nox.project.load_toml("pyproject.toml")
 PY_VERSIONS = nox.project.python_versions(PYPROJECT)
-PY_DEFAULT  = "3.13"
+PY_DEFAULT  = "3.14"
 
 # Prevent Python from writing bytecode
 env["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -48,7 +48,9 @@ def cleanup(session: nox.Session) -> None:
     nox_lib.cleanup.clean_cmd(session)
     nox_lib.cleanup.cleanup(session)
 
-@nox.session(python=[*PY_VERSIONS, "pypy3.11"])
+@nox.session(python=[*PY_VERSIONS,
+                     "pypy3.11", "pypy3.12",
+                     "graalpy3.13"])
 def tests(session: nox.Session) -> None:
     """Running tests"""
     session.install(".", "--group=test")

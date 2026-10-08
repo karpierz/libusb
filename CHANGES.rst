@@ -1,6 +1,18 @@
 Changelog
 =========
 
+1.0.30.post2 (2026-10-05)
+-------------------------
+- | Upgraded all DLLs and shared libraries (.so) to version 1.0.30
+  | with the following exceptions for older architectures:
+  | 'armel': version 1.0.28
+  | 'mips64el' and  'mipsel': version 1.0.26
+- Added support for PyPy 3.12
+- Added support for GraalPy 3.13
+- GraalPy <= 3.12 is not supported due to 'ctypes' incompatibility.
+- Updated nox's default python to version 3.14
+- Setup updates.
+
 1.0.30 (2026-06-30)
 -------------------
 - Libusb API update: v.1.0.29 -> v.1.0.30
